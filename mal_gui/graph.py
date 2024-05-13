@@ -5,9 +5,9 @@ from PySide6.QtCore import (QEasingCurve, QLineF,
                             QParallelAnimationGroup, QPointF,
                             QPropertyAnimation, QRectF, Qt)
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen, QPolygonF
-from PySide6.QtWidgets import (QApplication, QComboBox, QGraphicsItem,
+from PySide6.QtWidgets import (QComboBox, QGraphicsItem,
                                QGraphicsObject, QGraphicsScene, QGraphicsView,
-                               QStyleOptionGraphicsItem, QVBoxLayout, QWidget)
+                               QStyleOptionGraphicsItem, QVBoxLayout, QWidget,QPushButton,QLineEdit,QDialog,QMessageBox,QLabel)
 
 import networkx as nx
 
@@ -304,6 +304,54 @@ class GraphView(QGraphicsView):
             dest = self._nodes_map[b]
             self.scene().addItem(Edge(source, dest))
 
+class GraphCalculations():
+    def __init__(self, directedGraph: nx.DiGraph, parent=None):
+        super().__init__()
+        self.directedGraph = directedGraph
+    
+    def calculateShortestPath(self,source,target):
+        try:
+            
+            shortestPath =  nx.shortest_path(self.directedGraph,source, target)
+            shortestPathLength = self.calculateShortestPathLength(source, target)
+            
+            successResultDialog = QMessageBox()
+            successResultDialog.setWindowTitle("Calculation Results")
+            shortestPathStr = ', '.join(shortestPath)
+            successResultDialog.setText("shortestPath = "+ shortestPathStr + "\nshortestPathLength = "+ str(shortestPathLength))
+            resultButton = successResultDialog.exec()
+
+            # if resultButton == QMessageBox.Ok:
+            #     print("OK!")
+            
+            return shortestPath
+        except nx.NetworkXNoPath:
+            print("No Valid Path exists:")
+            
+            failedResultDialog = QMessageBox()
+            failedResultDialog.setWindowTitle("Failed Calculation Results")
+            failedResultDialog.setText("No Valid Path exists:")
+            resultButton = failedResultDialog.exec()
+
+
+            
+            return None
+        except Exception as e:
+            # Handle other exceptions
+            print("An error occurred:", e)
+            return None
+    
+    def calculateShortestPathLength(self,source,target):
+        try:
+            shortestPathLength =  nx.shortest_path_length(self.directedGraph, source,target)
+            return shortestPathLength
+        except nx.NetworkXNoPath:
+            return None
+        except Exception as e:
+            # Handle other exceptions
+            print("An error occurred:", e)
+            return None
+    
 
 class GraphWindow(QWidget):
     def __init__(self, parent=None):
@@ -315,16 +363,51 @@ class GraphWindow(QWidget):
                 ("1", "2"),
                 ("2", "3"),
                 ("3", "4"),
-                ("1", "5"),
+                ("4", "5"),
                 ("1", "6"),
-                ("1", "7"),
+                ("6", "7"),
+                ("7", "8"),
+                ("8", "5"),
+                ("1", "9"),
+                ("9", "5"),
             ]
         )
 
         self.view = GraphView(self.graph)
+        self.graphCalulation = GraphCalculations(self.graph)
         self.choice_combo = QComboBox()
         self.choice_combo.addItems(self.view.get_nx_layouts())
         v_layout = QVBoxLayout(self)
         v_layout.addWidget(self.choice_combo)
         v_layout.addWidget(self.view)
         self.choice_combo.currentTextChanged.connect(self.view.set_nx_layout)
+        
+        v_layout_shortestPath = QVBoxLayout(self)
+        self.linseEditStartNode = QLineEdit(self)
+        self.linseEditEndNode = QLineEdit(self)
+        self.labelStartNode = QLabel("StartNode")
+        self.labelEndNode = QLabel("EndNode")
+        
+        self.linseEditStartNode.textChanged.connect(self.extractStartNodeValueFromLineEdit)
+        self.linseEditEndNode.textChanged.connect(self.extractEndNodeValueFromLineEdit)
+        
+        self.linseEditStartNode.setText(str(1))
+        self.linseEditEndNode.setText(str(5))
+
+        self.buttonCalculateShortestPath = QPushButton("Calculate Shortest Path")
+        self.buttonCalculateShortestPath.clicked.connect(lambda: self.graphCalulation.calculateShortestPath(self.linseEditStartNode.text(), self.linseEditEndNode.text()))
+        self.buttonCalculateShortestPath.clicked.connect(lambda: self.graphCalulation.calculateShortestPathLength(self.linseEditStartNode.text(), self.linseEditEndNode.text()))
+        
+        
+        v_layout_shortestPath.addWidget(self.labelStartNode)
+        v_layout_shortestPath.addWidget(self.linseEditStartNode)
+        v_layout_shortestPath.addWidget(self.labelEndNode)
+        v_layout_shortestPath.addWidget(self.linseEditEndNode)
+        v_layout_shortestPath.addWidget(self.buttonCalculateShortestPath)
+        
+        v_layout.addLayout(v_layout_shortestPath)
+        
+    def extractStartNodeValueFromLineEdit(self,nodeValue):
+        self.linseEditStartNode.setText(nodeValue) 
+    def extractEndNodeValueFromLineEdit(self,nodeValue):
+        self.linseEditEndNode.setText(nodeValue) 
