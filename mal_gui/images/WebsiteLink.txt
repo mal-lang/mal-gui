@@ -25,3 +25,63 @@ Link: https://uxwing.com/cpu-server-icon/
 7. Network 
 
 Link: https://uxwing.com/big-data-icon/
+
+8. Application
+
+Link: https://uxwing.com/coding-icon/
+
+9. Connection Rule
+
+Link: https://uxwing.com/pc-network-icon/
+
+10. Credentials
+
+Link: https://uxwing.com/key-line-icon/
+
+11. Group
+
+Link: https://uxwing.com/team-icon/
+
+12. Hardware 
+
+Link: https://uxwing.com/server-rack-outline-icon/
+
+13. Hardware Vulnerability
+
+Link: https://uxwing.com/shield-sedo-line-icon/
+
+14. Identity
+
+Link: https://uxwing.com/name-id-icon/
+
+15. IDPS 
+
+Link: https://uxwing.com/web-page-source-code-icon/
+
+16. Information
+
+Link: https://uxwing.com/more-info-icon/
+
+17. Physical Zone
+
+Link: https://uxwing.com/address-location-icon/
+
+18. Previleges
+
+Link: https://uxwing.com/access-hand-key-icon/
+
+19. Routing Firewall 
+
+Link: https://uxwing.com/encryption-icon/
+
+20. SoftwareProduct
+
+Link: https://uxwing.com/packing-icon/
+
+21. Software Vulnerability 
+
+Link: https://uxwing.com/cyber-security-icon/
+
+22. User
+
+Link: https://uxwing.com/unisex-male-and-female-icon/

@@ -1,12 +1,20 @@
-from PySide6.QtWidgets import QWidget,QSplitter, QMainWindow,QToolBar,QDockWidget, QListWidget,QVBoxLayout,QComboBox,QListWidgetItem, QLabel,QTreeView,QTreeWidget, QTreeWidgetItem
+from PySide6.QtWidgets import QWidget,QSplitter, QMainWindow,QToolBar,QDockWidget, QListWidget,QVBoxLayout,QComboBox,QListWidgetItem, QLabel,QTreeView,QTreeWidget, QTreeWidgetItem,QCheckBox
 from PySide6.QtGui import QDrag,QPixmap
 from PySide6.QtCore import Qt,QMimeData,QByteArray,QSize
 
+from ModelScene import ModelScene
+from ModelView import ModelView
+from ObjectExplorer.AssetBase import AssetBase
+
 from graph import GraphWindow
+from ConnectionItem import ConnectionItem
 
-import external.qtpynodeeditor as nodeeditor
+from AssociationTableView import AssociationDefinitions
 
-from malmodels import Attacker,Client,Container,Datastore,Firewall,Host
+# from malmodels import Attacker,Client,Container,Datastore,Firewall,Host
+from ObjectExplorer.AssetFactory import AssetFactory
+
+from DraggableTreeView import DraggableTreeView
 
 class DraggableListWidget(QListWidget):
     def mousePressEvent(self, event):
@@ -62,35 +70,52 @@ class MainWindow(QMainWindow):
         #Add the quit action 
         toolbar.addAction(file_menu_quit_action)
         
-        #Add other widgets
-        # self.textEdit = QTextEdit()
-        # self.setCentralWidget(self.textEdit)
+        toolbar.addSeparator()
         
-        #Main GraphicsViewFramework ( View, Scene and Items related)
-        registry = nodeeditor.DataModelRegistry()
-
-        registry.register_model(Attacker, category='Hacking',style=None)
-        registry.register_model(Client, category='Hacking',style=None)
-        registry.register_model(Container, category='Hacking',style=None)
-        registry.register_model(Datastore, category='Hacking',style=None)
-        registry.register_model(Firewall, category='Hacking',style=None)
-        registry.register_model(Host, category='Hacking',style=None)
-            
-        self.scene = nodeeditor.FlowScene(registry=registry)
-        self.grapicsView = nodeeditor.FlowView(self.scene)
+        showAssociationCheckBoxLabel  = QLabel("Show Association")
+        showAssociationCheckBox = QCheckBox()
+        showAssociationCheckBox.setCheckState(Qt.CheckState.Unchecked)
+        toolbar.addWidget(showAssociationCheckBoxLabel)
+        toolbar.addWidget(showAssociationCheckBox)
+        showAssociationCheckBox.stateChanged.connect(self.showAssociationCheckBoxChanged)
+        
+        #Create a registery as a dictionary containing name as key and class as value
+        self.assetFactory = AssetFactory()
+        self.assetFactory.registerAsset("Application", "images/application.png")
+        self.assetFactory.registerAsset("Attacker", "images/attacker.png")
+        self.assetFactory.registerAsset("Credentials", "images/credentials.png")
+        self.assetFactory.registerAsset("Data", "images/dataStore.png")
+        self.assetFactory.registerAsset("Group", "images/group.png")
+        self.assetFactory.registerAsset("Hardware", "images/hardware.png")
+        self.assetFactory.registerAsset("HardwareVulnerability", "images/hardwareVulnerability.png")
+        # self.assetFactory.registerAsset("IAMObject", "images/IAMObject.png") # Need to verify before adding here
+        self.assetFactory.registerAsset("IDPS", "images/idps.png")
+        self.assetFactory.registerAsset("Identity", "images/identity.png")
+        self.assetFactory.registerAsset("Information", "images/information.png")
+        self.assetFactory.registerAsset("Network", "images/network.png")
+        self.assetFactory.registerAsset("PhysicalZone", "images/physicalZone.png")
+        self.assetFactory.registerAsset("RoutingFirewall", "images/routingFirewall.png")
+        self.assetFactory.registerAsset("SoftwareProduct", "images/softwareProduct.png")
+        self.assetFactory.registerAsset("SoftwareVulnerability", "images/softwareVulnerability.png")
+        self.assetFactory.registerAsset("User", "images/user.png")
+        
+        
+        
+        self.scene = ModelScene(self.assetFactory)
+        self.view = ModelView(self.scene)
         
         #Simple Graphics with networkx example
         self.graphWindow = GraphWindow()
         # self.setCentralWidget(self.graphWindow)
         
-        self.scene = nodeeditor.FlowScene(registry=registry)
-        self.grapicsView = nodeeditor.FlowView(self.scene)
-        # self.setCentralWidget(self.grapicsView)
+        #Association Information
+        self.associationInfo = AssociationDefinitions()
         
         self.splitter = QSplitter()
-        self.splitter.addWidget(self.grapicsView)
+        self.splitter.addWidget(self.view)
+        self.splitter.addWidget(self.associationInfo)
         self.splitter.addWidget(self.graphWindow)
-        self.splitter.setSizes([200, 200])  # Set initial sizes of widgets in splitter
+        self.splitter.setSizes([200, 100, 100])  # Set initial sizes of widgets in splitter
         
         self.setCentralWidget(self.splitter)
         
@@ -117,34 +142,25 @@ class MainWindow(QMainWindow):
             "SoftwareProduct": []
         }
         
-    #     templates = [
-    #         [
-    #             ["Item1_1_1", "Item1_1_2", "Item1_1_3"],
-    #             ["Item1_2_1", "Item1_2_2", "Item1_2_3"]
-    #         ],
-    #         [
-    #             ["Item2_1_1", "Item2_1_2", "Item2_1_3"],
-    #             ["Item2_2_1", "Item2_2_2", "Item2_2_3"]
-    #         ]
-    #     ]
-
-    # for template_level_1 in templates:
-    #     for template_level_2 in template_level_1:
-    #         print("Template:")
-    #         for item in template_level_2:
-    #             print(item)
-    #         print()
-    
-        #ObjectExplorer ListView ( With Drag And Drop Functionality)
-        self.objectExplorerListContent = ["Attacker","Client","Container","Datastore","Firewall","Host"]
-        
-        # objectExplorerListTab.setHeaderLabel(None)
+        # ObjectExplorer - LeftSide pannel is Draggable TreeView
         dockObjectExplorer = QDockWidget("Object Explorer",self)
-        self.objectExplorerListTab = DraggableListWidget(dockObjectExplorer)
-        self.objectExplorerListTab.addItems(self.objectExplorerListContent)
-        dockObjectExplorer.setWidget(self.objectExplorerListTab)
-        self.addDockWidget(Qt.LeftDockWidgetArea, dockObjectExplorer)
+        self.objectExplorerTree = DraggableTreeView()
         
+        #printing registry
+        print("printing registry: ")
+        for key,values in self.assetFactory.assetRegistry.items():
+            print(f"Key: {key}")
+            for value in values:
+                print(f"  Tuple: {value}")
+                print(f"    Field1: {value.assetNameUpper}")
+                print(f"    Field2: {value.assetNameLower}")
+                print(f"    Field3: {value.assetImage}")
+                self.objectExplorerTree.setParentItemText(value.assetNameUpper,value.assetImage)
+                self.objectExplorerTree.addChildItem(value.assetNameUpper, value.assetNameUpper+ "@Number_TBD")
+                
+        
+        dockObjectExplorer.setWidget(self.objectExplorerTree)
+        self.addDockWidget(Qt.LeftDockWidgetArea, dockObjectExplorer)
         
         #EDOC Tab with treeview
         componentTabTree = QTreeWidget()
@@ -189,6 +205,11 @@ class MainWindow(QMainWindow):
         dockProperties.setWidget(propertiesTabTree)
         self.addDockWidget(Qt.RightDockWidgetArea, dockProperties)
         
+    def showAssociationCheckBoxChanged(self,checked):
+        print("self.showAssociationCheckBoxChanged clicked")
+        for connection in self.scene.items():
+            if isinstance(connection, ConnectionItem):
+                connection.setShowAssocitaions(checked)
         
 
         

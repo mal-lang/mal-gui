@@ -4,11 +4,6 @@ from PySide6.QtCore import Qt
 
 import threading
 
-import external.qtpynodeeditor as nodeeditor
-from external.qtpynodeeditor import (NodeData, NodeDataModel, NodeDataType,
-                            NodeValidationState, Port, PortType)
-from external.qtpynodeeditor.type_converter import TypeConverter
-
 
 class IntegerData(NodeData):
     'Node data holding an integer value'
