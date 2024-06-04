@@ -1,5 +1,5 @@
-from PySide6.QtWidgets import QWidget,QSplitter, QMainWindow,QToolBar,QDockWidget, QListWidget,QVBoxLayout,QComboBox,QListWidgetItem, QLabel,QTreeView,QTreeWidget, QTreeWidgetItem,QCheckBox
-from PySide6.QtGui import QDrag,QPixmap
+from PySide6.QtWidgets import QWidget,QLineEdit,QSplitter, QMainWindow,QToolBar,QDockWidget, QListWidget,QVBoxLayout,QComboBox,QListWidgetItem, QLabel,QTreeView,QTreeWidget, QTreeWidgetItem,QCheckBox,QPushButton
+from PySide6.QtGui import QDrag,QPixmap,QAction,QIcon,QIntValidator
 from PySide6.QtCore import Qt,QMimeData,QByteArray,QSize
 
 from ModelScene import ModelScene
@@ -35,49 +35,9 @@ class MainWindow(QMainWindow):
         self.app = app #declare an app member 
         self.setWindowTitle("MAL GUI")
         
-        #Menubar and menus 
-        menu_bar = self.menuBar()
-        
-        file_menu = menu_bar.addMenu("File")
-        file_menu_new_action = file_menu.addAction("New")
-        file_menu_open_action = file_menu.addAction("Open")
-        file_menu_save_action = file_menu.addAction("Save")
-        file_menu_saveas_action = file_menu.addAction("SaveAs..")
-        file_menu_quit_action = file_menu.addAction("Quit")
-        file_menu_quit_action.triggered.connect(self.quit_app)
-        
-        edit_menu = menu_bar.addMenu("Edit")
-        edit_menu_copy_action = edit_menu.addAction("Copy")
-        edit_menu_cut_action = edit_menu.addAction("Cut")
-        edit_menu_paste_action= edit_menu.addAction("Paste")
-        edit_menu_undo_action = edit_menu.addAction("Undo")
-        edit_menu_redo_action = edit_menu.addAction("Redo")
-        
-        settings_menu = menu_bar.addMenu("Settings")
-        settings_menu.addAction("View")
-        
-        help_menu = menu_bar.addMenu("Help")
-        help_menu_about_action = help_menu.addAction("About1")
-        help_menu_about_action2 = help_menu.addAction("About2")
-        help_menu_tbd2_action = help_menu.addAction("TBD_2")
-        help_menu_tbd2_action = help_menu.addAction("TBD_3")
-        
-        #working with toolbars 
-        toolbar = QToolBar("My main Toolbar")
-        toolbar.setIconSize(QSize(16,16))
-        self.addToolBar(toolbar)
-        
-        #Add the quit action 
-        toolbar.addAction(file_menu_quit_action)
-        
-        toolbar.addSeparator()
-        
-        showAssociationCheckBoxLabel  = QLabel("Show Association")
-        showAssociationCheckBox = QCheckBox()
-        showAssociationCheckBox.setCheckState(Qt.CheckState.Unchecked)
-        toolbar.addWidget(showAssociationCheckBoxLabel)
-        toolbar.addWidget(showAssociationCheckBox)
-        showAssociationCheckBox.stateChanged.connect(self.showAssociationCheckBoxChanged)
+        self.createActions()
+        self.createMenus()
+        self.createToolbar()
         
         #Create a registery as a dictionary containing name as key and class as value
         self.assetFactory = AssetFactory()
@@ -102,7 +62,9 @@ class MainWindow(QMainWindow):
         
         
         self.scene = ModelScene(self.assetFactory)
-        self.view = ModelView(self.scene)
+        self.view = ModelView(self.scene, self)
+        
+        self.view.zoomChanged.connect(self.updateZoomLabel)
         
         #Simple Graphics with networkx example
         self.graphWindow = GraphWindow()
@@ -149,12 +111,12 @@ class MainWindow(QMainWindow):
         #printing registry
         print("printing registry: ")
         for key,values in self.assetFactory.assetRegistry.items():
-            print(f"Key: {key}")
+            # print(f"Key: {key}")
             for value in values:
-                print(f"  Tuple: {value}")
-                print(f"    Field1: {value.assetNameUpper}")
-                print(f"    Field2: {value.assetNameLower}")
-                print(f"    Field3: {value.assetImage}")
+                # print(f"  Tuple: {value}")
+                # print(f"    Field1: {value.assetNameUpper}")
+                # print(f"    Field2: {value.assetNameLower}")
+                # print(f"    Field3: {value.assetImage}")
                 self.objectExplorerTree.setParentItemText(value.assetNameUpper,value.assetImage)
                 self.objectExplorerTree.addChildItem(value.assetNameUpper, value.assetNameUpper+ "@Number_TBD")
                 
@@ -210,8 +172,83 @@ class MainWindow(QMainWindow):
         for connection in self.scene.items():
             if isinstance(connection, ConnectionItem):
                 connection.setShowAssocitaions(checked)
+                
+                
+    def createActions(self):
+
+        self.zoomInAction = QAction(QIcon("images/zoomIn.png"), "ZoomIn", self)
+        self.zoomInAction.triggered.connect(self.zoomIn)
         
+        self.zoomOutAction = QAction(QIcon("images/zoomOut.png"), "ZoomOut", self)
+        self.zoomOutAction.triggered.connect(self.zoomOut)
 
         
-    def quit_app(self):
+    def createMenus(self):
+         #Menubar and menus
+        self.menuBar = self.menuBar()
+        self.fileMenu =  self.menuBar.addMenu("&File")
+        self.fileMenuNewAction = self.fileMenu.addAction("New")
+        self.fileMenuOpenAction = self.fileMenu.addAction("Open")
+        self.fileMenuSaveAction = self.fileMenu.addAction("Save")
+        self.fileMenuSaveAsAction = self.fileMenu.addAction("SaveAs..")
+        self.fileMenuQuitAction = self.fileMenu.addAction("Quit")
+        
+        self.fileMenuQuitAction.triggered.connect(self.quitApp)
+
+    def createToolbar(self):
+        #toolbar
+        self.toolbar = QToolBar("Mainwindow Toolbar")
+        self.toolbar.setIconSize(QSize(20, 20))  # Adjust the size to reduce bigger image- its a magic number
+        self.addToolBar(self.toolbar)
+        # Set the style to show text beside the icon for the entire toolbar
+        self.toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        
+        #Add the quit action 
+        self.toolbar.addAction(self.fileMenuQuitAction)
+        
+        self.toolbar.addSeparator()
+        
+        showAssociationCheckBoxLabel  = QLabel("Show Association")
+        showAssociationCheckBox = QCheckBox()
+        showAssociationCheckBox.setCheckState(Qt.CheckState.Unchecked)
+        self.toolbar.addWidget(showAssociationCheckBoxLabel)
+        self.toolbar.addWidget(showAssociationCheckBox)
+        showAssociationCheckBox.stateChanged.connect(self.showAssociationCheckBoxChanged)
+        
+        self.toolbar.addSeparator()
+        
+        self.toolbar.addAction(self.zoomInAction)
+        self.toolbar.addAction(self.zoomOutAction)
+        
+        
+        self.zoomLabel = QLabel("100%")
+        self.zoomLineEdit = QLineEdit()
+        self.zoomLineEdit.setValidator(QIntValidator()) # No limit on zoom level, but should be an integer
+        # self.zoomLineEdit.setValidator(QIntValidator(1, 500)) #Akash: If we want to put limit we can use this
+        self.zoomLineEdit.setText("100")
+        self.zoomLineEdit.returnPressed.connect(self.setZoomLevelFromLineEdit)
+        self.zoomLineEdit.setFixedWidth(40)
+        self.toolbar.addWidget(self.zoomLabel)
+        self.toolbar.addWidget(self.zoomLineEdit)
+
+        self.toolbar.addSeparator()
+        
+        
+    def zoomIn(self):
+        print("Zoom In Clicked")
+        self.view.zoomIn()
+        
+    def zoomOut(self):
+        print("Zoom Out Clicked")
+        self.view.zoomOut()
+        
+    def setZoomLevelFromLineEdit(self):
+        zoomValue = int(self.zoomLineEdit.text())
+        self.view.setZoom(zoomValue)
+    
+    def updateZoomLabel(self):
+        self.zoomLabel.setText(f"{int(self.view.zoomFactor * 100)}%")
+        self.zoomLineEdit.setText(f"{int(self.view.zoomFactor * 100)}")
+        
+    def quitApp(self):
         self.app.quit()
