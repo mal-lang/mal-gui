@@ -1,23 +1,23 @@
 from PySide6.QtCore import QRectF, Qt,QPointF
-from PySide6.QtGui import QPixmap, QFont, QColor,QBrush
+from PySide6.QtGui import QPixmap, QFont, QColor,QBrush,QPen
 from PySide6.QtWidgets import  QGraphicsItem
 
 from .EditableTextItem import EditableTextItem
 
 class AssetBase(QGraphicsItem):
-    def __init__(self, assetNameUpper, assetNameLower, imagePath, parent=None):
+    def __init__(self, assetType, assetName, imagePath, parent=None):
         super().__init__(parent)
         self.setZValue(1)  # rect items are on top
-        self.assetNameUpper = assetNameUpper
-        self.assetNameLower = assetNameLower
+        self.assetType = assetType
+        self.assetName = assetName
         self.imagePath = imagePath
         self.image = QPixmap(self.imagePath).scaled(35, 35, Qt.KeepAspectRatio)  # Scale the image here
 
         self.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemSendsGeometryChanges)
 
         # Create the editable text item for block type
-        self.typeTextItem = EditableTextItem(self.assetNameLower, self)
-        self.typeTextItem.lostFocus.connect(self.updateassetNameLower)
+        self.typeTextItem = EditableTextItem(self.assetName, self)
+        self.typeTextItem.lostFocus.connect(self.updateAssetName)
 
         self.connections = []
         self.initial_position = QPointF()
@@ -33,11 +33,17 @@ class AssetBase(QGraphicsItem):
         
         # Draw the rectangle
         painter.setBrush(Qt.white)
+        painter.setPen(Qt.black)
         
         # if self.isSelected():
         #     painter.setBrush(QBrush(QColor(0, 255, 0, 100)))  # Highlight color with transparency
         # else:
         #     painter.setBrush(Qt.white)  # Normal color
+
+        if self.isSelected():
+            pen = QPen(QColor(0, 0, 255), 4)  # Blue border with a thickness of 4(TBD)
+            painter.setPen(pen)
+            painter.drawRect(rect)
 
         painter.setPen(Qt.black)
         painter.drawRect(rect)
@@ -56,7 +62,7 @@ class AssetBase(QGraphicsItem):
         # Draw block name (upper half of rectangle)
         nameRect = QRectF(80, 5, rect.width() - 90, rect.height() / 2 - 10)
         painter.setPen(QColor(100, 100, 100))
-        painter.drawText(nameRect, Qt.AlignLeft | Qt.AlignVCenter, self.assetNameUpper)
+        painter.drawText(nameRect, Qt.AlignLeft | Qt.AlignVCenter, self.assetType)
 
         # Set position for the type text item (bottom half of rectangle)
         self.typeTextItem.setPos(75, rect.height() / 2 )  # Adjusted position
@@ -81,8 +87,8 @@ class AssetBase(QGraphicsItem):
         else:
             event.ignore()
 
-    def updateassetNameLower(self):
-        self.assetNameLower = self.typeTextItem.toPlainText()
+    def updateAssetName(self):
+        self.assetName = self.typeTextItem.toPlainText()
         self.typeTextItem.setTextInteractionFlags(Qt.NoTextInteraction)
         self.typeTextItem.deselectText()
 

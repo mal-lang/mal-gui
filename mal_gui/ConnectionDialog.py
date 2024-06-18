@@ -8,14 +8,14 @@ class ConnectionDialog(QDialog):
         self.setWindowTitle("Select Association Type")
         self.setMinimumWidth(300)
         
-        self.startAssetNameUpper = startAsset.assetNameUpper
-        self.endAssetNameUpper = endAsset.assetNameUpper
-        self.startAssetNameLower = startAsset.assetNameLower
-        self.endAssetNameLower = endAsset.assetNameLower
+        self.startAssetType = startAsset.assetType
+        self.endAssetType = endAsset.assetType
+        self.startAssetName = startAsset.assetName
+        self.endAssetName = endAsset.assetName
 
         layout = QVBoxLayout()
         
-        self.label = QLabel(f"{self.startAssetNameLower} : {self.endAssetNameLower}")
+        self.label = QLabel(f"{self.startAssetName} : {self.endAssetName}")
         layout.addWidget(self.label)
         
         self.filterEdit = QLineEdit()
@@ -42,13 +42,13 @@ class ConnectionDialog(QDialog):
             assocLeftAssetName,assocLeftFieldName,assocName,assocRightFieldName,assocRightAssetName = row
             print("Checking row : "+ str(i+1))
             i=i+1
-            print("self.startAssetNameLower = "+ self.startAssetNameLower)
+            print("self.startAssetName = "+ self.startAssetName)
             print("assocLeftAssetName= "+ assocLeftAssetName)
-            print("self.endAssetNameLower = "+ self.endAssetNameLower)
+            print("self.endAssetName = "+ self.endAssetName)
             print("assocRightAssetName = "+ assocRightAssetName)
-            if assocLeftAssetName == self.startAssetNameUpper and assocRightAssetName == self.endAssetNameUpper:
+            if assocLeftAssetName == self.startAssetType and assocRightAssetName == self.endAssetType:
                 print("IDENTIFIED MATCH  ++++++++++++")
-                formattedAssocStr = self.startAssetNameLower +"."+ assocLeftFieldName +"-->"+ assocName +"-->" + self.endAssetNameLower +"."+ assocRightFieldName
+                formattedAssocStr = self.startAssetName +"."+ assocLeftFieldName +"-->"+ assocName +"-->" + self.endAssetName +"."+ assocRightFieldName
                 self.associationListWidget.addItem(QListWidgetItem(formattedAssocStr))
                 
         layout.addWidget(self.associationListWidget)      

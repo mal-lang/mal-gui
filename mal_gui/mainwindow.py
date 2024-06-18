@@ -114,11 +114,11 @@ class MainWindow(QMainWindow):
             # print(f"Key: {key}")
             for value in values:
                 # print(f"  Tuple: {value}")
-                # print(f"    Field1: {value.assetNameUpper}")
-                # print(f"    Field2: {value.assetNameLower}")
+                # print(f"    Field1: {value.assetType}")
+                # print(f"    Field2: {value.assetName}")
                 # print(f"    Field3: {value.assetImage}")
-                self.objectExplorerTree.setParentItemText(value.assetNameUpper,value.assetImage)
-                self.objectExplorerTree.addChildItem(value.assetNameUpper, value.assetNameUpper+ "@Number_TBD")
+                self.objectExplorerTree.setParentItemText(value.assetType,value.assetImage)
+                self.objectExplorerTree.addChildItem(value.assetType, value.assetType+ "@Number_TBD")
                 
         
         dockObjectExplorer.setWidget(self.objectExplorerTree)
