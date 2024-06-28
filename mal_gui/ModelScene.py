@@ -6,16 +6,22 @@ from ConnectionItem import ConnectionItem
 from ConnectionDialog import ConnectionDialog
 from ObjectExplorer.AssetBase import AssetBase
 
+from maltoolbox.model import AttackerAttachment
 
 class ModelScene(QGraphicsScene):
-    def __init__(self,assetFactory):
+    def __init__(self, assetFactory, mainWindow):
         super().__init__()
-        
+
         self.assetFactory = assetFactory
-        
+        self.mainWindow = mainWindow
+        self.model = mainWindow.model
+        self.lcs = mainWindow.langClassesFactory
+
+        # TODO We should probably just connect the assets and items and
+        # operate on items instead.
         self.copiedItem = None
         self.cutItemFlag = False
-        
+
         self.lineItem = None
         self.startItem = None
         self.endItem = None
@@ -35,9 +41,24 @@ class ModelScene(QGraphicsScene):
             itemType = event.mimeData().text()
             print("dropped item type = "+ itemType)
             pos = event.scenePos()
-            
+
             newItem = self.assetFactory.getAsset(itemType)
-            
+            if itemType == "Attacker":
+                newAttackerAttachment = AttackerAttachment()
+                self.model.add_attacker(newAttackerAttachment)
+            else:
+                newAsset = getattr(self.lcs.ns, itemType)()
+                self.model.add_asset(newAsset)
+                newAsset.extras = {
+                    "position" :
+                    {
+                        "x": pos.x(),
+                        "y": pos.y()
+                    }
+                }
+                newItem.asset = newAsset
+                self.mainWindow._asset_id_to_item[newAsset.id] = newItem
+
             newItem.setPos(pos)
             self.addItem(newItem)
             event.acceptProposedAction()
@@ -86,18 +107,22 @@ class ModelScene(QGraphicsScene):
         if event.button() == Qt.LeftButton and self.lineItem and QApplication.keyboardModifiers() == Qt.ShiftModifier:
             print("Entered Release with Shift")
             print("Scene Mouse Release event")
-            
+
             # Temporarily remove the line item to avoid interference
             self.removeItem(self.lineItem)
-            
+
             item = self.itemAt(event.scenePos(), QTransform())
             print(f"item is: {item}")
             if isinstance(item, AssetBase) and item != self.startItem:
                 print(f"End item found: {item}")
                 self.endItem = item
-                
+
                 # Create and show the connection dialog
-                dialog = ConnectionDialog(self.startItem, self.endItem)
+                dialog = ConnectionDialog(
+                    self.startItem,
+                    self.endItem,
+                    self.mainWindow
+                )
                 if dialog.exec() == QDialog.Accepted:
                     selectedItem = dialog.associationListWidget.currentItem()
                     if selectedItem:
@@ -106,8 +131,8 @@ class ModelScene(QGraphicsScene):
                         self.addItem(connection)
                     else:
                         self.removeItem(self.lineItem)
-                
-                
+
+
             else:
                 print("No end item found")
                 self.removeItem(self.lineItem)
