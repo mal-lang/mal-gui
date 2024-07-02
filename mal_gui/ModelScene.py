@@ -69,8 +69,8 @@ class ModelScene(QGraphicsScene):
         item = self.itemAt(event.scenePos(), QTransform())
         if item:
             if isinstance(item, AssetBase):
-                print("Found Node", item)
-                self.showNodeContextMenu(event.screenPos(), item)
+                print("Found Asset", item)
+                self.showAssetContextMenu(event.screenPos(), item)
         else:
             self.showSceneContextMenu(event.screenPos(),event.scenePos())
 
@@ -145,14 +145,14 @@ class ModelScene(QGraphicsScene):
         else:
             super().mouseReleaseEvent(event)
 
-    def cutAsset(self, node):
+    def cutAsset(self, asset):
         print("Cut Asset is called..") 
-        command = CutCommand(self, node,self.clipboard)
+        command = CutCommand(self, asset,self.clipboard)
         self.undoStack.push(command)
     
-    def copyAsset(self, node):
+    def copyAsset(self, asset):
         print("Copy Asset is called..")
-        command = CopyCommand(self, node,self.clipboard)
+        command = CopyCommand(self, asset,self.clipboard)
         self.undoStack.push(command)
     
     def pasteAsset(self, position):
@@ -160,9 +160,9 @@ class ModelScene(QGraphicsScene):
         command = PasteCommand(self, position, self.clipboard)
         self.undoStack.push(command) 
         
-    def deleteAsset(self, node):
-        print("Delete Node is called..")
-        command = DeleteCommand(self, node)
+    def deleteAsset(self, asset):
+        print("Delete asset is called..")
+        command = DeleteCommand(self, asset)
         self.undoStack.push(command)
         
     def serializeGraphicsItem(self, item, cutIntended):
@@ -180,8 +180,8 @@ class ModelScene(QGraphicsScene):
         return base64SerializedData
         
     
-    def deserializeGraphicsItem(self, nodeText):
-        serializedData = base64.b64decode(nodeText)
+    def deserializeGraphicsItem(self, assetText):
+        serializedData = base64.b64decode(assetText)
         deserializedData = pickle.loads(serializedData)
         deserializedAssetType = deserializedData['assetType']
         deserializedAssetName = deserializedData['assetName']
@@ -202,24 +202,24 @@ class ModelScene(QGraphicsScene):
             return newItem
             
 
-    def showNodeContextMenu(self, position, node):
-        print("Node Context menu activated")
+    def showAssetContextMenu(self, position, asset):
+        print("Asset Context menu activated")
         menu = QMenu()
-        nodeCutAction = QAction("Cut Asset", self)
-        nodeCopyAction = QAction("Copy Asset", self)
-        nodeDeleteAction = QAction("Delete Asset", self)
+        assetCutAction = QAction("Cut Asset", self)
+        assetCopyAction = QAction("Copy Asset", self)
+        assetDeleteAction = QAction("Delete Asset", self)
         
-        menu.addAction(nodeCutAction)
-        menu.addAction(nodeCopyAction)
-        menu.addAction(nodeDeleteAction)
+        menu.addAction(assetCutAction)
+        menu.addAction(assetCopyAction)
+        menu.addAction(assetDeleteAction)
         action = menu.exec(position) 
         
-        if action == nodeCutAction:
-            self.cutAsset(node)
-        if action == nodeCopyAction:
-           self.copyAsset(node)
-        if action == nodeDeleteAction:
-           self.deleteAsset(node)
+        if action == assetCutAction:
+            self.cutAsset(asset)
+        if action == assetCopyAction:
+           self.copyAsset(asset)
+        if action == assetDeleteAction:
+           self.deleteAsset(asset)
            
     def showSceneContextMenu(self, screenPos,scenePos):
         print("Scene Context menu activated")

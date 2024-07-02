@@ -7,7 +7,7 @@ class PasteCommand(QUndoCommand):
         super().__init__(parent)
         self.scene = scene
         self.position = position
-        self.pastedNode = None
+        self.pastedAsset= None
         self.clipboard = clipboard
 
     def redo(self):
@@ -16,16 +16,16 @@ class PasteCommand(QUndoCommand):
         print("\nSerializedData = "+ str(len(serializedData)))
         print("\nSerializedData = "+ str(serializedData))
         if serializedData:
-            self.pastedNode = self.scene.deserializeGraphicsItem(serializedData)
-            if self.pastedNode:
-                print("Redo - Pasted Node found")
-                self.scene.addItem(self.pastedNode)
+            self.pastedAsset = self.scene.deserializeGraphicsItem(serializedData)
+            if self.pastedAsset:
+                print("Redo - Pasted Asset found")
+                self.scene.addItem(self.pastedAsset)
                 if self.position:
-                    self.pastedNode.setPos(self.position)
+                    self.pastedAsset.setPos(self.position)
 
     def undo(self):
         print("\nPaste Undo is Called")
-        if self.pastedNode:
-            print("Undo - Pasted Node found")
-            self.scene.removeItem(self.pastedNode)
-            self.pastedNode = None
+        if self.pastedAsset:
+            print("Undo - Pasted Asset found")
+            self.scene.removeItem(self.pastedAsset)
+            self.pastedAsset = None
