@@ -69,6 +69,10 @@ class AssetBase(QGraphicsItem):
 
     def addConnection(self, connection):
         self.connections.append(connection)
+        
+    def removeConnection(self, connection):
+        if connection in self.connections:
+            self.connections.remove(connection)
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:

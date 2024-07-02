@@ -24,9 +24,11 @@ class ConnectionItem(QGraphicsLineItem):
         
         
         # Create labels with background color
-        self.lebelAssocLeftField = self.createLabel(assocLeftField.split(".")[1])
-        self.lebelAssocMiddleName = self.createLabel(assocMiddleName)
-        self.lebelAssocRightField = self.createLabel(assocRightField.split(".")[1])
+        self.labelAssocLeftField = self.createLabel(assocLeftField.split(".")[1])
+        self.labelAssocMiddleName = self.createLabel(assocMiddleName)
+        self.labelAssocRightField = self.createLabel(assocRightField.split(".")[1])
+        
+        # self.isAssociationVisibilityChecked = False
         
         self.updatePath()
 
@@ -59,17 +61,19 @@ class ConnectionItem(QGraphicsLineItem):
         start_rect = self.startItem.sceneBoundingRect()
         end_rect = self.endItem.sceneBoundingRect()
         
-        lebelAssocLeftFieldPos = self.line().pointAt(0.2)
-        self.lebelAssocLeftField.setPos(lebelAssocLeftFieldPos - QPointF(self.lebelAssocLeftField.boundingRect().width() / 2, self.lebelAssocLeftField.boundingRect().height() / 2))
+        labelAssocLeftFieldPos = self.line().pointAt(0.2)
+        self.labelAssocLeftField.setPos(labelAssocLeftFieldPos - QPointF(self.labelAssocLeftField.boundingRect().width() / 2, self.labelAssocLeftField.boundingRect().height() / 2))
 
-        lebelAssocMiddleNamePos = self.line().pointAt(0.5)
-        self.lebelAssocMiddleName.setPos(lebelAssocMiddleNamePos - QPointF(self.lebelAssocMiddleName.boundingRect().width() / 2, self.lebelAssocMiddleName.boundingRect().height() / 2))
+        labelAssocMiddleNamePos = self.line().pointAt(0.5)
+        self.labelAssocMiddleName.setPos(labelAssocMiddleNamePos - QPointF(self.labelAssocMiddleName.boundingRect().width() / 2, self.labelAssocMiddleName.boundingRect().height() / 2))
 
-        lebelAssocRightFieldPos = self.line().pointAt(0.8)
-        self.lebelAssocRightField.setPos(lebelAssocRightFieldPos - QPointF(self.lebelAssocRightField.boundingRect().width() / 2, self.lebelAssocRightField.boundingRect().height() / 2))
-
-        self.lebelAssocLeftField.setVisible(False)
-        self.lebelAssocRightField.setVisible(False)
+        labelAssocRightFieldPos = self.line().pointAt(0.8)
+        self.labelAssocRightField.setPos(labelAssocRightFieldPos - QPointF(self.labelAssocRightField.boundingRect().width() / 2, self.labelAssocRightField.boundingRect().height() / 2))
+        
+        # print("isAssociationVisibilityChecked = "+ str(self.isAssociationVisibilityChecked))
+        
+        self.labelAssocLeftField.setVisible(self.scene.getShowAssociationCheckBoxStatus())
+        self.labelAssocRightField.setVisible(self.scene.getShowAssociationCheckBoxStatus())
 
     def calculateOffset(self, rect, label_pos, angle):
         """
@@ -91,8 +95,24 @@ class ConnectionItem(QGraphicsLineItem):
         
         return offset
     
-    def setShowAssocitaions(self,isEnabled):
-        print("Toggled show/hide association labels-->"+ str(isEnabled))
-        self.lebelAssocLeftField.setVisible(isEnabled)
-        self.lebelAssocRightField.setVisible(isEnabled)
+    # def setShowAssocitaions(self,isEnabled):
+    #     print("Toggled show/hide association labels-->"+ str(isEnabled))
+    #     # self.labelAssocLeftField.setVisible(isEnabled)
+    #     # self.labelAssocRightField.setVisible(isEnabled)
+    #     self.isAssociationVisibilityChecked = isEnabled 
+    #     self.updatePath()
+        
+    def removeLabels(self):
+        self.scene.removeItem(self.labelAssocLeftField)
+        self.scene.removeItem(self.labelAssocMiddleName)
+        self.scene.removeItem(self.labelAssocRightField)
+    
+    def restoreLabels(self):
+        self.scene.addItem(self.labelAssocLeftField)
+        self.scene.addItem(self.labelAssocMiddleName)
+        self.scene.addItem(self.labelAssocRightField)
+
+    def delete(self):
+        self.removeLabels()
+        self.scene.removeItem(self)
         

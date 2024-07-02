@@ -32,12 +32,8 @@ class DraggableListWidget(QListWidget):
 class MainWindow(QMainWindow):
     def __init__(self,app):
         super().__init__()
-        self.app = app #declare an app member 
+ 
         self.setWindowTitle("MAL GUI")
-        
-        self.createActions()
-        self.createMenus()
-        self.createToolbar()
         
         #Create a registery as a dictionary containing name as key and class as value
         self.assetFactory = AssetFactory()
@@ -59,10 +55,13 @@ class MainWindow(QMainWindow):
         self.assetFactory.registerAsset("SoftwareVulnerability", "images/softwareVulnerability.png")
         self.assetFactory.registerAsset("User", "images/user.png")
         
-        
-        
+        self.app = app #declare an app member
         self.scene = ModelScene(self.assetFactory)
         self.view = ModelView(self.scene, self)
+        
+        self.createActions()
+        self.createMenus()
+        self.createToolbar()
         
         self.view.zoomChanged.connect(self.updateZoomLabel)
         
@@ -169,9 +168,10 @@ class MainWindow(QMainWindow):
         
     def showAssociationCheckBoxChanged(self,checked):
         print("self.showAssociationCheckBoxChanged clicked")
+        self.scene.setShowAssociationCheckBoxStatus(checked)
         for connection in self.scene.items():
             if isinstance(connection, ConnectionItem):
-                connection.setShowAssocitaions(checked)
+                connection.updatePath()
                 
                 
     def createActions(self):
@@ -181,6 +181,16 @@ class MainWindow(QMainWindow):
         
         self.zoomOutAction = QAction(QIcon("images/zoomOut.png"), "ZoomOut", self)
         self.zoomOutAction.triggered.connect(self.zoomOut)
+        
+        #undo Action
+        self.undoAction = QAction(QIcon("images/undoIcon.png"), "Undo", self)
+        self.undoAction.setShortcut("Ctrl+z")
+        self.undoAction.triggered.connect(self.scene.undoStack.undo)
+
+        #redo Action
+        self.redoAction = QAction(QIcon("images/redoIcon.png"), "Redo", self)
+        self.redoAction.setShortcut("Ctrl+Shift+z")
+        self.redoAction.triggered.connect(self.scene.undoStack.redo)
 
         
     def createMenus(self):
@@ -194,6 +204,10 @@ class MainWindow(QMainWindow):
         self.fileMenuQuitAction = self.fileMenu.addAction("Quit")
         
         self.fileMenuQuitAction.triggered.connect(self.quitApp)
+        
+        self.editMenu = self.menuBar.addMenu("Edit")
+        self.editMenuUndoAction = self.editMenu.addAction(self.undoAction)
+        self.editMenuRedoAction = self.editMenu.addAction(self.redoAction)
 
     def createToolbar(self):
         #toolbar
@@ -220,7 +234,6 @@ class MainWindow(QMainWindow):
         self.toolbar.addAction(self.zoomInAction)
         self.toolbar.addAction(self.zoomOutAction)
         
-        
         self.zoomLabel = QLabel("100%")
         self.zoomLineEdit = QLineEdit()
         self.zoomLineEdit.setValidator(QIntValidator()) # No limit on zoom level, but should be an integer
@@ -231,6 +244,11 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(self.zoomLabel)
         self.toolbar.addWidget(self.zoomLineEdit)
 
+        self.toolbar.addSeparator()
+        
+        #undo/redo
+        self.toolbar.addAction(self.undoAction)
+        self.toolbar.addAction(self.redoAction)
         self.toolbar.addSeparator()
         
         
