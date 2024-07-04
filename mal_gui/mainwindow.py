@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget,QLineEdit,QSplitter, QMainWindow,QToolBar,QDockWidget, QListWidget,QVBoxLayout,QComboBox,QListWidgetItem, QLabel,QTreeView,QTreeWidget, QTreeWidgetItem,QCheckBox,QPushButton
+from PySide6.QtWidgets import QWidget,QLineEdit,QSplitter, QMainWindow,QToolBar,QDockWidget, QListWidget,QVBoxLayout,QComboBox,QListWidgetItem, QLabel,QTreeView,QTreeWidget, QTreeWidgetItem,QCheckBox,QPushButton,QFileDialog,QMessageBox
 from PySide6.QtGui import QDrag,QPixmap,QAction,QIcon,QIntValidator
 from PySide6.QtCore import Qt,QMimeData,QByteArray,QSize
 
@@ -203,6 +203,8 @@ class MainWindow(QMainWindow):
         self.fileMenuSaveAsAction = self.fileMenu.addAction("SaveAs..")
         self.fileMenuQuitAction = self.fileMenu.addAction("Quit")
         
+        self.fileMenuOpenAction.triggered.connect(self.loadProject)
+        self.fileMenuSaveAsAction.triggered.connect(self.saveAsProject)
         self.fileMenuQuitAction.triggered.connect(self.quitApp)
         
         self.editMenu = self.menuBar.addMenu("Edit")
@@ -267,6 +269,50 @@ class MainWindow(QMainWindow):
     def updateZoomLabel(self):
         self.zoomLabel.setText(f"{int(self.view.zoomFactor * 100)}%")
         self.zoomLineEdit.setText(f"{int(self.view.zoomFactor * 100)}")
+    
+    def loadProject(self):
+        """
+        To load SharpCut project from a file.This function is not used currently.
+        """
+        fileExtensionFilter = "JSON Files (*.json);;YAML Files (*.yaml)"
+        projectPathJson, _ = QFileDialog.getOpenFileName(None, "Select Project Folder", "",fileExtensionFilter)
+        
+
+
+        if not projectPathJson:
+            print("No valid path detected for loading")
+            return
+        else:
+            self.showInformationPopup("Successfully Opened project : " + projectPathJson)
+        
+    def saveAsProject(self):
+        """
+        To Save SharpCut project from current scene on window. This function is not used currently.
+        """
+        fileExtensionFilter = "JSON Files (*.json);;YAML Files (*.yaml)"
+        fileDialog = QFileDialog()
+        fileDialog.setAcceptMode(QFileDialog.AcceptSave)
+        fileDialog.setDefaultSuffix("json")
+        fileDialog.setNameFilter(fileExtensionFilter)
+        filePath, _ = fileDialog.getSaveFileName()
+
+        if not filePath:
+            print("No valid path detected for saving")
+            return
+        else:
+            self.showInformationPopup("Successfully saved project to : " + filePath)
+    
         
     def quitApp(self):
         self.app.quit()
+        
+        
+    def showInformationPopup(self,messageText):
+        parentWidget = QWidget() #To maintain object lifetim
+        messageBox = QMessageBox(parentWidget)
+        messageBox.setIcon(QMessageBox.Information)
+        messageBox.setWindowTitle("Information") #default values
+        messageBox.setText("This is default informative Text") #default values
+        messageBox.setInformativeText(messageText) #default values
+        messageBox.setStandardButtons(QMessageBox.Ok) #default Ok Button
+        messageBox.exec()
