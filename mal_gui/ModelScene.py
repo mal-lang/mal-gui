@@ -17,28 +17,38 @@ from UndoRedoCommands.Move.MoveCommand import MoveCommand
 from UndoRedoCommands.DragDrop.DragDropCommand import DragDropCommand
 from UndoRedoCommands.CreateConnection.CreateConnectionCommand import CreateConnectionCommand
 
+from maltoolbox.language import LanguageGraph, LanguageClassesFactory
+from maltoolbox.model import Model, AttackerAttachment
 
 class ModelScene(QGraphicsScene):
-    def __init__(self,assetFactory):
+    def __init__(self, assetFactory, mainWindow):
         super().__init__()
-        
+
         self.assetFactory = assetFactory
-        
         self.undoStack = QUndoStack(self)
         self.clipboard = QApplication.clipboard()
-        
+        self.mainWindow = mainWindow
+
+        # Create the MAL language graph, language classes factory, and
+        # instance model
+        self.langGraph = LanguageGraph.from_mar_archive("langs/org.mal-lang.coreLang-1.0.0.mar")
+        self.lcs = LanguageClassesFactory(self.langGraph)
+        self.model = Model("Untitled Model", self.lcs)
+        self._asset_id_to_item = {}
+        self._attacker_id_to_item = {}
+
         self.copiedItem = None
         self.cutItemFlag = False
-        
+
         self.lineItem = None
         self.startItem = None
         self.endItem = None
-        
+
         self.objdetails = {}
-        
+
         self.movingItem = None
         self.startPos = None
-        
+
         self.showAssociationCheckBoxStatus = False
 
     def dragEnterEvent(self, event):
@@ -56,15 +66,53 @@ class ModelScene(QGraphicsScene):
             itemType = event.mimeData().text()
             print("dropped item type = "+ itemType)
             pos = event.scenePos()
-            
-            newItem = self.assetFactory.getAsset(itemType)
-            
-            newItem.setPos(pos)
-            self.addItem(newItem)
-            self.undoStack.push(DragDropCommand(self, newItem))  # Add the drop as a command
+
+            if itemType == "Attacker":
+                self.addAttacker(pos)
+            else:
+                self.addAsset(itemType, pos)
 
             event.acceptProposedAction()
-            
+
+    def addAsset(self, itemType, position, name = None):
+        newAsset = getattr(self.lcs.ns, itemType)(name = name)
+        self.model.add_asset(newAsset)
+        newAsset.extras = {
+            "position" :
+            {
+                "x": position.x(),
+                "y": position.y()
+            }
+        }
+        newItem = self.createItem(
+            itemType,
+            position,
+            newAsset.name
+        )
+        newItem.asset = newAsset
+        self._asset_id_to_item[newAsset.id] = newItem
+
+    def addAttacker(self, position, name = None):
+        newAttackerAttachment = AttackerAttachment()
+        self.model.add_attacker(newAttackerAttachment)
+        newItem = self.createItem(
+            "Attacker",
+            position,
+            newAttackerAttachment.name
+        )
+        newItem.attackerAttachment = newAttackerAttachment
+        self._attacker_id_to_item[newAttackerAttachment.id] = newItem
+
+    def createItem(self, itemType, position, name):
+        newItem = self.assetFactory.getAsset(itemType)
+        newItem.assetName = name
+        newItem.typeTextItem.setPlainText(str(name))
+        newItem.setPos(position)
+        self.addItem(newItem)
+        self.undoStack.push(DragDropCommand(self, newItem))  # Add the drop as a command
+        return newItem
+
+
     def contextMenuEvent(self, event):
         item = self.itemAt(event.scenePos(), QTransform())
         if item:
@@ -74,7 +122,7 @@ class ModelScene(QGraphicsScene):
         else:
             self.showSceneContextMenu(event.screenPos(),event.scenePos())
 
-    
+
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton and QApplication.keyboardModifiers() == Qt.ShiftModifier:
@@ -108,18 +156,22 @@ class ModelScene(QGraphicsScene):
         if event.button() == Qt.LeftButton and self.lineItem and QApplication.keyboardModifiers() == Qt.ShiftModifier:
             print("Entered Release with Shift")
             print("Scene Mouse Release event")
-            
+
             # Temporarily remove the line item to avoid interference
             self.removeItem(self.lineItem)
-            
+
             item = self.itemAt(event.scenePos(), QTransform())
             print(f"item is: {item}")
             if isinstance(item, AssetBase) and item != self.startItem:
                 print(f"End item found: {item}")
                 self.endItem = item
-                
+
                 # Create and show the connection dialog
-                dialog = ConnectionDialog(self.startItem, self.endItem)
+                dialog = ConnectionDialog(
+                    self.startItem,
+                    self.endItem,
+                    self
+                )
                 if dialog.exec() == QDialog.Accepted:
                     selectedItem = dialog.associationListWidget.currentItem()
                     if selectedItem:
@@ -141,30 +193,30 @@ class ModelScene(QGraphicsScene):
             if self.startPos != endPos:
                 command = MoveCommand(self,self.movingItem, self.startPos, endPos)
                 self.undoStack.push(command)
-            self.movingItem = None    
+            self.movingItem = None
         else:
             super().mouseReleaseEvent(event)
 
     def cutAsset(self, asset):
-        print("Cut Asset is called..") 
+        print("Cut Asset is called..")
         command = CutCommand(self, asset,self.clipboard)
         self.undoStack.push(command)
-    
+
     def copyAsset(self, asset):
         print("Copy Asset is called..")
         command = CopyCommand(self, asset,self.clipboard)
         self.undoStack.push(command)
-    
+
     def pasteAsset(self, position):
         print("Paste is called")
         command = PasteCommand(self, position, self.clipboard)
-        self.undoStack.push(command) 
-        
+        self.undoStack.push(command)
+
     def deleteAsset(self, asset):
         print("Delete asset is called..")
         command = DeleteCommand(self, asset)
         self.undoStack.push(command)
-        
+
     def serializeGraphicsItem(self, item, cutIntended):
         # objType = type(item).__name__
         # print("objType is: "+ objType)
@@ -178,29 +230,29 @@ class ModelScene(QGraphicsScene):
         serializedData = pickle.dumps(self.objdetails)
         base64SerializedData = base64.b64encode(serializedData).decode('utf-8')
         return base64SerializedData
-        
-    
+
+
     def deserializeGraphicsItem(self, assetText):
         serializedData = base64.b64decode(assetText)
         deserializedData = pickle.loads(serializedData)
         deserializedAssetType = deserializedData['assetType']
         deserializedAssetName = deserializedData['assetName']
         deserializedAssetId = deserializedData['assetId']
-        
-        
+
+
         print("deserializedAssetType = "+ deserializedAssetType)
-        if deserializedAssetType: 
+        if deserializedAssetType:
             newItem = self.assetFactory.getAsset(deserializedAssetType)
             # self.addItem(newItem)
             if isinstance(newItem,AssetBase):
                 print("It is instance of AssetBase")
-                
+
             # This below rename currently doesn't work. Need to check why.
             # print("newItem.assetName =" + newItem.assetName)
             # newItem.assetName = deserializedAssetName
             # print("newItem.assetName =" + newItem.assetName)
             return newItem
-            
+
 
     def showAssetContextMenu(self, position, asset):
         print("Asset Context menu activated")
@@ -208,32 +260,32 @@ class ModelScene(QGraphicsScene):
         assetCutAction = QAction("Cut Asset", self)
         assetCopyAction = QAction("Copy Asset", self)
         assetDeleteAction = QAction("Delete Asset", self)
-        
+
         menu.addAction(assetCutAction)
         menu.addAction(assetCopyAction)
         menu.addAction(assetDeleteAction)
-        action = menu.exec(position) 
-        
+        action = menu.exec(position)
+
         if action == assetCutAction:
             self.cutAsset(asset)
         if action == assetCopyAction:
            self.copyAsset(asset)
         if action == assetDeleteAction:
            self.deleteAsset(asset)
-           
+
     def showSceneContextMenu(self, screenPos,scenePos):
         print("Scene Context menu activated")
         menu = QMenu()
         pasteAssetAction = menu.addAction("Paste Asset")
         action = menu.exec(screenPos)
-        
+
         if action == pasteAssetAction:
             # self.requestpasteAsset.emit(scenePos)
             self.pasteAsset(scenePos)
-            
+
     def setShowAssociationCheckBoxStatus(self,isEnabled):
         self.showAssociationCheckBoxStatus = isEnabled
-    
+
     def getShowAssociationCheckBoxStatus(self):
         return self.showAssociationCheckBoxStatus
-    
+

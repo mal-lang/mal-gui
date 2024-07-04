@@ -95,6 +95,10 @@ class AssetBase(QGraphicsItem):
         self.assetName = self.typeTextItem.toPlainText()
         self.typeTextItem.setTextInteractionFlags(Qt.NoTextInteraction)
         self.typeTextItem.deselectText()
+        if self.assetType == "Attacker":
+            self.attackerAttachment.name = self.assetName
+        else:
+            self.asset.name = self.assetName
 
     def focusOutEvent(self, event):
         # Clear focus from typeTextItem when focus is lost

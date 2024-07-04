@@ -6,8 +6,8 @@ from ObjectExplorer.AssetBase import AssetBase
 
 class ModelView(QGraphicsView):
     zoomChanged = Signal(float)
-    
-    def __init__(self, scene,mainWindow):
+
+    def __init__(self, scene, mainWindow):
         super().__init__(scene)
         self.setRenderHint(QPainter.Antialiasing)
         self.setMouseTracking(True)
@@ -15,10 +15,11 @@ class ModelView(QGraphicsView):
         self.selectionRect = None
         self.origin = QPointF()
         self.isDraggingItem = False
-        
+        self.mainWindow = mainWindow
+
         self.zoomFactor = 1.0
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        
+
     def zoomIn(self):
         self.zoom(1.5) # Akash: This value need to discuss with Andrei
 
@@ -64,9 +65,15 @@ class ModelView(QGraphicsView):
         if event.button() == Qt.LeftButton:
             if self.selectionRect:
                 items = self.scene().items(self.selectionRect.rect(), Qt.IntersectsItemShape)
+                selected_assets = []
                 for item in items:
                     if isinstance(item, AssetBase):
                         item.setSelected(True)
+                        if item.assetType != "Attacker":
+                            selected_assets.append(item.asset)
+                if len(selected_assets) == 1:
+                    asset = selected_assets[0]
+                    self.mainWindow.updatePropertiesWindow(asset)
                 self.scene().removeItem(self.selectionRect)
                 self.selectionRect = None
             self.isDraggingItem = False
