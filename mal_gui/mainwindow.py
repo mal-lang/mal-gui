@@ -15,7 +15,6 @@ from ObjectExplorer.AssetFactory import AssetFactory
 
 from DraggableTreeView import DraggableTreeView
 
-from maltoolbox.language import LanguageGraph, LanguageClassesFactory
 from maltoolbox.model import Model
 
 class DraggableListWidget(QListWidget):
@@ -63,23 +62,17 @@ class MainWindow(QMainWindow):
             "User": "images/user.png"
         }
 
-        #Create the MAL language graph
-        self.langGraph = LanguageGraph.from_mar_archive("langs/org.mal-lang.coreLang-1.0.0.mar")
-        self.langClassesFactory = LanguageClassesFactory(self.langGraph)
-        self.model = Model("Untitled Model", self.langClassesFactory)
-        self._asset_id_to_item = {}
-
         #Create a registry as a dictionary containing name as key and class as value
         self.assetFactory = AssetFactory()
         self.assetFactory.registerAsset("Attacker", "images/attacker.png")
 
-        for asset in self.langGraph.assets:
+        self.scene = ModelScene(self.assetFactory, self)
+        self.view = ModelView(self.scene, self)
+        for asset in self.scene.langGraph.assets:
             if not asset.is_abstract:
                 self.assetFactory.registerAsset(asset.name,
                     assetImages[asset.name])
 
-        self.scene = ModelScene(self.assetFactory, self)
-        self.view = ModelView(self.scene, self)
 
         self.view.zoomChanged.connect(self.updateZoomLabel)
 
@@ -143,7 +136,7 @@ class MainWindow(QMainWindow):
     def updatePropertiesWindow(self, asset):
         self.propertiesTabTree.clear()
         propertiesTabTreeItems = []
-        defenses = self.model.get_asset_defenses(
+        defenses = self.scene.model.get_asset_defenses(
             asset,
             include_defaults = True
         )
@@ -243,10 +236,13 @@ class MainWindow(QMainWindow):
             #TODO Ask the user for a filename
             self.modelFilename = 'example_model.yml'
 
-        self.model.save_to_file(self.modelFilename)
+        self.scene.model.save_to_file(self.modelFilename)
 
     def loadModel(self):
         #TODO Ask the user for a filename
-        self.model.load_from_file('example_model.yml', self.langClassesFactory)
+        self.scene.model = Model.load_from_file(
+            'example_model.yml',
+            self.scene.lcs
+        )
         #TODO Re-create the items for the assets, associations, and attackers
         # in the model

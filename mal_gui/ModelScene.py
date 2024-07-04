@@ -6,7 +6,9 @@ from ConnectionItem import ConnectionItem
 from ConnectionDialog import ConnectionDialog
 from ObjectExplorer.AssetBase import AssetBase
 
-from maltoolbox.model import AttackerAttachment
+from maltoolbox.language import LanguageGraph, LanguageClassesFactory
+from maltoolbox.model import Model, AttackerAttachment
+
 
 class ModelScene(QGraphicsScene):
     def __init__(self, assetFactory, mainWindow):
@@ -14,11 +16,15 @@ class ModelScene(QGraphicsScene):
 
         self.assetFactory = assetFactory
         self.mainWindow = mainWindow
-        self.model = mainWindow.model
-        self.lcs = mainWindow.langClassesFactory
 
-        # TODO We should probably just connect the assets and items and
-        # operate on items instead.
+        # Create the MAL language graph, language classes factory, and
+        # instance model
+        self.langGraph = LanguageGraph.from_mar_archive("langs/org.mal-lang.coreLang-1.0.0.mar")
+        self.lcs = LanguageClassesFactory(self.langGraph)
+        self.model = Model("Untitled Model", self.lcs)
+        self._asset_id_to_item = {}
+        self._attacker_id_to_item = {}
+
         self.copiedItem = None
         self.cutItemFlag = False
 
@@ -42,26 +48,47 @@ class ModelScene(QGraphicsScene):
             print("dropped item type = "+ itemType)
             pos = event.scenePos()
 
-            newItem = self.assetFactory.getAsset(itemType)
             if itemType == "Attacker":
-                newAttackerAttachment = AttackerAttachment()
-                self.model.add_attacker(newAttackerAttachment)
+                self.addAttacker(pos)
             else:
-                newAsset = getattr(self.lcs.ns, itemType)()
-                self.model.add_asset(newAsset)
-                newAsset.extras = {
-                    "position" :
-                    {
-                        "x": pos.x(),
-                        "y": pos.y()
-                    }
-                }
-                newItem.asset = newAsset
-                self.mainWindow._asset_id_to_item[newAsset.id] = newItem
+                self.addAsset(itemType, pos)
 
-            newItem.setPos(pos)
-            self.addItem(newItem)
-            event.acceptProposedAction()
+    def addAsset(self, itemType, position, name = None):
+        newAsset = getattr(self.lcs.ns, itemType)(name = name)
+        self.model.add_asset(newAsset)
+        newAsset.extras = {
+            "position" :
+            {
+                "x": position.x(),
+                "y": position.y()
+            }
+        }
+        newItem = self.createItem(
+            itemType,
+            position,
+            newAsset.name
+        )
+        newItem.asset = newAsset
+        self._asset_id_to_item[newAsset.id] = newItem
+
+    def addAttacker(self, position, name = None):
+        newAttackerAttachment = AttackerAttachment()
+        self.model.add_attacker(newAttackerAttachment)
+        newItem = self.createItem(
+            "Attacker",
+            position,
+            newAttackerAttachment.name
+        )
+        newItem.attackerAttachment = newAttackerAttachment
+        self._attacker_id_to_item[newAttackerAttachment.id] = newItem
+
+    def createItem(self, itemType, position, name):
+        newItem = self.assetFactory.getAsset(itemType)
+        newItem.assetName = name
+        newItem.typeTextItem.setPlainText(str(name))
+        newItem.setPos(position)
+        self.addItem(newItem)
+        return newItem
 
     def contextMenuEvent(self, event):
         item = self.itemAt(event.scenePos(), QTransform())
@@ -121,7 +148,7 @@ class ModelScene(QGraphicsScene):
                 dialog = ConnectionDialog(
                     self.startItem,
                     self.endItem,
-                    self.mainWindow
+                    self
                 )
                 if dialog.exec() == QDialog.Accepted:
                     selectedItem = dialog.associationListWidget.currentItem()

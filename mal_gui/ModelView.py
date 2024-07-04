@@ -69,7 +69,8 @@ class ModelView(QGraphicsView):
                 for item in items:
                     if isinstance(item, AssetBase):
                         item.setSelected(True)
-                        selected_assets.append(item.asset)
+                        if item.assetType != "Attacker":
+                            selected_assets.append(item.asset)
                 if len(selected_assets) == 1:
                     asset = selected_assets[0]
                     self.mainWindow.updatePropertiesWindow(asset)

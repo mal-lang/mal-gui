@@ -21,7 +21,7 @@ class AssociationDefinitions(QWidget):
 
         self.associationInfoModel.removeRows(0, self.associationInfoModel.rowCount())
 
-        for assoc in self.mainWindow.langGraph.associations:
+        for assoc in self.mainWindow.scene.langGraph.associations:
             items = [
                 QStandardItem(assoc.left_field.asset.name),
                 QStandardItem(assoc.left_field.fieldname),
