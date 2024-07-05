@@ -7,19 +7,20 @@ class DeleteCommand(QUndoCommand):
         self.item = item
         # self.connections = []
         self.connections = self.item.connections.copy()
+        self.scene.model.remove_asset(item.asset)
 
     def redo(self):
         # Store the connections before removing the item
         if hasattr(self.item, 'connections'):
             for connection in self.connections:
                 connection.delete()
-        
+
         #At the end remove the item
         self.scene.removeItem(self.item)
 
     def undo(self):
         self.scene.addItem(self.item)
-        
+
         # Restore the connections
         for connection in self.connections:
             self.scene.addItem(connection)
