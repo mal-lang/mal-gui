@@ -262,8 +262,7 @@ class MainWindow(QMainWindow):
                 self.scene.lcs
             )
             self.modelFilename = filePath
-            #TODO Re-create the items for the assets, associations, and attackers
-            # in the model
+            self.scene.drawModel()
 
     def saveModel(self):
         if self.modelFilename:

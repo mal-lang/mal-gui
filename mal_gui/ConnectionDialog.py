@@ -76,7 +76,7 @@ class ConnectionDialog(QDialog):
                     formattedAssocStr = leftAsset.name + "." + \
                         assoc.left_field.fieldname + "-->" + \
                         assoc.name + "-->" + \
-                        rightAsset.name  + "." + \
+                        rightAsset.name + "." + \
                         assoc.right_field.fieldname
                     self._str_to_assoc[formattedAssocStr] = (
                         assoc,

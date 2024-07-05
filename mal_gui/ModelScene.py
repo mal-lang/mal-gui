@@ -2,7 +2,6 @@ from PySide6.QtWidgets import QGraphicsScene, QMenu, QApplication, QGraphicsLine
 from PySide6.QtGui import QCursor, QTransform,QAction,QUndoStack
 from PySide6.QtCore import QLineF, Qt, QPointF
 
-from ConnectionItem import ConnectionItem
 from ConnectionDialog import ConnectionDialog
 from ObjectExplorer.AssetBase import AssetBase
 
@@ -92,6 +91,41 @@ class ModelScene(QGraphicsScene):
         newItem.asset = newAsset
         self._asset_id_to_item[newAsset.id] = newItem
 
+    def drawModel(self):
+        for asset in self.model.assets:
+            newItem = self.createItem(
+                asset.type,
+                QPointF(asset.extras['position']['x'],
+                    asset.extras['position']['y']),
+                asset.name
+            )
+            newItem.asset = asset
+            self._asset_id_to_item[asset.id] = newItem
+
+        for assoc in self.model.associations:
+            leftFieldName, rightFieldName = \
+                self.model.get_association_field_names(
+                    assoc
+                )
+            leftField = getattr(assoc, leftFieldName)
+            rightField = getattr(assoc, rightFieldName)
+
+            for leftAsset in leftField:
+                for rightAsset in rightField:
+                    assocText = str(leftAsset.name) + "." + \
+                        leftFieldName + "-->" + \
+                        assoc.__class__.__name__ + "-->" + \
+                        rightAsset.name  + "." + \
+                        rightFieldName
+
+                    command = CreateConnectionCommand(
+                        self,
+                        self._asset_id_to_item[leftAsset.id],
+                        self._asset_id_to_item[rightAsset.id],
+                        assocText
+                    )
+                    self.undoStack.push(command)
+
     def addAttacker(self, position, name = None):
         newAttackerAttachment = AttackerAttachment()
         self.model.add_attacker(newAttackerAttachment)
@@ -176,9 +210,12 @@ class ModelScene(QGraphicsScene):
                     selectedItem = dialog.associationListWidget.currentItem()
                     if selectedItem:
                         print("Selected Association Text is: "+ selectedItem.text())
-                        # connection = ConnectionItem(selectedItem.text(),self.startItem, self.endItem,self)
-                        # self.addItem(connection)
-                        command = CreateConnectionCommand(self, self.startItem, self.endItem, selectedItem.text())
+                        command = CreateConnectionCommand(
+                            self,
+                            self.startItem,
+                            self.endItem,
+                            selectedItem.text()
+                        )
                         self.undoStack.push(command)
                     else:
                         self.removeItem(self.lineItem)
