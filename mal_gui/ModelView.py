@@ -11,11 +11,6 @@ class ModelView(QGraphicsView):
         super().__init__(scene)
         self.setRenderHint(QPainter.Antialiasing)
         self.setMouseTracking(True)
-        self.setAcceptDrops(True)
-        self.selectionRect = None
-        self.origin = QPointF()
-        self.isDraggingItem = False
-        self.mainWindow = mainWindow
 
         self.zoomFactor = 1.0
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
@@ -43,38 +38,6 @@ class ModelView(QGraphicsView):
         else:
             self.zoomOut()
 
-    def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self.origin = self.mapToScene(event.position().toPoint())
-            item = self.itemAt(event.position().toPoint())
-            if item:
-                self.isDraggingItem = True
-            else:
-                self.selectionRect = QGraphicsRectItem(QRectF(self.origin, self.origin))
-                self.selectionRect.setPen(QPen(Qt.blue, 2, Qt.DashLine))
-                self.scene().addItem(self.selectionRect)
-        super().mousePressEvent(event)
-
-    def mouseMoveEvent(self, event):
-        if self.selectionRect:
-            rect = QRectF(self.origin, self.mapToScene(event.position().toPoint())).normalized()
-            self.selectionRect.setRect(rect)
-        super().mouseMoveEvent(event)
-
-    def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            if self.selectionRect:
-                items = self.scene().items(self.selectionRect.rect(), Qt.IntersectsItemShape)
-                selected_assets = []
-                for item in items:
-                    if isinstance(item, AssetBase):
-                        item.setSelected(True)
-                        if item.assetType != "Attacker":
-                            selected_assets.append(item.asset)
-                if len(selected_assets) == 1:
-                    asset = selected_assets[0]
-                    self.mainWindow.updatePropertiesWindow(asset)
-                self.scene().removeItem(self.selectionRect)
-                self.selectionRect = None
-            self.isDraggingItem = False
-        super().mouseReleaseEvent(event)
+    # Handling all the mouse press/move/release event to QGraphicsScene ( ModelScene) derived class to avoid 
+    # collision of functionality in 2 different places( ModelView vs ModelScene). 
+    

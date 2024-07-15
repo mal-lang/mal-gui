@@ -1,15 +1,15 @@
-from PySide6.QtGui import QUndoCommand, QUndoStack
+from PySide6.QtGui import QUndoCommand
 
 class CopyCommand(QUndoCommand):
-    def __init__(self, scene, item, clipboard, parent=None):
+    def __init__(self, scene, items, clipboard, parent=None):
         super().__init__(parent)
         self.scene = scene
-        self.item = item
+        self.items = items
         self.clipboard = clipboard
 
     def redo(self):
         self.cutItemFlag = False
-        serializedData = self.scene.serializeGraphicsItem(self.item, self.cutItemFlag)
+        serializedData = self.scene.serializeGraphicsItems(self.items, self.cutItemFlag)
         self.clipboard.clear()
         self.clipboard.setText(serializedData) 
 

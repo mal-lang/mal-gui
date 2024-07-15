@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from PySide6.QtWidgets import QWidget,QLineEdit,QSplitter, QMainWindow,QToolBar,QDockWidget, QListWidget,QVBoxLayout,QComboBox,QListWidgetItem, QLabel,QTreeView,QTreeWidget, QTreeWidgetItem,QCheckBox,QPushButton,QFileDialog,QMessageBox
+from PySide6.QtWidgets import QWidget,QLineEdit,QSplitter, QMainWindow,QToolBar,QDockWidget, QListWidget,QVBoxLayout,QComboBox,QListWidgetItem, QLabel,QTreeView,QTreeWidget, QTreeWidgetItem,QCheckBox,QPushButton,QFileDialog,QMessageBox,QTableWidget, QTableWidgetItem
 from PySide6.QtGui import QDrag,QPixmap,QAction,QIcon,QIntValidator
-from PySide6.QtCore import Qt,QMimeData,QByteArray,QSize
+from PySide6.QtCore import Qt,QMimeData,QByteArray,QSize,Signal
 
 from ModelScene import ModelScene
 from ModelView import ModelView
@@ -14,9 +14,13 @@ from AssociationTableView import AssociationDefinitions
 
 from ObjectExplorer.AssetFactory import AssetFactory
 
-from DraggableTreeView import DraggableTreeView
-
+from maltoolbox.language import LanguageGraph, LanguageClassesFactory
 from maltoolbox.model import Model
+
+
+from DockedWindows.ObjectExplorerDockedWindow.DraggableTreeView import DraggableTreeView
+from DockedWindows.ItemDetailsDockedWindow.ItemDetailsWindow import ItemDetailsWindow
+from DockedWindows.PropertiesDockedWindow.PropertiesWindow import PropertiesWindow
 
 class DraggableListWidget(QListWidget):
     def mousePressEvent(self, event):
@@ -32,6 +36,8 @@ class DraggableListWidget(QListWidget):
 
 
 class MainWindow(QMainWindow):
+    updateChildsInObjectExplorerSignal = Signal()
+    
     def __init__(self,app):
         super().__init__()
         self.app = app #declare an app member
@@ -62,13 +68,23 @@ class MainWindow(QMainWindow):
         #Create a registry as a dictionary containing name as key and class as value
         self.assetFactory = AssetFactory()
         self.assetFactory.registerAsset("Attacker", "images/attacker.png")
+        
+        # Create the MAL language graph, language classes factory, and
+        # instance model
+        # self.langGraph = LanguageGraph.from_mar_archive("langs/org.mal-lang.coreLang-1.0.0.mar")
+        self.langGraph = LanguageGraph.from_mar_archive("/Users/akashkumarsinha/Desktop/KTH_Project/MasterThesis/Sharpcut_Docs_From_Bernd/PartTime_CyberSecurity_Final/mal-toolbox-gui/mal_gui/langs/org.mal-lang.coreLang-1.0.0.mar")
+        self.lcs = LanguageClassesFactory(self.langGraph)
+        self.model = Model("Untitled Model", self.lcs)
 
-        self.scene = ModelScene(self.assetFactory, self)
-        self.view = ModelView(self.scene, self)
-        for asset in self.scene.langGraph.assets:
+
+        for asset in self.langGraph.assets:
             if not asset.is_abstract:
                 self.assetFactory.registerAsset(asset.name,
                     assetImages[asset.name])
+        
+        #assetFactory registration should complete before injecting into ModelScene
+        self.scene = ModelScene(self.assetFactory, self.langGraph, self.lcs,self.model, self)
+        self.view = ModelView(self.scene, self)
 
         self.createActions()
         self.createMenus()
@@ -89,6 +105,9 @@ class MainWindow(QMainWindow):
 
         # self.setDockNestingEnabled(True)
         # self.setCorner()
+        
+        self.updateChildsInObjectExplorerSignal.connect(self.updateExplorerDockedWindow)
+        
         self.dockAble()
 
     def dockAble(self):
@@ -116,16 +135,21 @@ class MainWindow(QMainWindow):
         #EDOC Tab with treeview
         componentTabTree = QTreeWidget()
         componentTabTree.setHeaderLabel(None)
-
-
-        #Properties Tab with treeview
-        self.propertiesTabTree = QTreeWidget()
-        self.propertiesTabTree.setHeaderLabel(None)
-        self.propertiesTabTree.setColumnCount(2)
-        self.propertiesTabTree.setHeaderLabels(["Property","Value"])
+        
+        
+        #ItemDetails with treeview
+        self.itemDetailsWindow = ItemDetailsWindow()
+        
+        dockItemDetails = QDockWidget("Item Details",self)
+        dockItemDetails.setWidget(self.itemDetailsWindow)
+        self.addDockWidget(Qt.LeftDockWidgetArea, dockItemDetails)
+        
+        #Properties Tab with tableview
+        propertiesDockedWindow = PropertiesWindow()
+        self.propertiesTable = propertiesDockedWindow.propertiesTable
 
         dockProperties = QDockWidget("Properties",self)
-        dockProperties.setWidget(self.propertiesTabTree)
+        dockProperties.setWidget(self.propertiesTable)
         self.addDockWidget(Qt.RightDockWidgetArea, dockProperties)
 
     def showAssociationCheckBoxChanged(self,checked):
@@ -134,21 +158,44 @@ class MainWindow(QMainWindow):
         for connection in self.scene.items():
             if isinstance(connection, ConnectionItem):
                 connection.updatePath()
+                
+    def fitToViewButtonClicked(self):
+        print("Fit To View Button Clicked..")  
+        # Find the bounding rectangle of all items in Scene
+        boundingRect = self.scene.itemsBoundingRect()   
+        self.view.fitInView(boundingRect,Qt.KeepAspectRatio) 
 
-    def updatePropertiesWindow(self, asset):
-        self.propertiesTabTree.clear()
-        propertiesTabTreeItems = []
-        defenses = self.scene.model.get_asset_defenses(
-            asset,
-            include_defaults = True
-        )
-        for key, value in defenses.items():
-            print(f"DEF:{key} VAL:{float(value)}")
-            item = QTreeWidgetItem([key, str(float(value))])
-            propertiesTabTreeItems.append(item)
+    def updatePropertiesWindow(self, assetItem): 
+        #Clear the table
+        self.propertiesTable.setRowCount(0)
+        
+        if assetItem is not None and assetItem.assetType != "Attacker":
+            asset = assetItem.asset
+            defenses = self.model.get_asset_defenses(
+                asset,
+                include_defaults = True
+            )
+            
+            properties = list(defenses.items())
+            # Insert new rows based on the data dictionary
+            numRows = len(properties)
+            self.propertiesTable.setRowCount(numRows)
+            
+            for row, (propertyKey, propertyValue) in enumerate(properties):
+                print(f"DEF:{propertyKey} VAL:{float(propertyValue)}")
+                
+                columnPropertyName = QTableWidgetItem(propertyKey)
+                columnPropertyName.setFlags(Qt.ItemIsEnabled)  # Make the property name read-only
+            
+                columnValue = QTableWidgetItem(str(float(propertyValue)))
+                columnValue.setFlags(Qt.ItemIsEditable | Qt.ItemIsEnabled)  # Make the value editable
+            
+                columnDefaultValue = QTableWidgetItem("1.0")
+                columnDefaultValue.setFlags(Qt.ItemIsEnabled)  # Make the default value read-only
 
-        self.propertiesTabTree.insertTopLevelItems(0,propertiesTabTreeItems)
-        self.propertiesTabTree.show()
+                self.propertiesTable.setItem(row, 0, columnPropertyName)
+                self.propertiesTable.setItem(row, 1, columnValue)
+                self.propertiesTable.setItem(row, 2, columnDefaultValue)
 
 
     def createActions(self):
@@ -227,7 +274,12 @@ class MainWindow(QMainWindow):
         self.toolbar.addAction(self.undoAction)
         self.toolbar.addAction(self.redoAction)
         self.toolbar.addSeparator()
-
+        
+         #Fit To Window
+        fitToViewButton = QPushButton(QIcon("images/fitToView.png"), "Fit To View")
+        self.toolbar.addWidget(fitToViewButton)
+        fitToViewButton.clicked.connect(self.fitToViewButtonClicked)
+        self.toolbar.addSeparator()
 
     def zoomIn(self):
         print("Zoom In Clicked")
@@ -301,3 +353,17 @@ class MainWindow(QMainWindow):
         messageBox.setInformativeText(messageText) #default values
         messageBox.setStandardButtons(QMessageBox.Ok) #default Ok Button
         messageBox.exec()
+    
+    def updateExplorerDockedWindow(self):
+        #Clean the existing child and fill each items from scratch- performance BAD- To be discussed/improved
+        self.objectExplorerTree.clearAllObjectExplorerChildItems()
+        
+        #Fill all the items from Scene one by one
+        for childAssetItem in self.scene.items():
+            if isinstance(childAssetItem,AssetBase):
+                # Check if parent exists before adding child
+                parentAssetType = self.objectExplorerTree.checkAndGetIfParentAssetTypeExists(childAssetItem.assetType)
+                if parentAssetType:
+                    self.objectExplorerTree.addChildItem(parentAssetType, str(childAssetItem.assetName))
+                
+            

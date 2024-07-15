@@ -49,3 +49,18 @@ class DraggableTreeView(QTreeView):
         childItem = QStandardItem(childText)
         childItem.setFlags(childItem.flags() | Qt.ItemIsDragEnabled & ~Qt.ItemIsEditable)
         parentItem.appendRow(childItem)
+        
+    def checkAndGetIfParentAssetTypeExists(self, childAssetType):
+        invisibleTopLevelRootItem = self.model.invisibleRootItem()
+        for i in range(invisibleTopLevelRootItem.rowCount()):
+            passetAssetItem = invisibleTopLevelRootItem.child(i) #This Child basically refers to Parent Asset used in drag and drop
+            parentAssetType = passetAssetItem.text()
+            if parentAssetType == childAssetType:
+                return parentAssetType
+        return None
+    
+    def clearAllObjectExplorerChildItems(self):
+        invisibleTopLevelRootItem = self.model.invisibleRootItem()
+        for i in range(invisibleTopLevelRootItem.rowCount()):
+            passetAssetItem = invisibleTopLevelRootItem.child(i)
+            passetAssetItem.removeRows(0, passetAssetItem.rowCount())

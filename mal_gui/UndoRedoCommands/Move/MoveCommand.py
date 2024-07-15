@@ -1,23 +1,27 @@
-from PySide6.QtGui import QUndoCommand, QUndoStack
+from PySide6.QtGui import QUndoCommand
+
+
 class MoveCommand(QUndoCommand):
-    def __init__(self, scene, item, startPos, endPos, parent=None):
+    def __init__(self, scene, items, startPositions, endPositions, parent=None):
         super().__init__(parent)
         self.scene = scene
-        self.item = item
-        self.startPos = startPos
-        self.endPos = endPos
+        self.items = items
+        self.startPositions = startPositions
+        self.endPositions = endPositions
 
     def redo(self):
         print("Move Redo")
-        self.item.setPos(self.endPos)
-        self.updateConnections()
+        for item in self.items:
+            item.setPos(self.endPositions[item])
+            self.updateConnections(item)
 
     def undo(self):
         print("Move Undo")
-        self.item.setPos(self.startPos)
-        self.updateConnections()
-        
-    def updateConnections(self):
-        if hasattr(self.item, 'connections'):
-            for connection in self.item.connections:
+        for item in self.items:
+            item.setPos(self.startPositions[item])
+            self.updateConnections(item)
+
+    def updateConnections(self, item):
+        if hasattr(item, 'connections'):
+            for connection in item.connections:
                 connection.updatePath()

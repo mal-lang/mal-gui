@@ -5,11 +5,15 @@ from PySide6.QtWidgets import  QGraphicsItem
 from .EditableTextItem import EditableTextItem
 
 class AssetBase(QGraphicsItem):
+    
+    assetSequenceId = 100 #Starting Sequence Id with normal start at 100(randomly taken)
+    
     def __init__(self, assetType, assetName, imagePath, parent=None):
         super().__init__(parent)
         self.setZValue(1)  # rect items are on top
         self.assetType = assetType
         self.assetName = assetName
+        self.assetSequenceId = AssetBase.generateNextSequenceId() #For Test only this field was added. Need to rethink design with respect to mal toolbox
         self.imagePath = imagePath
         self.image = QPixmap(self.imagePath).scaled(35, 35, Qt.KeepAspectRatio)  # Scale the image here
 
@@ -21,6 +25,12 @@ class AssetBase(QGraphicsItem):
 
         self.connections = []
         self.initial_position = QPointF()
+        
+    @classmethod
+    def generateNextSequenceId(cls):
+        print("generateNextSequenceId is called")
+        cls.assetSequenceId += 1
+        return cls.assetSequenceId
 
     def boundingRect(self):
         # Define the bounding rectangle dimensions
@@ -99,6 +109,13 @@ class AssetBase(QGraphicsItem):
             self.attackerAttachment.name = self.assetName
         else:
             self.asset.name = self.assetName
+        
+        associatedScene = self.typeTextItem.scene()
+        if associatedScene:
+            print("Asset Name Changed by user")
+            #Update the Object Explorer when number of items change
+            associatedScene.mainWindow.updateChildsInObjectExplorerSignal.emit()
+
 
     def focusOutEvent(self, event):
         # Clear focus from typeTextItem when focus is lost
@@ -115,3 +132,10 @@ class AssetBase(QGraphicsItem):
             self.typeTextItem.deselectText()
         else:
             super().mousePressEvent(event)
+            
+    def getItemAttributeValues(self):
+        return {
+            "Asset Sequence ID" : self.assetSequenceId,
+            "Asset Name" : self.assetName,
+            "Asset Type" : self.assetType
+        }

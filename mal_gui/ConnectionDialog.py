@@ -2,11 +2,15 @@ import csv
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QPushButton,QSizePolicy,QMessageBox
 
 class ConnectionDialog(QDialog):
-    def __init__(self, startItem, endItem, scene, parent=None):
+    # def __init__(self, startItem, endItem, scene, parent=None):
+    def __init__(self, startItem, endItem,langGraph, lcs,model,parent=None):
         super().__init__(parent)
 
-        self.scene = scene
-        self.lcs = scene.lcs
+        # self.scene = scene
+        self.langGraph = langGraph
+        self.lcs = lcs
+        self.model = model
+        
         self.setWindowTitle("Select Association Type")
         self.setMinimumWidth(300)
 
@@ -29,7 +33,7 @@ class ConnectionDialog(QDialog):
 
         self.associationListWidget = QListWidget()
         langGraphStartAsset = next(
-                (asset for asset in self.scene.langGraph.assets
+                (asset for asset in self.langGraph.assets
                  if asset.name == startAsset.type), None
             )
         if langGraphStartAsset is None:
@@ -37,7 +41,7 @@ class ConnectionDialog(QDialog):
                 'in language graph.')
 
         langGraphEndAsset = next(
-                (asset for asset in self.scene.langGraph.assets
+                (asset for asset in self.langGraph.assets
                  if asset.name == endAsset.type), None
             )
         if langGraphEndAsset is None:
@@ -69,7 +73,7 @@ class ConnectionDialog(QDialog):
                     # We need to create the reverse association as well
                     assetPairs.append((endAsset, startAsset))
             for (leftAsset, rightAsset) in assetPairs:
-                if not self.scene.model.association_exists_between_assets(
+                if not self.model.association_exists_between_assets(
                         assoc.name,
                         leftAsset,
                         rightAsset):
@@ -120,5 +124,5 @@ class ConnectionDialog(QDialog):
             print(f'N:{assoc.name} LF:{assoc.left_field.fieldname} LA:{leftAsset.name} RF:{assoc.right_field.fieldname} RA:{rightAsset.name}')
             setattr(association, assoc.left_field.fieldname, [leftAsset])
             setattr(association, assoc.right_field.fieldname, [rightAsset])
-            self.scene.model.add_association(association)
+            self.model.add_association(association)
         self.accept()

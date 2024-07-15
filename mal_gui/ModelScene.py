@@ -1,9 +1,11 @@
-from PySide6.QtWidgets import QGraphicsScene, QMenu, QApplication, QGraphicsLineItem,QDialog
-from PySide6.QtGui import QCursor, QTransform,QAction,QUndoStack
-from PySide6.QtCore import QLineF, Qt, QPointF
+from PySide6.QtWidgets import QGraphicsScene, QMenu, QApplication, QGraphicsLineItem,QDialog,QGraphicsRectItem
+from PySide6.QtGui import QCursor, QTransform,QAction,QUndoStack,QPen
+from PySide6.QtCore import QLineF, Qt, QPointF,QRectF
 
+from ConnectionItem import ConnectionItem
 from ConnectionDialog import ConnectionDialog
 from ObjectExplorer.AssetBase import AssetBase
+from ObjectExplorer.EditableTextItem import EditableTextItem
 
 import pickle
 import base64
@@ -15,12 +17,14 @@ from UndoRedoCommands.Delete.DeleteCommand import DeleteCommand
 from UndoRedoCommands.Move.MoveCommand import MoveCommand
 from UndoRedoCommands.DragDrop.DragDropCommand import DragDropCommand
 from UndoRedoCommands.CreateConnection.CreateConnectionCommand import CreateConnectionCommand
+from UndoRedoCommands.DeleteConnection.DeleteConnectionCommand import DeleteConnectionCommand
+
 
 from maltoolbox.language import LanguageGraph, LanguageClassesFactory
 from maltoolbox.model import Model, AttackerAttachment
 
 class ModelScene(QGraphicsScene):
-    def __init__(self, assetFactory, mainWindow):
+    def __init__(self, assetFactory,langGraph, lcs,model, mainWindow):
         super().__init__()
 
         self.assetFactory = assetFactory
@@ -28,11 +32,20 @@ class ModelScene(QGraphicsScene):
         self.clipboard = QApplication.clipboard()
         self.mainWindow = mainWindow
 
-        # Create the MAL language graph, language classes factory, and
-        # instance model
-        self.langGraph = LanguageGraph.from_mar_archive("langs/org.mal-lang.coreLang-1.0.0.mar")
-        self.lcs = LanguageClassesFactory(self.langGraph)
-        self.model = Model("Untitled Model", self.lcs)
+        # # Create the MAL language graph, language classes factory, and
+        # # instance model
+        # self.langGraph = LanguageGraph.from_mar_archive("langs/org.mal-lang.coreLang-1.0.0.mar")
+        # self.lcs = LanguageClassesFactory(self.langGraph)
+        # self.model = Model("Untitled Model", self.lcs)
+        
+        
+        # # Assign the MAL language graph, language classes factory, and
+        # # instance model
+        self.langGraph = langGraph
+        self.lcs = lcs
+        self.model = model
+        
+        
         self._asset_id_to_item = {}
         self._attacker_id_to_item = {}
 
@@ -43,12 +56,19 @@ class ModelScene(QGraphicsScene):
         self.startItem = None
         self.endItem = None
 
-        self.objdetails = {}
+        # self.objdetails = {}
 
         self.movingItem = None
         self.startPos = None
 
         self.showAssociationCheckBoxStatus = False
+        
+        #For multiple select and handle
+        self.selectionRect = None
+        self.origin = QPointF()
+        self.isDraggingItem = False
+        self.draggedItems = []
+        self.initialPositions = {}
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasFormat('text/plain'):
@@ -72,7 +92,7 @@ class ModelScene(QGraphicsScene):
                 self.addAsset(itemType, pos)
 
             event.acceptProposedAction()
-
+    
     def addAsset(self, itemType, position, name = None):
         newAsset = getattr(self.lcs.ns, itemType)(name = name)
         self.model.add_asset(newAsset)
@@ -90,6 +110,7 @@ class ModelScene(QGraphicsScene):
         )
         newItem.asset = newAsset
         self._asset_id_to_item[newAsset.id] = newItem
+    
 
     def drawModel(self):
         for asset in self.model.assets:
@@ -142,7 +163,7 @@ class ModelScene(QGraphicsScene):
         newItem.assetName = name
         newItem.typeTextItem.setPlainText(str(name))
         newItem.setPos(position)
-        self.addItem(newItem)
+        # self.addItem(newItem)
         self.undoStack.push(DragDropCommand(self, newItem))  # Add the drop as a command
         return newItem
 
@@ -150,9 +171,17 @@ class ModelScene(QGraphicsScene):
     def contextMenuEvent(self, event):
         item = self.itemAt(event.scenePos(), QTransform())
         if item:
-            if isinstance(item, AssetBase):
+            if isinstance(item, (AssetBase,EditableTextItem)):
+                if isinstance(item, EditableTextItem):
+                    # If right-clicked on EditableTextItem, get its parent which is AssetBase
+                    item = item.parentItem()
+                item.setSelected(True)
                 print("Found Asset", item)
-                self.showAssetContextMenu(event.screenPos(), item)
+                # self.showAssetContextMenu(event.screenPos(), item)
+                self.showAssetContextMenu(event.screenPos())
+            elif isinstance(item, ConnectionItem):
+                print("Found Connection Item", item)
+                self.showConnectionItemContextMenu(event.screenPos(), item)
         else:
             self.showSceneContextMenu(event.screenPos(),event.scenePos())
 
@@ -162,153 +191,228 @@ class ModelScene(QGraphicsScene):
         if event.button() == Qt.LeftButton and QApplication.keyboardModifiers() == Qt.ShiftModifier:
             print("Scene Mouse Press event")
             item = self.itemAt(event.scenePos(), QTransform())
-            if isinstance(item, AssetBase):
-                self.startItem = item
+            if isinstance(item, (AssetBase,EditableTextItem)):
+                if isinstance(item, EditableTextItem):
+                    # If clicked on EditableTextItem, get its parent which is AssetBase
+                    assetItem = item.parentItem()
+                    if isinstance(assetItem, AssetBase):
+                        self.startItem = assetItem
+                    else:
+                        return  # Ignore clicks on items that are not AssetBase or its EditableTextItem
+                else:
+                    self.startItem = item
                 self.lineItem = QGraphicsLineItem()
                 self.lineItem.setLine(QLineF(event.scenePos(), event.scenePos()))
                 self.addItem(self.lineItem)
                 print(f"Start item set: {self.startItem}")
+                return #Fix: Without this return the AssetBaseItem was moving along while drawing line.
         elif event.button() == Qt.LeftButton:
             item = self.itemAt(event.scenePos(), QTransform())
+            if item and isinstance(item, (AssetBase, EditableTextItem)):
+                if isinstance(item, EditableTextItem):
+                    assetItem = item.parentItem()
+                    if isinstance(assetItem, AssetBase):
+                        item = assetItem
+                    else:
+                        return
+                if item.isSelected():
+                    print("Item is already selected")
+                    self.movingItem = item
+                    self.startPos = item.pos()
+                    self.draggedItems = [i for i in self.selectedItems() if isinstance(i, AssetBase)]
+                    self.initialPositions = {i: i.pos() for i in self.draggedItems}
+                else:
+                    print("Item is not selected")
+                    self.clearSelection()
+                    item.setSelected(True)
+                    self.movingItem = item
+                    self.startPos = item.pos()
+                    self.draggedItems = [item]
+                    self.initialPositions = {item: item.pos()}
+            else:
+                self.clearSelection()  # Deselect all items if clicking outside any item
+                self.origin = event.scenePos()
+                self.selectionRect = QGraphicsRectItem(QRectF(self.origin, self.origin))
+                self.selectionRect.setPen(QPen(Qt.blue, 2, Qt.DashLine))
+                self.addItem(self.selectionRect)
+        elif event.button() == Qt.RightButton:
+            item = self.itemAt(event.scenePos(), self.views()[0].transform())
             if item and isinstance(item, AssetBase):
-                self.movingItem = item
-                self.startPos = item.pos()
-        else:
-            super().mousePressEvent(event)
+                if not item.isSelected():
+                    self.clearSelection()
+                    item.setSelected(True)
+                    
+        self.showItemDetails()
+        super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         if self.lineItem and QApplication.keyboardModifiers() == Qt.ShiftModifier:
             print("Scene Mouse Move event")
             self.lineItem.setLine(QLineF(self.lineItem.line().p1(), event.scenePos()))
-        elif self.movingItem:
+        elif self.movingItem and not QApplication.keyboardModifiers() == Qt.ShiftModifier:
             newPos = event.scenePos()
-            self.movingItem.setPos(newPos)
-        else:
-            super().mouseMoveEvent(event)
+            delta = newPos - self.startPos
+            for item in self.draggedItems:
+                item.setPos(self.initialPositions[item] + delta)
+        elif self.selectionRect and not self.movingItem:
+            rect = QRectF(self.origin, event.scenePos()).normalized()
+            self.selectionRect.setRect(rect)
+
+        super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton and self.lineItem and QApplication.keyboardModifiers() == Qt.ShiftModifier:
             print("Entered Release with Shift")
             print("Scene Mouse Release event")
-
+            
             # Temporarily remove the line item to avoid interference
             self.removeItem(self.lineItem)
-
+            
             item = self.itemAt(event.scenePos(), QTransform())
             print(f"item is: {item}")
-            if isinstance(item, AssetBase) and item != self.startItem:
+            if isinstance(item, (AssetBase,EditableTextItem)) and item != self.startItem:
                 print(f"End item found: {item}")
-                self.endItem = item
-
-                # Create and show the connection dialog
-                dialog = ConnectionDialog(
-                    self.startItem,
-                    self.endItem,
-                    self
-                )
-                if dialog.exec() == QDialog.Accepted:
-                    selectedItem = dialog.associationListWidget.currentItem()
-                    if selectedItem:
-                        print("Selected Association Text is: "+ selectedItem.text())
-                        command = CreateConnectionCommand(
-                            self,
-                            self.startItem,
-                            self.endItem,
-                            selectedItem.text()
-                        )
-                        self.undoStack.push(command)
+                if isinstance(item, EditableTextItem):
+                    # If clicked on EditableTextItem, get its parent which is AssetBase
+                    assetItem = item.parentItem()
+                    if isinstance(assetItem, AssetBase):
+                        self.endItem = assetItem
                     else:
-                        self.removeItem(self.lineItem)
-            else:
-                print("No end item found")
-                self.removeItem(self.lineItem)
-            self.lineItem = None
-            self.startItem = None
-            self.endItem = None
-        elif event.button() == Qt.LeftButton and self.movingItem:
-            endPos = self.movingItem.pos()
-            if self.startPos != endPos:
-                command = MoveCommand(self,self.movingItem, self.startPos, endPos)
-                self.undoStack.push(command)
-            self.movingItem = None
-        else:
-            super().mouseReleaseEvent(event)
+                        self.endItem = None
+                else:
+                    self.endItem = item
+                
+                # Create and show the connection dialog
+                if self.endItem:
+                    dialog = ConnectionDialog(self.startItem, self.endItem,self.langGraph, self.lcs,self.model)
+                    if dialog.exec() == QDialog.Accepted:
+                        selectedItem = dialog.associationListWidget.currentItem()
+                        if selectedItem:
+                            print("Selected Association Text is: "+ selectedItem.text())
+                            # connection = ConnectionItem(selectedItem.text(),self.startItem, self.endItem,self)
+                            # self.addItem(connection)
+                            command = CreateConnectionCommand(self, self.startItem, self.endItem, selectedItem.text())
+                            self.undoStack.push(command)
+                        else:
+                            print("No end item found")
+                            self.removeItem(self.lineItem)
+                else:
+                    print("No end item found")
+                    self.removeItem(self.lineItem)
+                self.lineItem = None
+                self.startItem = None
+                self.endItem = None  
+        elif event.button() == Qt.LeftButton:
+            if self.selectionRect:
+                items = self.items(self.selectionRect.rect(), Qt.IntersectsItemShape)
+                for item in items:
+                    if isinstance(item, AssetBase):
+                        item.setSelected(True)
+                self.removeItem(self.selectionRect)
+                self.selectionRect = None
+            elif self.movingItem and not QApplication.keyboardModifiers() == Qt.ShiftModifier:
+                endPositions = {item: item.pos() for item in self.draggedItems}
+                if self.initialPositions != endPositions:
+                    command = MoveCommand(self, self.draggedItems, self.initialPositions, endPositions)
+                    self.undoStack.push(command)
+            self.movingItem = None    
+                 
+        self.showItemDetails()
+        super().mouseReleaseEvent(event)
 
-    def cutAsset(self, asset):
-        print("Cut Asset is called..")
-        command = CutCommand(self, asset,self.clipboard)
+    def cutAssets(self, selectedAssets):
+        print("Cut Asset is called..") 
+        command = CutCommand(self, selectedAssets,self.clipboard)
         self.undoStack.push(command)
 
-    def copyAsset(self, asset):
+    def copyAssets(self, selectedAssets):
         print("Copy Asset is called..")
-        command = CopyCommand(self, asset,self.clipboard)
+        command = CopyCommand(self, selectedAssets,self.clipboard)
         self.undoStack.push(command)
-
-    def pasteAsset(self, position):
+    
+    def pasteAssets(self, position):
         print("Paste is called")
         command = PasteCommand(self, position, self.clipboard)
-        self.undoStack.push(command)
-
-    def deleteAsset(self, asset):
+        self.undoStack.push(command) 
+        
+    def deleteAssets(self, selectedAssets):
         print("Delete asset is called..")
-        command = DeleteCommand(self, asset)
+        command = DeleteCommand(self, selectedAssets)
         self.undoStack.push(command)
 
-    def serializeGraphicsItem(self, item, cutIntended):
-        # objType = type(item).__name__
-        # print("objType is: "+ objType)
-        print("assetType is: "+ item.assetType)
-        self.objdetails['assetType'] = item.assetType
-        self.objdetails['assetName'] = item.assetName
-        if cutIntended:
-            self.objdetails['assetId'] = 5 #This is a ID already generated from mal-toolbox
-        else:
-            self.objdetails['assetId'] = 6 #This is a ID which will newly be generated from mal-toolbox
-        serializedData = pickle.dumps(self.objdetails)
+    def serializeGraphicsItems(self, items, cutIntended):
+        objdetails = []
+        selectedSequenceIds = {item.assetSequenceId for item in items}  # Set of selected item IDs
+        for item in items:
+            
+            # Convert assetName to a string - This is causing issue with Serialization 
+            assetNameStr = str(item.assetName)
+            
+            itemDetails = {
+                'assetType': item.assetType,
+                'assetName': assetNameStr,
+                'assetSequenceId': item.assetSequenceId,
+                'position': (item.pos().x(), item.pos().y()),
+                'connections': [
+                        (conn.startItem.assetSequenceId, conn.endItem.assetSequenceId, '-->'.join(conn.associationDetails))
+                        for conn in item.connections
+                        if conn.startItem.assetSequenceId in selectedSequenceIds and conn.endItem.assetSequenceId in selectedSequenceIds                    
+                    ]
+            }
+            objdetails.append(itemDetails)
+            
+        serializedData = pickle.dumps(objdetails)
         base64SerializedData = base64.b64encode(serializedData).decode('utf-8')
         return base64SerializedData
+    
+    def deserializeGraphicsItems(self, assetText):
+        # Fix padding if necessary- I was getting padding error 
+        paddingNeeded = len(assetText) % 4
+        if paddingNeeded:
+            assetText += '=' * (4 - paddingNeeded)
 
-
-    def deserializeGraphicsItem(self, assetText):
         serializedData = base64.b64decode(assetText)
         deserializedData = pickle.loads(serializedData)
-        deserializedAssetType = deserializedData['assetType']
-        deserializedAssetName = deserializedData['assetName']
-        deserializedAssetId = deserializedData['assetId']
 
+        return deserializedData
 
-        print("deserializedAssetType = "+ deserializedAssetType)
-        if deserializedAssetType:
-            newItem = self.assetFactory.getAsset(deserializedAssetType)
-            # self.addItem(newItem)
-            if isinstance(newItem,AssetBase):
-                print("It is instance of AssetBase")
+    def deleteConnection(self, conectionItemToBeDeleted):
+        print("Delete Connection is called..") 
+        command = DeleteConnectionCommand(self, conectionItemToBeDeleted)
+        self.undoStack.push(command)
 
-            # This below rename currently doesn't work. Need to check why.
-            # print("newItem.assetName =" + newItem.assetName)
-            # newItem.assetName = deserializedAssetName
-            # print("newItem.assetName =" + newItem.assetName)
-            return newItem
-
-
-    def showAssetContextMenu(self, position, asset):
+    def showAssetContextMenu(self, position):
         print("Asset Context menu activated")
         menu = QMenu()
         assetCutAction = QAction("Cut Asset", self)
         assetCopyAction = QAction("Copy Asset", self)
         assetDeleteAction = QAction("Delete Asset", self)
-
+        
         menu.addAction(assetCutAction)
         menu.addAction(assetCopyAction)
         menu.addAction(assetDeleteAction)
-        action = menu.exec(position)
-
+        action = menu.exec(position) 
+        
+        selectedItems = self.selectedItems()  # Get all selected items
+        
         if action == assetCutAction:
-            self.cutAsset(asset)
+            self.cutAssets(selectedItems)
         if action == assetCopyAction:
-           self.copyAsset(asset)
+           self.copyAssets(selectedItems)
         if action == assetDeleteAction:
-           self.deleteAsset(asset)
+           self.deleteAssets(selectedItems)
+           
+    def showConnectionItemContextMenu(self,position, connectionItem):
+        print("ConnectionItem Context menu activated")
+        menu = QMenu()
+        connectionItemDeleteAction = QAction("Delete Connection", self)
+        
+        menu.addAction(connectionItemDeleteAction)
+        action = menu.exec(position)
+        
+        #In future we may want more option. So "if" condition.
+        if action == connectionItemDeleteAction:
+            self.deleteConnection(connectionItem)
 
     def showSceneContextMenu(self, screenPos,scenePos):
         print("Scene Context menu activated")
@@ -318,11 +422,23 @@ class ModelScene(QGraphicsScene):
 
         if action == pasteAssetAction:
             # self.requestpasteAsset.emit(scenePos)
-            self.pasteAsset(scenePos)
+            self.pasteAssets(scenePos)
 
     def setShowAssociationCheckBoxStatus(self,isEnabled):
         self.showAssociationCheckBoxStatus = isEnabled
 
     def getShowAssociationCheckBoxStatus(self):
         return self.showAssociationCheckBoxStatus
+    
+    def showItemDetails(self):
+        selectedItems = self.selectedItems()
+        if len(selectedItems) == 1:
+            item = selectedItems[0]
+            if isinstance(item, AssetBase):
+                # self.mainWindow is a reference to main window
+                self.mainWindow.itemDetailsWindow.updateItemDetailsWindow(item)
+                self.mainWindow.updatePropertiesWindow(item)
+        else:
+            self.mainWindow.itemDetailsWindow.updateItemDetailsWindow(None)
+            self.mainWindow.updatePropertiesWindow(None)
 
