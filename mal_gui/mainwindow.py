@@ -71,8 +71,7 @@ class MainWindow(QMainWindow):
         
         # Create the MAL language graph, language classes factory, and
         # instance model
-        # self.langGraph = LanguageGraph.from_mar_archive("langs/org.mal-lang.coreLang-1.0.0.mar")
-        self.langGraph = LanguageGraph.from_mar_archive("/Users/akashkumarsinha/Desktop/KTH_Project/MasterThesis/Sharpcut_Docs_From_Bernd/PartTime_CyberSecurity_Final/mal-toolbox-gui/mal_gui/langs/org.mal-lang.coreLang-1.0.0.mar")
+        self.langGraph = LanguageGraph.from_mar_archive("langs/org.mal-lang.coreLang-1.0.0.mar")
         self.lcs = LanguageClassesFactory(self.langGraph)
         self.model = Model("Untitled Model", self.lcs)
 
