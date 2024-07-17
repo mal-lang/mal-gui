@@ -125,7 +125,7 @@ class MainWindow(QMainWindow):
                 # print(f"    Field2: {value.assetName}")
                 # print(f"    Field3: {value.assetImage}")
                 self.objectExplorerTree.setParentItemText(value.assetType,value.assetImage)
-                self.objectExplorerTree.addChildItem(value.assetType, value.assetType+ "@Number_TBD")
+                # self.objectExplorerTree.addChildItem(value.assetType, value.assetType+ "@Number_TBD")
 
 
         dockObjectExplorer.setWidget(self.objectExplorerTree)
