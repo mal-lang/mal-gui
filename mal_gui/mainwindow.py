@@ -20,7 +20,9 @@ from maltoolbox.model import Model
 
 from DockedWindows.ObjectExplorerDockedWindow.DraggableTreeView import DraggableTreeView
 from DockedWindows.ItemDetailsDockedWindow.ItemDetailsWindow import ItemDetailsWindow
-from DockedWindows.PropertiesDockedWindow.PropertiesWindow import PropertiesWindow
+from DockedWindows.PropertiesDockedWindow.PropertiesWindow import PropertiesWindow,EditableDelegate
+
+from qt_material import apply_stylesheet,list_themes
 
 class DraggableListWidget(QListWidget):
     def mousePressEvent(self, event):
@@ -53,17 +55,20 @@ class MainWindow(QMainWindow):
             "HardwareVulnerability": "images/hardwareVulnerability.png",
             "IDPS": "images/idps.png",
             "Identity": "images/identity.png",
-            "Group": "images/identity.png",
-            "Privileges": "images/identity.png",
+            "Privileges": "images/privileges.png",
             "Information": "images/information.png",
             "Network": "images/network.png",
-            "ConnectionRule": "images/network.png",
+            "ConnectionRule": "images/connectionRule.png",
             "PhysicalZone": "images/physicalZone.png",
             "RoutingFirewall": "images/routingFirewall.png",
             "SoftwareProduct": "images/softwareProduct.png",
             "SoftwareVulnerability": "images/softwareVulnerability.png",
             "User": "images/user.png"
         }
+        
+        self.eyeUnhideIconImage = "images/eyeUnhide.png"
+        self.eyeHideIconImage = "images/eyeHide.png"
+        self.rgbColorIconImage = "images/rgbColor.png"
 
         #Create a registry as a dictionary containing name as key and class as value
         self.assetFactory = AssetFactory()
@@ -113,7 +118,7 @@ class MainWindow(QMainWindow):
 
         # ObjectExplorer - LeftSide pannel is Draggable TreeView
         dockObjectExplorer = QDockWidget("Object Explorer",self)
-        self.objectExplorerTree = DraggableTreeView()
+        self.objectExplorerTree = DraggableTreeView(self.scene,self.eyeUnhideIconImage,self.eyeHideIconImage,self.rgbColorIconImage)
 
         #printing registry
         print("printing registry: ")
@@ -179,6 +184,7 @@ class MainWindow(QMainWindow):
             # Insert new rows based on the data dictionary
             numRows = len(properties)
             self.propertiesTable.setRowCount(numRows)
+            self.propertiesTable.currentItem = assetItem
             
             for row, (propertyKey, propertyValue) in enumerate(properties):
                 print(f"DEF:{propertyKey} VAL:{float(propertyValue)}")
@@ -195,8 +201,13 @@ class MainWindow(QMainWindow):
                 self.propertiesTable.setItem(row, 0, columnPropertyName)
                 self.propertiesTable.setItem(row, 1, columnValue)
                 self.propertiesTable.setItem(row, 2, columnDefaultValue)
+            
+            # Set the item delegate and pass assetItem - based on Andrei's input
+            self.propertiesTable.setItemDelegateForColumn(1, EditableDelegate(assetItem))
 
-
+        else: 
+            self.propertiesTable.currentItem = None
+            
     def createActions(self):
 
         self.zoomInAction = QAction(QIcon("images/zoomIn.png"), "ZoomIn", self)
@@ -279,6 +290,17 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(fitToViewButton)
         fitToViewButton.clicked.connect(self.fitToViewButtonClicked)
         self.toolbar.addSeparator()
+        
+        #Material Theme - https://pypi.org/project/qt-material/
+        self.themeComboBox = QComboBox()
+        
+        self.themeComboBox.addItem('None')
+        inbuiltThemeListFromPackage = list_themes()
+        self.themeComboBox.addItems(inbuiltThemeListFromPackage)
+        
+        self.toolbar.addWidget(self.themeComboBox)
+        self.themeComboBox.currentIndexChanged.connect(self.onThemeSelectionChanged)
+        self.toolbar.addSeparator()
 
     def zoomIn(self):
         print("Zoom In Clicked")
@@ -314,10 +336,23 @@ class MainWindow(QMainWindow):
             )
             self.modelFilename = filePath
             self.scene.drawModel()
+            
+    def updatePositionsAndSaveModel(self):
+        for asset in self.scene.model.assets:
+            item = self.scene._asset_id_to_item[int(asset.id)]
+            position = item.pos()
+            asset.extras = {
+                "position": 
+                    {
+                        "x": position.x(),
+                        "y": position.y()
+                    }
+            }
+        self.scene.model.save_to_file(self.modelFileName)
 
     def saveModel(self):
         if self.modelFilename:
-            self.scene.model.save_to_file(self.modelFilename)
+            self.updatePositionsAndSaveModel()
         else:
             self.saveAsModel()
 
@@ -336,8 +371,8 @@ class MainWindow(QMainWindow):
         else:
             self.showInformationPopup("Successfully saved model to: " + filePath)
             self.scene.model.name = Path(filePath).stem
-            self.scene.model.save_to_file(filePath)
             self.modelFilename = filePath
+            self.updatePositionsAndSaveModel()
 
     def quitApp(self):
         self.app.quit()
@@ -361,8 +396,16 @@ class MainWindow(QMainWindow):
         for childAssetItem in self.scene.items():
             if isinstance(childAssetItem,AssetBase):
                 # Check if parent exists before adding child
-                parentAssetType = self.objectExplorerTree.checkAndGetIfParentAssetTypeExists(childAssetItem.assetType)
+                # parentAssetType = self.objectExplorerTree.checkAndGetIfParentAssetTypeExists(childAssetItem.assetType)
+                parentItem,parentAssetType = self.objectExplorerTree.checkAndGetIfParentAssetTypeExists(childAssetItem.assetType)
+
                 if parentAssetType:
-                    self.objectExplorerTree.addChildItem(parentAssetType, str(childAssetItem.assetName))
+                    self.objectExplorerTree.addChildItem(parentItem,childAssetItem, str(childAssetItem.assetName))
+                    
+    def onThemeSelectionChanged(self):
+        # Get the selected theme
+        selectedTheme = self.themeComboBox.currentText()
+        print(f"{selectedTheme} is the Theme selected")
+        apply_stylesheet(self.app, theme=selectedTheme)
                 
             

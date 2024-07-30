@@ -1,5 +1,5 @@
 from PySide6.QtCore import QRectF, Qt,QPointF
-from PySide6.QtGui import QPixmap, QFont, QColor,QBrush,QPen
+from PySide6.QtGui import QPixmap, QFont, QColor,QBrush,QPen,QPainterPath
 from PySide6.QtWidgets import  QGraphicsItem
 
 from .EditableTextItem import EditableTextItem
@@ -15,7 +15,8 @@ class AssetBase(QGraphicsItem):
         self.assetName = assetName
         self.assetSequenceId = AssetBase.generateNextSequenceId() #For Test only this field was added. Need to rethink design with respect to mal toolbox
         self.imagePath = imagePath
-        self.image = QPixmap(self.imagePath).scaled(35, 35, Qt.KeepAspectRatio)  # Scale the image here
+        # self.image = QPixmap(self.imagePath).scaled(30, 30, Qt.KeepAspectRatio)  # Scale the image here
+        self.image = QPixmap(self.imagePath)
 
         self.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemSendsGeometryChanges)
 
@@ -26,6 +27,11 @@ class AssetBase(QGraphicsItem):
         self.connections = []
         self.initial_position = QPointF()
         
+        #Asset Item Styling - Start
+        self.assetTypeBackgroundColor = QColor(204, 204, 255)
+        self.assetNameBackgroundColor = QColor(255, 255, 255)
+        #Asset Item Styling - End
+        
     @classmethod
     def generateNextSequenceId(cls):
         print("generateNextSequenceId is called")
@@ -34,32 +40,38 @@ class AssetBase(QGraphicsItem):
 
     def boundingRect(self):
         # Define the bounding rectangle dimensions
-        rectWidth = 300  # Adjust width as necessary
-        rectHeight = 60
+        rectWidth = 250  # Adjust width as necessary
+        rectHeight = 100
         return QRectF(0, 0, rectWidth, rectHeight)
 
     def paint(self, painter, option, widget):
         rect = self.boundingRect()
-        
-        # Draw the rectangle
-        painter.setBrush(Qt.white)
-        painter.setPen(Qt.black)
-        
-        # if self.isSelected():
-        #     painter.setBrush(QBrush(QColor(0, 255, 0, 100)))  # Highlight color with transparency
-        # else:
-        #     painter.setBrush(Qt.white)  # Normal color
 
-        if self.isSelected():
-            pen = QPen(QColor(0, 0, 255), 4)  # Blue border with a thickness of 4(TBD)
-            painter.setPen(pen)
-            painter.drawRect(rect)
+        # Calculate the height proportions
+        upperHeight = rect.height() * 0.6
+        lowerHeight = rect.height() * 0.4
 
-        painter.setPen(Qt.black)
-        painter.drawRect(rect)
+        # upper and lower rectangle regions
+        upperHalfRect = QRectF(0, 0, rect.width(), upperHeight)
+        lowerHalfRect = QRectF(0, upperHeight, rect.width(), lowerHeight)
 
-        # Draw the image
-        imageRect = QRectF(10, (rect.height() - 40) / 2, 40, 40)  # Center the image vertically
+        # upper half of the rectangle with a specific RGB background
+        painter.setBrush(self.assetTypeBackgroundColor )  # Light blue brush for the upper half
+        painter.setPen(Qt.NoPen)
+        painter.drawRect(upperHalfRect)
+
+        # lower half of the rectangle with a different RGB background
+        # painter.setBrush(QColor(254, 204, 2))  # Color1 is top
+        painter.setBrush(self.assetNameBackgroundColor )  # Color2 is bottom
+
+        painter.drawRect(lowerHalfRect)
+
+        # Draw a line between the upper and lower halves
+        painter.setPen(QPen(Qt.black))
+        painter.drawLine(0, upperHeight, rect.width(), upperHeight)
+
+        # Draw the image in the upper half
+        imageRect = QRectF(10, 10, 40, 40)  # Adjusted position for the image in the upper half
         painter.drawPixmap(imageRect.toRect(), self.image)
 
         # Set font size, increased by 10%
@@ -70,12 +82,25 @@ class AssetBase(QGraphicsItem):
         painter.setFont(lightFont)
 
         # Draw block name (upper half of rectangle)
-        nameRect = QRectF(80, 5, rect.width() - 90, rect.height() / 2 - 10)
+        nameRect = QRectF(80, 5, rect.width(), upperHeight - 10)  # Adjusted position for the text
         painter.setPen(QColor(100, 100, 100))
-        painter.drawText(nameRect, Qt.AlignLeft | Qt.AlignVCenter, self.assetType)
+        painter.drawText(nameRect, Qt.AlignVCenter, self.assetType)
 
         # Set position for the type text item (bottom half of rectangle)
-        self.typeTextItem.setPos(75, rect.height() / 2 )  # Adjusted position
+        self.typeTextItem.setPos(75, upperHeight + 5)  # Adjusted position for the type text item
+
+        # Draw the border around the entire rectangle (no rounded corners)
+        if self.isSelected():
+            pen = QPen(QColor(0, 0, 255), 4)  # Blue border with a thickness of 4
+            painter.setPen(pen)
+        else:
+            painter.setPen(QPen(Qt.black))
+
+        painter.setBrush(Qt.NoBrush)  # Ensure the border doesn't fill with color
+        painter.drawRect(rect)  # Draw border around the entire rectangle
+
+
+
 
     def addConnection(self, connection):
         self.connections.append(connection)
@@ -90,6 +115,8 @@ class AssetBase(QGraphicsItem):
                 for connection in self.connections:
                     connection.updatePath()
                 self.initial_position = self.pos()
+            if self.scene():
+                self.scene().update()  # Ensure the scene is updated - this fixed trailing borders issue
         return super().itemChange(change, value)
 
     def mouseDoubleClickEvent(self, event):

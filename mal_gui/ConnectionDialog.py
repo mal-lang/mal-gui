@@ -124,5 +124,6 @@ class ConnectionDialog(QDialog):
             print(f'N:{assoc.name} LF:{assoc.left_field.fieldname} LA:{leftAsset.name} RF:{assoc.right_field.fieldname} RA:{rightAsset.name}')
             setattr(association, assoc.left_field.fieldname, [leftAsset])
             setattr(association, assoc.right_field.fieldname, [rightAsset])
-            self.model.add_association(association)
+            selectedItem.association = association
+            # self.model.add_association(association)
         self.accept()

@@ -105,3 +105,15 @@ Link: https://uxwing.com/forward-arrow-outline-icon/
 27. Fit To View
 
 Link: https://uxwing.com/enlarge-increase-icon/
+
+28. Eye Hide Icon
+
+Link: https://uxwing.com/hide-private-hidden-icon/
+
+29. Eye Un-Hide Icon
+
+Link: https://uxwing.com/eye-look-icon/
+
+30. RGB Color Icon
+
+Link: https://uxwing.com/colors-icon/

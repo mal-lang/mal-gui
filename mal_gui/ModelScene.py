@@ -96,13 +96,13 @@ class ModelScene(QGraphicsScene):
     def addAsset(self, itemType, position, name = None):
         newAsset = getattr(self.lcs.ns, itemType)(name = name)
         self.model.add_asset(newAsset)
-        newAsset.extras = {
-            "position" :
-            {
-                "x": position.x(),
-                "y": position.y()
-            }
-        }
+        # newAsset.extras = {
+        #     "position" :
+        #     {
+        #         "x": position.x(),
+        #         "y": position.y()
+        #     }
+        # }
         newItem = self.createItem(
             itemType,
             position,
@@ -291,7 +291,7 @@ class ModelScene(QGraphicsScene):
                             print("Selected Association Text is: "+ selectedItem.text())
                             # connection = ConnectionItem(selectedItem.text(),self.startItem, self.endItem,self)
                             # self.addItem(connection)
-                            command = CreateConnectionCommand(self, self.startItem, self.endItem, selectedItem.text())
+                            command = CreateConnectionCommand(self, self.startItem, self.endItem, selectedItem.text(),selectedItem.association)
                             self.undoStack.push(command)
                         else:
                             print("No end item found")
@@ -417,10 +417,10 @@ class ModelScene(QGraphicsScene):
     def showSceneContextMenu(self, screenPos,scenePos):
         print("Scene Context menu activated")
         menu = QMenu()
-        pasteAssetAction = menu.addAction("Paste Asset")
+        assetPasteAction = menu.addAction("Paste Asset")
         action = menu.exec(screenPos)
 
-        if action == pasteAssetAction:
+        if action == assetPasteAction:
             # self.requestpasteAsset.emit(scenePos)
             self.pasteAssets(scenePos)
 
