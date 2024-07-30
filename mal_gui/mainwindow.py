@@ -292,12 +292,14 @@ class MainWindow(QMainWindow):
         self.toolbar.addSeparator()
         
         #Material Theme - https://pypi.org/project/qt-material/
+        materialThemeLabel  = QLabel("Theme")
         self.themeComboBox = QComboBox()
         
         self.themeComboBox.addItem('None')
         inbuiltThemeListFromPackage = list_themes()
         self.themeComboBox.addItems(inbuiltThemeListFromPackage)
         
+        self.toolbar.addWidget(materialThemeLabel)
         self.toolbar.addWidget(self.themeComboBox)
         self.themeComboBox.currentIndexChanged.connect(self.onThemeSelectionChanged)
         self.toolbar.addSeparator()
