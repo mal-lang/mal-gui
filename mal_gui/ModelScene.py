@@ -143,7 +143,8 @@ class ModelScene(QGraphicsScene):
                         self,
                         self._asset_id_to_item[leftAsset.id],
                         self._asset_id_to_item[rightAsset.id],
-                        assocText
+                        assocText,
+                        assoc
                     )
                     self.undoStack.push(command)
 

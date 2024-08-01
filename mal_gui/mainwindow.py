@@ -44,7 +44,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.app = app #declare an app member
         self.setWindowTitle("MAL GUI")
-        self.modelFilename = None
+        self.modelFileName = None
 
         assetImages = {
             "Application": "images/application.png",
@@ -336,7 +336,7 @@ class MainWindow(QMainWindow):
                 filePath,
                 self.scene.lcs
             )
-            self.modelFilename = filePath
+            self.modelFileName = filePath
             self.scene.drawModel()
             
     def updatePositionsAndSaveModel(self):
@@ -373,7 +373,7 @@ class MainWindow(QMainWindow):
         else:
             self.showInformationPopup("Successfully saved model to: " + filePath)
             self.scene.model.name = Path(filePath).stem
-            self.modelFilename = filePath
+            self.modelFileName = filePath
             self.updatePositionsAndSaveModel()
 
     def quitApp(self):
