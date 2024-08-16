@@ -14,45 +14,6 @@ class PasteCommand(QUndoCommand):
         self.pastedItems = []
         self.pastedConnections = []
         self.clipboard = clipboard
-
-    # def redo(self):
-    #     print("\nPaste Redo is Called")
-    #     serializedData = self.clipboard.text()
-    #     print("\nSerializedData = " + str(len(serializedData)))
-    #     print("\nSerializedData = " + str(serializedData))
-    #     if serializedData:
-    #         self.pastedItems = self.scene.deserializeGraphicsItems(serializedData)
-    #         if self.pastedItems:
-    #             print("Redo - Pasted Asset found")
-    #             # offset = self.position - self.pastedItems[0].pos()
-                
-    #             # Find the top-leftmost position among the items to be pasted
-    #             minX = min(item.pos().x() for item in self.pastedItems)
-    #             minY = min(item.pos().y() for item in self.pastedItems)
-    #             topLeft = QPointF(minX, minY)
-                
-    #             # Calculate the offset from the top-leftmost position to the paste position
-    #             offset = self.position - topLeft
-                
-    #             for item in self.pastedItems:
-    #                 item.setPos(item.pos() + offset)
-    #                 self.scene.addItem(item)
-
-    #             # Update connections
-    #             for item in self.pastedItems:
-    #                 if hasattr(item, 'connections'):
-    #                     for conn in item.connections:
-    #                         self.scene.addItem(conn)
-    #                         conn.restoreLabels()
-    #                         conn.updatePath()
-    #                         self.pastedConnections.append(conn)
-        
-    #     #Update the Object Explorer when number of items change
-    #     self.scene.mainWindow.updateChildsInObjectExplorerSignal.emit()
-        
-    #     #After paste, we should clear the clipboard, 
-    #     #but based on requirement we can allow multiple paste by commenting below line witth clear()
-    #     # self.clipboard.clear()
         
     def redo(self):
         
@@ -70,9 +31,12 @@ class PasteCommand(QUndoCommand):
                 assetType = data['assetType']
                 assetName = data['assetName']
                 oldAssetSequenceId = data['assetSequenceId']
+                assetProperties = data['assetProperties']
 
                 positionTuple = data['position']
                 position = QPointF(positionTuple[0], positionTuple[1])
+                
+
 
                 # AddAsset Equivalent - Start - To Be Discussed
                 if assetType == "Attacker":
@@ -99,8 +63,13 @@ class PasteCommand(QUndoCommand):
                     newItem.assetName = newAsset.name
                     newItem.typeTextItem.setPlainText(str(newAsset.name))
                     newItem.asset = newAsset
+                    
+                    #we can assign the properties to new asset
+                    for propertyKey,propertyValue in assetProperties:
+                        setattr(newItem.asset, propertyKey, float(propertyValue))
+                    
                     newItem.setPos(position)
-                    # self.scene._asset_id_to_item[newAsset.id] = newItem
+                    self.scene._asset_id_to_item[newAsset.id] = newItem
                 
                 self.pastedItems.append(newItem)
                 newItemMap[oldAssetSequenceId] = newItem  # Map old assetId to new item

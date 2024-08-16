@@ -20,7 +20,7 @@ class DeleteCommand(QUndoCommand):
         
         for item in self.items:
             self.scene.removeItem(item)
-            # self.scene.model.remove_asset(item.asset)
+            self.scene.model.remove_asset(item.asset)
             
         #Update the Object Explorer when number of items change
         self.scene.mainWindow.updateChildsInObjectExplorerSignal.emit()

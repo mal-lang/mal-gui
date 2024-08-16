@@ -1,0 +1,24 @@
+assets:
+  0:
+    extras:
+      position:
+        x: -82.0
+        y: -276.0
+    name: Application:0
+    type: Application
+  1:
+    extras:
+      position:
+        x: -5.0
+        y: -605.0
+    name: Data:1
+    type: Data
+associations: []
+attackers: {}
+metadata:
+  MAL-Toolbox Version: 0.1.6
+  info: Created by the mal-toolbox model python module.
+  langID: org.mal-lang.coreLang
+  langVersion: 1.0.0
+  malVersion: 0.1.0-SNAPSHOT
+  name: TestSave4

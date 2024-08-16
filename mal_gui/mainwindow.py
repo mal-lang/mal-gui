@@ -40,7 +40,7 @@ class DraggableListWidget(QListWidget):
 class MainWindow(QMainWindow):
     updateChildsInObjectExplorerSignal = Signal()
     
-    def __init__(self,app):
+    def __init__(self,app,malLanguageMarFilePath):
         super().__init__()
         self.app = app #declare an app member
         self.setWindowTitle("MAL GUI")
@@ -76,7 +76,8 @@ class MainWindow(QMainWindow):
         
         # Create the MAL language graph, language classes factory, and
         # instance model
-        self.langGraph = LanguageGraph.from_mar_archive("langs/org.mal-lang.coreLang-1.0.0.mar")
+        # self.langGraph = LanguageGraph.from_mar_archive("langs/org.mal-lang.coreLang-1.0.0.mar")
+        self.langGraph = LanguageGraph.from_mar_archive(malLanguageMarFilePath)
         self.lcs = LanguageClassesFactory(self.langGraph)
         self.model = Model("Untitled Model", self.lcs)
 
@@ -331,13 +332,24 @@ class MainWindow(QMainWindow):
             print("No valid path detected for loading")
             return
         else:
-            self.showInformationPopup("Successfully opened model: " + filePath)
-            self.scene.model = Model.load_from_file(
-                filePath,
-                self.scene.lcs
-            )
-            self.modelFileName = filePath
-            self.scene.drawModel()
+            OpenProjectUserConfirmation = QMessageBox.question(self, "Load New Project",
+                                     "Loading a new project will delete current work (if any). Do you want to continue ?",
+                                     QMessageBox.Ok | QMessageBox.Cancel)
+            if OpenProjectUserConfirmation == QMessageBox.Ok:
+                
+                #clear scene so that canvas becomes blank
+                self.scene.clear()
+                
+                self.showInformationPopup("Successfully opened model: " + filePath)
+                self.scene.model = Model.load_from_file(
+                    filePath,
+                    self.scene.lcs
+                )
+                self.modelFileName = filePath
+                self.scene.drawModel()
+            else:
+                #User canceled, do nothing - Need to check with Andrei for any other behaviour
+                pass
             
     def updatePositionsAndSaveModel(self):
         for asset in self.scene.model.assets:

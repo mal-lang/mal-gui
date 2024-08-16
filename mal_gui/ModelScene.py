@@ -111,17 +111,56 @@ class ModelScene(QGraphicsScene):
         newItem.asset = newAsset
         self._asset_id_to_item[newAsset.id] = newItem
     
+    def assignPositionToAssetsWithoutPosition(self,assetsWithoutPosition,xMax,yMax):
+        distanceBetweenTwoAssetsVertically = 200
+        
+        for i, asset in enumerate(assetsWithoutPosition):  
+            xPos = xMax
+            yPos = yMax + (i* distanceBetweenTwoAssetsVertically)
+            print("In xPos= "+ str(xPos))
+            print("In yPos= "+ str(yPos))
+            asset.setPos(QPointF(xPos,yPos))
+            
+
+        
 
     def drawModel(self):
+        
+        assetsWithoutPosition = []
+        xMax = 0
+        yMax = 0
+        
         for asset in self.model.assets:
+            
+            if 'position' in asset.extras:
+                pos = QPointF(asset.extras['position']['x'],
+                    asset.extras['position']['y'])
+                
+                #Storing xMax and yMax to be used at the end for moving the assets without position
+                if xMax< asset.extras['position']['x']:
+                    xMax = asset.extras['position']['x']
+                    print("xMax = "+ str(xMax))
+                if yMax < asset.extras['position']['y']:
+                    yMax = asset.extras['position']['y']
+                    print("yMax = "+ str(yMax))
+                
+            else:
+                pos = QPointF(0,0)
+            
             newItem = self.createItem(
                 asset.type,
-                QPointF(asset.extras['position']['x'],
-                    asset.extras['position']['y']),
+                pos,
                 asset.name
             )
             newItem.asset = asset
             self._asset_id_to_item[asset.id] = newItem
+            
+            # extract assets without position
+            if 'position' not in asset.extras:
+                assetsWithoutPosition.append(newItem)
+        
+        
+        self.assignPositionToAssetsWithoutPosition(assetsWithoutPosition,xMax, yMax)
 
         for assoc in self.model.associations:
             leftFieldName, rightFieldName = \
@@ -131,6 +170,8 @@ class ModelScene(QGraphicsScene):
             leftField = getattr(assoc, leftFieldName)
             rightField = getattr(assoc, rightFieldName)
 
+            self.model.remove_association(assoc)   
+         
             for leftAsset in leftField:
                 for rightAsset in rightField:
                     assocText = str(leftAsset.name) + "." + \
@@ -139,6 +180,8 @@ class ModelScene(QGraphicsScene):
                         rightAsset.name  + "." + \
                         rightFieldName
 
+                    
+                    
                     command = CreateConnectionCommand(
                         self,
                         self._asset_id_to_item[leftAsset.id],
@@ -349,6 +392,8 @@ class ModelScene(QGraphicsScene):
             # Convert assetName to a string - This is causing issue with Serialization 
             assetNameStr = str(item.assetName)
             
+            propertyKeysToIgnore = ['id','type']
+            
             itemDetails = {
                 'assetType': item.assetType,
                 'assetName': assetNameStr,
@@ -358,7 +403,12 @@ class ModelScene(QGraphicsScene):
                         (conn.startItem.assetSequenceId, conn.endItem.assetSequenceId, '-->'.join(conn.associationDetails))
                         for conn in item.connections
                         if conn.startItem.assetSequenceId in selectedSequenceIds and conn.endItem.assetSequenceId in selectedSequenceIds                    
-                    ]
+                    ],
+                'assetProperties': [
+                    (str(key),str(value))
+                    for key,value in item.asset._properties.items()
+                    if key not in propertyKeysToIgnore 
+                ]
             }
             objdetails.append(itemDetails)
             

@@ -15,8 +15,8 @@ class CreateConnectionCommand(QUndoCommand):
     def redo(self):
         if self.connection is None:
             self.connection = ConnectionItem(self.associationText, self.startItem, self.endItem, self.scene)
-            # self.scene.model.add_association(self.association)
-
+            self.scene.model.add_association(self.association)
+        
         self.scene.addItem(self.connection)
         self.connection.restoreLabels()
         self.connection.updatePath()
@@ -24,4 +24,4 @@ class CreateConnectionCommand(QUndoCommand):
     def undo(self):
         self.connection.removeLabels()
         self.scene.removeItem(self.connection)
-        # self.scene.model.remove_association(self.association)
+        self.scene.model.remove_association(self.association)

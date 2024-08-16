@@ -1,0 +1,99 @@
+assets:
+  0:
+    extras:
+      position:
+        x: -87.0
+        y: -146.0
+    name: Application:0
+    type: Application
+  1:
+    extras:
+      position:
+        x: 76.0
+        y: -453.0
+    name: Data:1
+    type: Data
+  2:
+    extras:
+      position:
+        x: 411.0
+        y: -116.0
+    name: Application:2
+    type: Application
+  3:
+    extras:
+      position:
+        x: 201.0
+        y: -298.0
+    name: Data:3
+    type: Data
+  4:
+    extras:
+      position:
+        x: 66.0
+        y: 338.0
+    name: Application:4
+    type: Application
+  5:
+    extras:
+      position:
+        x: -84.48759439050703
+        y: 6.336569579288025
+    name: Data:5
+    type: Data
+  6:
+    extras:
+      position:
+        x: 642.0
+        y: 41.0
+    name: Data:6
+    type: Data
+  7:
+    extras:
+      position:
+        x: 564.0
+        y: 368.0
+    name: Application:7
+    type: Application
+  8:
+    extras:
+      position:
+        x: 649.4983818770228
+        y: 168.97518878101408
+    name: Data:8
+    type: Data
+  9:
+    extras:
+      position:
+        x: -84.48759439050701
+        y: 174.25566343042075
+    name: Data:9
+    type: Data
+  10:
+    extras:
+      position:
+        x: 121.52319309600858
+        y: 462.18015102481127
+    name: Application:10
+    type: Application
+  11:
+    extras:
+      position:
+        x: -376.4768069039914
+        y: 432.18015102481127
+    name: Application:11
+    type: Application
+associations:
+- AppContainment:
+    containedData:
+    - 1
+    containingApp:
+    - 0
+attackers: {}
+metadata:
+  MAL-Toolbox Version: 0.1.6
+  info: Created by the mal-toolbox model python module.
+  langID: org.mal-lang.coreLang
+  langVersion: 1.0.0
+  malVersion: 0.1.0-SNAPSHOT
+  name: TestSave11
