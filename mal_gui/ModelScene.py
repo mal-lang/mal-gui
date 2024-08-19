@@ -110,6 +110,7 @@ class ModelScene(QGraphicsScene):
         )
         newItem.asset = newAsset
         self._asset_id_to_item[newAsset.id] = newItem
+        return newItem
     
     def assignPositionToAssetsWithoutPosition(self,assetsWithoutPosition,xMax,yMax):
         distanceBetweenTwoAssetsVertically = 200
@@ -170,8 +171,6 @@ class ModelScene(QGraphicsScene):
             leftField = getattr(assoc, leftFieldName)
             rightField = getattr(assoc, rightFieldName)
 
-            self.model.remove_association(assoc)   
-         
             for leftAsset in leftField:
                 for rightAsset in rightField:
                     assocText = str(leftAsset.name) + "." + \
@@ -180,16 +179,31 @@ class ModelScene(QGraphicsScene):
                         rightAsset.name  + "." + \
                         rightFieldName
 
-                    
-                    
-                    command = CreateConnectionCommand(
-                        self,
-                        self._asset_id_to_item[leftAsset.id],
-                        self._asset_id_to_item[rightAsset.id],
+                    self.addConnection(
                         assocText,
-                        assoc
+                        self._asset_id_to_item[leftAsset.id],
+                        self._asset_id_to_item[rightAsset.id]
                     )
-                    self.undoStack.push(command)
+
+
+    def addConnection(
+        self,
+        assocText,
+        startItem,
+        endItem
+    ):
+        connection = ConnectionItem(
+            assocText,
+            startItem,
+            endItem,
+            self
+        )
+
+        self.addItem(connection)
+        connection.restoreLabels()
+        connection.updatePath()
+        return connection
+
 
     def addAttacker(self, position, name = None):
         newAttackerAttachment = AttackerAttachment()
@@ -335,7 +349,13 @@ class ModelScene(QGraphicsScene):
                             print("Selected Association Text is: "+ selectedItem.text())
                             # connection = ConnectionItem(selectedItem.text(),self.startItem, self.endItem,self)
                             # self.addItem(connection)
-                            command = CreateConnectionCommand(self, self.startItem, self.endItem, selectedItem.text(),selectedItem.association)
+                            command = CreateConnectionCommand(
+                                self,
+                                self.startItem,
+                                self.endItem,
+                                selectedItem.text(),
+                                selectedItem.association
+                            )
                             self.undoStack.push(command)
                         else:
                             print("No end item found")

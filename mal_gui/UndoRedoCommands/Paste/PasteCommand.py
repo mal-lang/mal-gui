@@ -5,6 +5,7 @@ from ObjectExplorer.AssetBase import AssetBase
 from ConnectionItem import ConnectionItem
 
 from maltoolbox.model import Model, AttackerAttachment
+import json
 
 class PasteCommand(QUndoCommand):
     def __init__(self, scene, position, clipboard, parent=None):
@@ -23,6 +24,7 @@ class PasteCommand(QUndoCommand):
         print("\nSerializedData = " + str(serializedData))
         if serializedData:
             self.deserializedData = self.scene.deserializeGraphicsItems(serializedData)
+            print(json.dumps(self.deserializedData, indent = 2))
             items = []
             newItemMap = {}  # Map old assetId to new item
 
@@ -49,27 +51,10 @@ class PasteCommand(QUndoCommand):
                     newItem.setPos(position)
                     # self.scene._attacker_id_to_item[newAttackerAttachment.id] = newItem
                 else:
-                    newAsset = getattr(self.scene.lcs.ns, assetType)(name = None)
-                    # print("newAsset : "+ str(newAsset))
-                    self.scene.model.add_asset(newAsset)
-                    # newAsset.extras = {
-                    #     "position" :
-                    #     {
-                    #         "x": position.x(),
-                    #         "y": position.y()
-                    #     }
-                    # }
-                    newItem = self.scene.assetFactory.getAsset(assetType)
-                    newItem.assetName = newAsset.name
-                    newItem.typeTextItem.setPlainText(str(newAsset.name))
-                    newItem.asset = newAsset
-                    
+                    newItem = self.scene.addAsset(assetType, position)
                     #we can assign the properties to new asset
                     for propertyKey,propertyValue in assetProperties:
                         setattr(newItem.asset, propertyKey, float(propertyValue))
-                    
-                    newItem.setPos(position)
-                    self.scene._asset_id_to_item[newAsset.id] = newItem
                 
                 self.pastedItems.append(newItem)
                 newItemMap[oldAssetSequenceId] = newItem  # Map old assetId to new item
@@ -93,6 +78,7 @@ class PasteCommand(QUndoCommand):
             # Second pass: re-establish connections with new assetSequenceIds
             for data in self.deserializedData:
                 for conn in data['connections']:
+                    print(f'CONN: {conn}')
                     oldStartId = data['assetSequenceId']
                     oldEndId, oldLabel = conn[1], conn[2]
                     newStartItem = newItemMap[oldStartId]
@@ -100,9 +86,29 @@ class PasteCommand(QUndoCommand):
 
                     #Avoid Self reference
                     if newStartItem != newEndItem:
-                        newConnection = ConnectionItem(oldLabel, newStartItem, newEndItem, self.scene)
+                        newConnection = ConnectionItem(oldLabel,
+                            newStartItem,
+                            newEndItem,
+                            self.scene
+                        )
                         self.scene.addItem(newConnection)
                         self.pastedConnections.append(newConnection)
+                        assocType = oldLabel.split('-->')[1]
+                        print(f'ASSOC TYPE {assocType}')
+                        association = getattr(self.scene.lcs.ns, assocType)()
+                        leftAsset = newStartItem.asset
+                        rightAsset = newEndItem.asset
+                        print(f'LEFT ASSET NAME:{leftAsset.name} ID:{leftAsset.id} TYPE:{leftAsset.type}')
+                        print(f'RIGHT ASSET NAME:{rightAsset.name} ID:{rightAsset.id} TYPE:{rightAsset.type}')
+                        leftFieldname, rightFieldname = \
+                            self.scene.model.get_association_field_names(
+                                association
+                            )
+                        setattr(association, leftFieldname, [leftAsset])
+                        setattr(association, rightFieldname, [rightAsset])
+                        self.scene.model.add_association(association)
+                        newConnection.association = association
+
         
         #Update the Object Explorer when number of items change
         self.scene.mainWindow.updateChildsInObjectExplorerSignal.emit()
@@ -116,8 +122,10 @@ class PasteCommand(QUndoCommand):
             for conn in self.pastedConnections:
                 conn.removeLabels()
                 self.scene.removeItem(conn)
+                self.scene.model.remove_association(conn.association)
             for item in self.pastedItems:
                 self.scene.removeItem(item)
+                self.scene.model.remove_asset(item.asset)
             self.pastedItems = []
             self.pastedConnections = []
         

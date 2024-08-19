@@ -14,6 +14,32 @@ class ConnectionDialog(QDialog):
         self.setWindowTitle("Select Association Type")
         self.setMinimumWidth(300)
 
+        print(f'START ITEM TYPE {startItem.assetType}')
+        print(f'END ITEM TYPE {endItem.assetType}')
+
+        targetAsset = None
+
+        if startItem.assetType == 'Attacker':
+            targetAsset = endItem.asset
+            attacker = startItem.attackerAttachment
+        elif endItem.assetType == 'Attacker':
+            target = startItem.asset
+            attacker = endItem.attackerAttachment
+
+        if targetAsset is not None:
+            assetType = self.langGraph.get_asset_by_name(targetAsset.type)
+            for attackStep in assetType.attack_steps:
+                # attackStep.name should actually be the user selection
+                # instead
+                if attackStep.type not in ['or', 'and']:
+                    continue
+                attackStepName = targetAsset.name + ":" + attackStep.name
+                if attackStepName not in attacker.entry_points:
+                    print(attackStep.name)
+                    # attacker.entry_points.append(targetAsset,
+                    # [attackStepName])
+            return
+
         startAsset = startItem.asset
         endAsset = endItem.asset
         self.startAssetType = startAsset.type
@@ -120,6 +146,9 @@ class ConnectionDialog(QDialog):
             selectedAssociationText = selectedItem.text()
             # QMessageBox.information(self, "Selected Item", f"You selected: {selectedAssociationText}")
             (assoc, leftAsset, rightAsset) = self._str_to_assoc[selectedAssociationText]
+            # TODO: Create association based on its full name instead in order
+            # to avoid conflicts when multiple associations with the same name
+            # exist.
             association = getattr(self.lcs.ns, assoc.name)()
             print(f'N:{assoc.name} LF:{assoc.left_field.fieldname} LA:{leftAsset.name} RF:{assoc.right_field.fieldname} RA:{rightAsset.name}')
             setattr(association, assoc.left_field.fieldname, [leftAsset])

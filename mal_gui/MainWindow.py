@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 from PySide6.QtWidgets import QWidget,QLineEdit,QSplitter, QMainWindow,QToolBar,QDockWidget, QListWidget,QVBoxLayout,QComboBox,QListWidgetItem, QLabel,QTreeView,QTreeWidget, QTreeWidgetItem,QCheckBox,QPushButton,QFileDialog,QMessageBox,QTableWidget, QTableWidgetItem
 from PySide6.QtGui import QDrag,QPixmap,QAction,QIcon,QIntValidator
@@ -99,11 +100,11 @@ class MainWindow(QMainWindow):
         self.view.zoomChanged.connect(self.updateZoomLabel)
 
         #Association Information
-        self.associationInfo = AssociationDefinitions(self)
+        # self.associationInfo = AssociationDefinitions(self)
 
         self.splitter = QSplitter()
         self.splitter.addWidget(self.view)
-        self.splitter.addWidget(self.associationInfo)
+        # self.splitter.addWidget(self.associationInfo)
         self.splitter.setSizes([200, 100])  # Set initial sizes of widgets in splitter
 
         self.setCentralWidget(self.splitter)
@@ -352,7 +353,10 @@ class MainWindow(QMainWindow):
                 pass
             
     def updatePositionsAndSaveModel(self):
+
+        print(f'ASSET ID TO ITEMS KEYS:{self.scene._asset_id_to_item.keys()}')
         for asset in self.scene.model.assets:
+            print(f'ASSET NAME:{asset.name} ID:{asset.id} TYPE:{asset.type}')
             item = self.scene._asset_id_to_item[int(asset.id)]
             position = item.pos()
             asset.extras = {
@@ -365,7 +369,7 @@ class MainWindow(QMainWindow):
         self.scene.model.save_to_file(self.modelFileName)
 
     def saveModel(self):
-        if self.modelFilename:
+        if self.modelFileName:
             self.updatePositionsAndSaveModel()
         else:
             self.saveAsModel()

@@ -3,7 +3,14 @@ from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import QGraphicsLineItem, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup
 
 class ConnectionItem(QGraphicsLineItem):
-    def __init__(self,selectedAssociationText, startItem, endItem, scene, parent=None):
+    def __init__(
+        self,
+        selectedAssociationText,
+        startItem,
+        endItem,
+        scene,
+        parent = None
+    ):
         super().__init__(parent)
         
         self.setZValue(0)  # Ensure connection items are behind rect items
