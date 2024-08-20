@@ -344,7 +344,7 @@ class ModelScene(QGraphicsScene):
                 if self.endItem:
                     dialog = ConnectionDialog(self.startItem, self.endItem,self.langGraph, self.lcs,self.model)
                     if dialog.exec() == QDialog.Accepted:
-                        selectedItem = dialog.associationListWidget.currentItem()
+                        selectedItem = dialog.associationOrAttackStepListWidget.currentItem()
                         if selectedItem:
                             print("Selected Association Text is: "+ selectedItem.text())
                             # connection = ConnectionItem(selectedItem.text(),self.startItem, self.endItem,self)
@@ -508,8 +508,15 @@ class ModelScene(QGraphicsScene):
             if isinstance(item, AssetBase):
                 # self.mainWindow is a reference to main window
                 self.mainWindow.itemDetailsWindow.updateItemDetailsWindow(item)
-                self.mainWindow.updatePropertiesWindow(item)
+                if item.assetType == 'Attacker':
+                    print("Attacker Selected")
+                    self.mainWindow.updateAttackStepsWindow(item)
+                    self.mainWindow.updatePropertiesWindow(None)
+                else:
+                    self.mainWindow.updatePropertiesWindow(item)  
+                    self.mainWindow.updateAttackStepsWindow(None)      
         else:
             self.mainWindow.itemDetailsWindow.updateItemDetailsWindow(None)
             self.mainWindow.updatePropertiesWindow(None)
+            self.mainWindow.updateAttackStepsWindow(None)
 

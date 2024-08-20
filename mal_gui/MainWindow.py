@@ -22,6 +22,7 @@ from maltoolbox.model import Model
 from DockedWindows.ObjectExplorerDockedWindow.DraggableTreeView import DraggableTreeView
 from DockedWindows.ItemDetailsDockedWindow.ItemDetailsWindow import ItemDetailsWindow
 from DockedWindows.PropertiesDockedWindow.PropertiesWindow import PropertiesWindow,EditableDelegate
+from DockedWindows.AttackStepsDockedWindow.AttackStepsWindow import AttackStepsWindow
 
 from qt_material import apply_stylesheet,list_themes
 
@@ -151,12 +152,25 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.LeftDockWidgetArea, dockItemDetails)
         
         #Properties Tab with tableview
-        propertiesDockedWindow = PropertiesWindow()
-        self.propertiesTable = propertiesDockedWindow.propertiesTable
+        self.propertiesDockedWindow = PropertiesWindow()
+        self.propertiesTable = self.propertiesDockedWindow.propertiesTable
 
         dockProperties = QDockWidget("Properties",self)
         dockProperties.setWidget(self.propertiesTable)
         self.addDockWidget(Qt.RightDockWidgetArea, dockProperties)
+        
+        #AttackSteps Tab with ListView
+        self.attackStepsDockedWindow = AttackStepsWindow()
+
+        dockAttackSteps = QDockWidget("Attack Steps",self)
+        dockAttackSteps.setWidget(self.attackStepsDockedWindow)
+        self.addDockWidget(Qt.RightDockWidgetArea, dockAttackSteps)
+        
+        #Keep Propeties Window and Attack Step Window Tabbed
+        self.tabifyDockWidget(dockProperties, dockAttackSteps)
+        
+        #Keep the properties Window highlighted and raised
+        dockProperties.raise_()
 
     def showAssociationCheckBoxChanged(self,checked):
         print("self.showAssociationCheckBoxChanged clicked")
@@ -209,6 +223,13 @@ class MainWindow(QMainWindow):
 
         else: 
             self.propertiesTable.currentItem = None
+            
+    def updateAttackStepsWindow(self, attackerAssetItem):
+        if attackerAssetItem is not None:
+            self.attackStepsDockedWindow.clear()
+            self.attackStepsDockedWindow.addItems(attackerAssetItem.attackerAttachment.entry_points)
+        else:
+            self.attackStepsDockedWindow.clear()
             
     def createActions(self):
 

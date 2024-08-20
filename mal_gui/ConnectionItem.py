@@ -24,18 +24,37 @@ class ConnectionItem(QGraphicsLineItem):
         self.startItem.addConnection(self)
         self.endItem.addConnection(self)
         
-        self.associationDetails = selectedAssociationText.split("-->")
-        assocLeftField = self.associationDetails[0]
-        assocMiddleName = self.associationDetails[1]
-        assocRightField = self.associationDetails[2]
+        if self.startItem.assetType != 'Attacker' and self.endItem.assetType != 'Attacker':
+        
+            self.associationDetails = selectedAssociationText.split("-->")
+            assocLeftField = self.associationDetails[0]
+            assocMiddleName = self.associationDetails[1]
+            assocRightField = self.associationDetails[2]
+
+
+            # Create labels with background color
+            self.labelAssocLeftField = self.createLabel(assocLeftField.split(".")[1])
+            self.labelAssocMiddleName = self.createLabel(assocMiddleName)
+            self.labelAssocRightField = self.createLabel(assocRightField.split(".")[1])
+        
+        else:
+            
+            #Need to check who is attacker and get the name of target and attackStep Name
+            # Assumption is Both are not 'Attacker'
+            if self.startItem.assetType == 'Attacker':
+                attacker = self.startItem.attackerAttachment
+                target = str(self.endItem.assetName)
+            else:
+                attacker = self.endItem.attackerAttachment
+                target = str(self.startItem.assetName)
+            
+            #selectedAssociationText is representing 'AttackStep' name
+            attacker.entry_points.append(target + ' -> ' + selectedAssociationText)
+            self.labelAssocLeftField = self.createLabel("")
+            self.labelAssocMiddleName = self.createLabel(selectedAssociationText)
+            self.labelAssocRightField = self.createLabel("")
         
         
-        # Create labels with background color
-        self.labelAssocLeftField = self.createLabel(assocLeftField.split(".")[1])
-        self.labelAssocMiddleName = self.createLabel(assocMiddleName)
-        self.labelAssocRightField = self.createLabel(assocRightField.split(".")[1])
-        
-        # self.isAssociationVisibilityChecked = False
         
         self.updatePath()
 

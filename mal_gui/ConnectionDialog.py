@@ -11,22 +11,27 @@ class ConnectionDialog(QDialog):
         self.lcs = lcs
         self.model = model
         
-        self.setWindowTitle("Select Association Type")
+        
         self.setMinimumWidth(300)
 
         print(f'START ITEM TYPE {startItem.assetType}')
         print(f'END ITEM TYPE {endItem.assetType}')
 
         targetAsset = None
+        self.associationOrAttackStepListWidget = QListWidget()
+        self.attackStepListWidget = QListWidget()
+        self.isOneOfTheAssetIsAttacker = False
 
         if startItem.assetType == 'Attacker':
             targetAsset = endItem.asset
             attacker = startItem.attackerAttachment
         elif endItem.assetType == 'Attacker':
-            target = startItem.asset
+            targetAsset = startItem.asset
             attacker = endItem.attackerAttachment
 
         if targetAsset is not None:
+            self.setWindowTitle("Select Entry Point")
+            self.isOneOfTheAssetIsAttacker = True
             assetType = self.langGraph.get_asset_by_name(targetAsset.type)
             for attackStep in assetType.attack_steps:
                 # attackStep.name should actually be the user selection
@@ -38,84 +43,98 @@ class ConnectionDialog(QDialog):
                     print(attackStep.name)
                     # attacker.entry_points.append(targetAsset,
                     # [attackStepName])
-            return
+                    
+                    self.associationOrAttackStepListWidget.addItem(QListWidgetItem(attackStep.name))
+            
+            self.layout = QVBoxLayout()
 
-        startAsset = startItem.asset
-        endAsset = endItem.asset
-        self.startAssetType = startAsset.type
-        self.endAssetType = endAsset.type
-        self.startAssetName = startAsset.name
-        self.endAssetName = endAsset.name
+            self.label = QLabel(f"{attacker.name}:{targetAsset.name}")
+            self.layout.addWidget(self.label)
 
-        layout = QVBoxLayout()
+            self.filterEdit = QLineEdit()
+            self.filterEdit.setPlaceholderText("Type to filter...")
+            self.filterEdit.textChanged.connect(self.filterItems)
+            self.layout.addWidget(self.filterEdit)
+            self.layout.addWidget(self.associationOrAttackStepListWidget)
 
-        self.label = QLabel(f"{self.startAssetName} : {self.endAssetName}")
-        layout.addWidget(self.label)
+        else:
+            self.setWindowTitle("Select Association Type")
+            startAsset = startItem.asset
+            endAsset = endItem.asset
+            self.startAssetType = startAsset.type
+            self.endAssetType = endAsset.type
+            self.startAssetName = startAsset.name
+            self.endAssetName = endAsset.name
 
-        self.filterEdit = QLineEdit()
-        self.filterEdit.setPlaceholderText("Type to filter...")
-        self.filterEdit.textChanged.connect(self.filterItems)
-        layout.addWidget(self.filterEdit)
+            self.layout = QVBoxLayout()
 
-        self.associationListWidget = QListWidget()
-        langGraphStartAsset = next(
-                (asset for asset in self.langGraph.assets
-                 if asset.name == startAsset.type), None
-            )
-        if langGraphStartAsset is None:
-            raise LookupError(f'Failed to find asset "{startAsset.type}" '
-                'in language graph.')
+            self.label = QLabel(f"{self.startAssetName} : {self.endAssetName}")
+            self.layout.addWidget(self.label)
 
-        langGraphEndAsset = next(
-                (asset for asset in self.langGraph.assets
-                 if asset.name == endAsset.type), None
-            )
-        if langGraphEndAsset is None:
-            raise LookupError(f'Failed to find asset "{endAsset.type}" '
-                'in language graph.')
-        self._str_to_assoc = {}
-        for assoc in langGraphStartAsset.associations:
-            assetPairs = []
-            oppositeAsset = assoc.get_opposite_asset(langGraphStartAsset)
+            self.filterEdit = QLineEdit()
+            self.filterEdit.setPlaceholderText("Type to filter...")
+            self.filterEdit.textChanged.connect(self.filterItems)
+            self.layout.addWidget(self.filterEdit)
 
-            # Check if the other side of the association matches the other end
-            # and if the exact association does not already exist in the
-            # model.
-            if langGraphEndAsset.is_subasset_of(oppositeAsset):
-                print("IDENTIFIED MATCH  ++++++++++++")
-                if langGraphStartAsset.is_subasset_of(assoc.left_field.asset):
-                    assetPairs.append((startAsset, endAsset))
-                else:
-                    assetPairs.append((endAsset, startAsset))
-            if langGraphStartAsset.is_subasset_of(oppositeAsset):
-                # The association could be applied either way, add the
-                # reverse association as well.
-                otherAsset = assoc.get_opposite_asset(oppositeAsset)
+
+            langGraphStartAsset = next(
+                    (asset for asset in self.langGraph.assets
+                     if asset.name == startAsset.type), None
+                )
+            if langGraphStartAsset is None:
+                raise LookupError(f'Failed to find asset "{startAsset.type}" '
+                    'in language graph.')
+
+            langGraphEndAsset = next(
+                    (asset for asset in self.langGraph.assets
+                     if asset.name == endAsset.type), None
+                )
+            if langGraphEndAsset is None:
+                raise LookupError(f'Failed to find asset "{endAsset.type}" '
+                    'in language graph.')
+            self._str_to_assoc = {}
+            for assoc in langGraphStartAsset.associations:
+                assetPairs = []
+                oppositeAsset = assoc.get_opposite_asset(langGraphStartAsset)
+
                 # Check if the other side of the association matches the other end
                 # and if the exact association does not already exist in the
                 # model.
-                if langGraphEndAsset.is_subasset_of(otherAsset):
-                    print("REVERSE ASSOC  ++++++++++++")
-                    # We need to create the reverse association as well
-                    assetPairs.append((endAsset, startAsset))
-            for (leftAsset, rightAsset) in assetPairs:
-                if not self.model.association_exists_between_assets(
-                        assoc.name,
-                        leftAsset,
-                        rightAsset):
-                    formattedAssocStr = leftAsset.name + "." + \
-                        assoc.left_field.fieldname + "-->" + \
-                        assoc.name + "-->" + \
-                        rightAsset.name + "." + \
-                        assoc.right_field.fieldname
-                    self._str_to_assoc[formattedAssocStr] = (
-                        assoc,
-                        leftAsset,
-                        rightAsset
-                    )
-                    self.associationListWidget.addItem(QListWidgetItem(formattedAssocStr))
+                if langGraphEndAsset.is_subasset_of(oppositeAsset):
+                    print("IDENTIFIED MATCH  ++++++++++++")
+                    if langGraphStartAsset.is_subasset_of(assoc.left_field.asset):
+                        assetPairs.append((startAsset, endAsset))
+                    else:
+                        assetPairs.append((endAsset, startAsset))
+                if langGraphStartAsset.is_subasset_of(oppositeAsset):
+                    # The association could be applied either way, add the
+                    # reverse association as well.
+                    otherAsset = assoc.get_opposite_asset(oppositeAsset)
+                    # Check if the other side of the association matches the other end
+                    # and if the exact association does not already exist in the
+                    # model.
+                    if langGraphEndAsset.is_subasset_of(otherAsset):
+                        print("REVERSE ASSOC  ++++++++++++")
+                        # We need to create the reverse association as well
+                        assetPairs.append((endAsset, startAsset))
+                for (leftAsset, rightAsset) in assetPairs:
+                    if not self.model.association_exists_between_assets(
+                            assoc.name,
+                            leftAsset,
+                            rightAsset):
+                        formattedAssocStr = leftAsset.name + "." + \
+                            assoc.left_field.fieldname + "-->" + \
+                            assoc.name + "-->" + \
+                            rightAsset.name + "." + \
+                            assoc.right_field.fieldname
+                        self._str_to_assoc[formattedAssocStr] = (
+                            assoc,
+                            leftAsset,
+                            rightAsset
+                        )
+                        self.associationOrAttackStepListWidget.addItem(QListWidgetItem(formattedAssocStr))
 
-        layout.addWidget(self.associationListWidget)
+            self.layout.addWidget(self.associationOrAttackStepListWidget)
 
         buttonLayout = QHBoxLayout()
         self.okButton = QPushButton("OK")
@@ -128,31 +147,39 @@ class ConnectionDialog(QDialog):
         self.cancelButton.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         buttonLayout.addWidget(self.cancelButton)
 
-        layout.addLayout(buttonLayout)
+        self.layout.addLayout(buttonLayout)
 
-        self.setLayout(layout)
+        self.setLayout(self.layout)
 
         # Select the first item by default
-        self.associationListWidget.setCurrentRow(0)
+        self.associationOrAttackStepListWidget.setCurrentRow(0)
 
-    def filterItems(self, text):
-        for i in range(self.associationListWidget.count()):
-            item = self.associationListWidget.item(i)
+    def filterItems(self ,text):
+        for i in range(self.associationOrAttackStepListWidget.count()):
+            item = self.associationOrAttackStepListWidget.item(i)
             item.setHidden(text.lower() not in item.text().lower())
 
-    def OkButtonClicked(self):
-        selectedItem = self.associationListWidget.currentItem()
+    def OkButtonClicked(self): 
+        selectedItem = self.associationOrAttackStepListWidget.currentItem()
         if selectedItem:
             selectedAssociationText = selectedItem.text()
             # QMessageBox.information(self, "Selected Item", f"You selected: {selectedAssociationText}")
-            (assoc, leftAsset, rightAsset) = self._str_to_assoc[selectedAssociationText]
-            # TODO: Create association based on its full name instead in order
-            # to avoid conflicts when multiple associations with the same name
-            # exist.
-            association = getattr(self.lcs.ns, assoc.name)()
-            print(f'N:{assoc.name} LF:{assoc.left_field.fieldname} LA:{leftAsset.name} RF:{assoc.right_field.fieldname} RA:{rightAsset.name}')
-            setattr(association, assoc.left_field.fieldname, [leftAsset])
-            setattr(association, assoc.right_field.fieldname, [rightAsset])
-            selectedItem.association = association
-            # self.model.add_association(association)
+            
+            #If Association
+            if self.isOneOfTheAssetIsAttacker is False:
+                (assoc, leftAsset, rightAsset) = self._str_to_assoc[selectedAssociationText]
+                # TODO: Create association based on its full name instead in order
+                # to avoid conflicts when multiple associations with the same name
+                # exist.
+                association = getattr(self.lcs.ns, assoc.name)()
+                print(f'N:{assoc.name} LF:{assoc.left_field.fieldname} LA:{leftAsset.name} RF:{assoc.right_field.fieldname} RA:{rightAsset.name}')
+                setattr(association, assoc.left_field.fieldname, [leftAsset])
+                setattr(association, assoc.right_field.fieldname, [rightAsset])
+                selectedItem.association = association
+                # self.model.add_association(association)
+    
+            #else Attacker's EntryPoint
+            else:
+                association = selectedItem.text()
+                selectedItem.association = association
         self.accept()

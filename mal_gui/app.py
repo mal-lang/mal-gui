@@ -2,6 +2,7 @@ from PySide6.QtWidgets import QApplication,QDialog,QVBoxLayout,QHBoxLayout,QLabe
 from MainWindow import MainWindow
 import sys 
 
+import configparser
 
 class FileSelectionDialog(QDialog):
     def __init__(self, parent=None):
@@ -19,6 +20,15 @@ class FileSelectionDialog(QDialog):
         horizontalLayout = QHBoxLayout()
 
         self.malLanguageMarFilePathText = QLineEdit(self)
+        
+        # Load the config file
+        self.config = configparser.ConfigParser()
+        # self.config.read('config.ini')
+        self.config.read('/Users/akashkumarsinha/Desktop/KTH_Project/KTH_Cyber_FinalCommit2/mal-toolbox-gui/mal_gui/config.ini')
+        self.marFilePath = self.config.get('Settings', 'marFilePath')
+        print(f"Initial marFilePath path: {self.marFilePath}")
+        self.malLanguageMarFilePathText.setText(self.marFilePath)
+        
         horizontalLayout.addWidget(self.malLanguageMarFilePathText)
 
         browseButton = QPushButton("Browse")
@@ -61,6 +71,12 @@ class FileSelectionDialog(QDialog):
         
         if selectedFile.endswith('.mar'):
             self.selectedFile = selectedFile
+            
+            self.config.set('Settings', 'marFilePath', self.selectedFile)
+            with open('config.ini', 'w') as configfile:
+                self.config.write(configfile)
+            
+            
             self.accept()  # Close the dialog and return accepted
         else:
             QMessageBox.warning(self, "Invalid File", "Please select a valid .mar file.")
