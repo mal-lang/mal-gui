@@ -3,7 +3,7 @@ import json
 
 from PySide6.QtWidgets import QWidget,QLineEdit,QSplitter, QMainWindow,QToolBar,QDockWidget, QListWidget,QVBoxLayout,QComboBox,QListWidgetItem, QLabel,QTreeView,QTreeWidget, QTreeWidgetItem,QCheckBox,QPushButton,QFileDialog,QMessageBox,QTableWidget, QTableWidgetItem
 from PySide6.QtGui import QDrag,QPixmap,QAction,QIcon,QIntValidator
-from PySide6.QtCore import Qt,QMimeData,QByteArray,QSize,Signal
+from PySide6.QtCore import Qt,QMimeData,QByteArray,QSize,Signal,QPointF
 
 from ModelScene import ModelScene
 from ModelView import ModelView
@@ -248,7 +248,26 @@ class MainWindow(QMainWindow):
         self.redoAction = QAction(QIcon("images/redoIcon.png"), "Redo", self)
         self.redoAction.setShortcut("Ctrl+Shift+z")
         self.redoAction.triggered.connect(self.scene.undoStack.redo)
+        
+        #cut Action
+        self.cutAction = QAction(QIcon("images/cutIcon.png"), "Cut", self)
+        self.cutAction.setShortcut("Ctrl+x")
+        self.cutAction.triggered.connect(lambda: self.scene.cutAssets(self.scene.selectedItems()))
 
+        #copy Action
+        self.copyAction = QAction(QIcon("images/copyIcon.png"), "Copy", self)
+        self.copyAction.setShortcut("Ctrl+c")
+        self.copyAction.triggered.connect(lambda: self.scene.copyAssets(self.scene.selectedItems()))
+        
+        #paste Action
+        self.pasteAction = QAction(QIcon("images/pasteIcon.png"), "Paste", self)
+        self.pasteAction.setShortcut("Ctrl+v")
+        self.pasteAction.triggered.connect(lambda: self.scene.pasteAssets(QPointF(0,0)))
+        
+        #delete Action
+        self.deleteAction = QAction(QIcon("images/deleteIcon.png"), "Delete", self)
+        self.deleteAction.setShortcut("Delete")
+        self.deleteAction.triggered.connect(lambda: self.scene.deleteAssets(self.scene.selectedItems()))
 
     def createMenus(self):
          #Menubar and menus
@@ -266,6 +285,10 @@ class MainWindow(QMainWindow):
         self.editMenu = self.menuBar.addMenu("Edit")
         self.editMenuUndoAction = self.editMenu.addAction(self.undoAction)
         self.editMenuRedoAction = self.editMenu.addAction(self.redoAction)
+        self.editMenuCutAction = self.editMenu.addAction(self.cutAction)
+        self.editMenuCopyAction = self.editMenu.addAction(self.copyAction)
+        self.editMenuPasteAction = self.editMenu.addAction(self.pasteAction)
+        self.editMenuDeleteAction = self.editMenu.addAction(self.deleteAction)
 
     def createToolbar(self):
         #toolbar
@@ -306,6 +329,12 @@ class MainWindow(QMainWindow):
         #undo/redo
         self.toolbar.addAction(self.undoAction)
         self.toolbar.addAction(self.redoAction)
+        self.toolbar.addSeparator()
+        #cut/copy/paste/delete
+        self.toolbar.addAction(self.cutAction)
+        self.toolbar.addAction(self.copyAction)
+        self.toolbar.addAction(self.pasteAction)
+        self.toolbar.addAction(self.deleteAction)
         self.toolbar.addSeparator()
         
          #Fit To Window
