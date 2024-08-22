@@ -2,7 +2,7 @@ from PySide6.QtGui import QUndoCommand
 from PySide6.QtCore import QPointF
 
 from ObjectExplorer.AssetBase import AssetBase
-from ConnectionItem import ConnectionItem
+from ConnectionItem import AssociationConnectionItem
 
 from maltoolbox.model import Model, AttackerAttachment
 import json
@@ -86,7 +86,7 @@ class PasteCommand(QUndoCommand):
 
                     #Avoid Self reference
                     if newStartItem != newEndItem:
-                        newConnection = ConnectionItem(oldLabel,
+                        newConnection = AssociationConnectionItem(oldLabel,
                             newStartItem,
                             newEndItem,
                             self.scene

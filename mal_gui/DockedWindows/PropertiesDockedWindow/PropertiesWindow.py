@@ -66,7 +66,7 @@ class PropertiesWindow(QObject):
         # Create the table
         self.propertiesTable = QTableWidget()
         self.propertiesTable.setColumnCount(3)
-        self.propertiesTable.setHorizontalHeaderLabels(["Property", "Value", "Default Value"])
+        self.propertiesTable.setHorizontalHeaderLabels(["Defense Property", "Value", "Default Value"])
         # self.propertiesTable.setRowCount(10)  # Example: setting 10 rows
 
 

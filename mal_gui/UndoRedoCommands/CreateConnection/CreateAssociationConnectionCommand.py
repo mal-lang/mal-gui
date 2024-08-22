@@ -1,7 +1,7 @@
 from PySide6.QtGui import QUndoCommand
-from ConnectionItem import ConnectionItem
+from ConnectionItem import AssociationConnectionItem
 
-class CreateConnectionCommand(QUndoCommand):
+class CreateAssociationConnectionCommand(QUndoCommand):
     def __init__(
         self,
         scene,
@@ -21,7 +21,7 @@ class CreateConnectionCommand(QUndoCommand):
         
 
     def redo(self):
-        self.connection = self.scene.addConnection(
+        self.connection = self.scene.addAssociationConnection(
             self.associationText,
             self.startItem,
             self.endItem

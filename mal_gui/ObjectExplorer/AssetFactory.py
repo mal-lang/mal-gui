@@ -30,5 +30,8 @@ class AssetFactory():
                 assetType = value.assetType
                 assetName = value.assetName
                 assetImage = value.assetImage
-            return AssetBase(assetType,assetName,assetImage)
+            # return AssetBase(assetType,assetName,assetImage)
+            requestedAsset = AssetBase(assetType, assetName, assetImage)
+            requestedAsset.build()
+            return requestedAsset
 

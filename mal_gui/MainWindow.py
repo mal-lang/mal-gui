@@ -9,7 +9,7 @@ from ModelScene import ModelScene
 from ModelView import ModelView
 from ObjectExplorer.AssetBase import AssetBase
 
-from ConnectionItem import ConnectionItem
+from ConnectionItem import AssociationConnectionItem
 
 from AssociationTableView import AssociationDefinitions
 
@@ -23,6 +23,7 @@ from DockedWindows.ObjectExplorerDockedWindow.DraggableTreeView import Draggable
 from DockedWindows.ItemDetailsDockedWindow.ItemDetailsWindow import ItemDetailsWindow
 from DockedWindows.PropertiesDockedWindow.PropertiesWindow import PropertiesWindow,EditableDelegate
 from DockedWindows.AttackStepsDockedWindow.AttackStepsWindow import AttackStepsWindow
+from DockedWindows.AssetRelationsDockedWindow.AssetRelationsWindow import AssetRelationsWindow
 
 from qt_material import apply_stylesheet,list_themes
 
@@ -157,14 +158,19 @@ class MainWindow(QMainWindow):
 
         dockProperties = QDockWidget("Properties",self)
         dockProperties.setWidget(self.propertiesTable)
-        self.addDockWidget(Qt.RightDockWidgetArea, dockProperties)
+        self.addDockWidget(Qt.LeftDockWidgetArea, dockProperties)
         
         #AttackSteps Tab with ListView
         self.attackStepsDockedWindow = AttackStepsWindow()
-
         dockAttackSteps = QDockWidget("Attack Steps",self)
         dockAttackSteps.setWidget(self.attackStepsDockedWindow)
-        self.addDockWidget(Qt.RightDockWidgetArea, dockAttackSteps)
+        self.addDockWidget(Qt.LeftDockWidgetArea, dockAttackSteps)
+        
+        #AssetRelations Tab with ListView
+        self.assetRelationsDockedWindow = AssetRelationsWindow()
+        dockAssetRelations = QDockWidget("Asset Relations",self)
+        dockAssetRelations.setWidget(self.assetRelationsDockedWindow)
+        self.addDockWidget(Qt.LeftDockWidgetArea, dockAssetRelations)
         
         #Keep Propeties Window and Attack Step Window Tabbed
         self.tabifyDockWidget(dockProperties, dockAttackSteps)
@@ -176,8 +182,14 @@ class MainWindow(QMainWindow):
         print("self.showAssociationCheckBoxChanged clicked")
         self.scene.setShowAssociationCheckBoxStatus(checked)
         for connection in self.scene.items():
-            if isinstance(connection, ConnectionItem):
+            if isinstance(connection, AssociationConnectionItem):
                 connection.updatePath()
+    
+    def showAssetIconCheckBoxChanged(self,checked):
+        print("self.showAssetIconCheckBoxChanged clicked")
+        for assetItem in self.scene.items():
+            if isinstance(assetItem, AssetBase):
+                assetItem.toggleIconVisibility()
                 
     def fitToViewButtonClicked(self):
         print("Fit To View Button Clicked..")  
@@ -195,6 +207,9 @@ class MainWindow(QMainWindow):
                 asset,
                 include_defaults = True
             )
+            
+            # for association in asset.associations:
+            #     print("association= "+ str(association.name))
             
             properties = list(defenses.items())
             # Insert new rows based on the data dictionary
@@ -230,6 +245,16 @@ class MainWindow(QMainWindow):
             self.attackStepsDockedWindow.addItems(attackerAssetItem.attackerAttachment.entry_points)
         else:
             self.attackStepsDockedWindow.clear()
+            
+    def updateAssetRelationsWindow(self, assetItem):
+        # assetItem.asset.associations[0]._properties.items()
+        if assetItem is not None:
+            for association in assetItem.asset.associations:
+                self.assetRelationsDockedWindow.clear()
+                for propertyKey,propertyValue in association._properties.items():
+                    self.assetRelationsDockedWindow.addItem(str(propertyKey)+ "-->"+ str(propertyValue) )
+        else:
+            self.assetRelationsDockedWindow.clear()
             
     def createActions(self):
 
@@ -309,6 +334,15 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(showAssociationCheckBoxLabel)
         self.toolbar.addWidget(showAssociationCheckBox)
         showAssociationCheckBox.stateChanged.connect(self.showAssociationCheckBoxChanged)
+        
+        self.toolbar.addSeparator()
+
+        showAssetIconCheckBoxLabel  = QLabel("Show Asset Icon")
+        showAssetIconCheckBox = QCheckBox()
+        showAssetIconCheckBox.setCheckState(Qt.CheckState.Checked)
+        self.toolbar.addWidget(showAssetIconCheckBoxLabel)
+        self.toolbar.addWidget(showAssetIconCheckBox)
+        showAssetIconCheckBox.stateChanged.connect(self.showAssetIconCheckBoxChanged)
 
         self.toolbar.addSeparator()
 

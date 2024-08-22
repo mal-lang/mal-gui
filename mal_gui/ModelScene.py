@@ -2,8 +2,8 @@ from PySide6.QtWidgets import QGraphicsScene, QMenu, QApplication, QGraphicsLine
 from PySide6.QtGui import QCursor, QTransform,QAction,QUndoStack,QPen
 from PySide6.QtCore import QLineF, Qt, QPointF,QRectF
 
-from ConnectionItem import ConnectionItem
-from ConnectionDialog import ConnectionDialog
+from ConnectionItem import AssociationConnectionItem,EntrypointConnectionItem
+from ConnectionDialog import AssociationConnectionDialog,EntrypointConnectionDialog
 from ObjectExplorer.AssetBase import AssetBase
 from ObjectExplorer.EditableTextItem import EditableTextItem
 
@@ -16,7 +16,8 @@ from UndoRedoCommands.Paste.PasteCommand import PasteCommand
 from UndoRedoCommands.Delete.DeleteCommand import DeleteCommand
 from UndoRedoCommands.Move.MoveCommand import MoveCommand
 from UndoRedoCommands.DragDrop.DragDropCommand import DragDropCommand
-from UndoRedoCommands.CreateConnection.CreateConnectionCommand import CreateConnectionCommand
+from UndoRedoCommands.CreateConnection.CreateAssociationConnectionCommand import CreateAssociationConnectionCommand
+from UndoRedoCommands.CreateConnection.CreateEntrypointConnectionCommand import CreateEntrypointConnectionCommand
 from UndoRedoCommands.DeleteConnection.DeleteConnectionCommand import DeleteConnectionCommand
 
 
@@ -179,20 +180,23 @@ class ModelScene(QGraphicsScene):
                         rightAsset.name  + "." + \
                         rightFieldName
 
-                    self.addConnection(
+                    self.addAssociationConnection(
                         assocText,
                         self._asset_id_to_item[leftAsset.id],
                         self._asset_id_to_item[rightAsset.id]
                     )
 
-
-    def addConnection(
+# based on connectionType use attacker or 
+# addAssociationConnection
+    
+    def addAssociationConnection(
         self,
         assocText,
         startItem,
         endItem
     ):
-        connection = ConnectionItem(
+
+        connection = AssociationConnectionItem(
             assocText,
             startItem,
             endItem,
@@ -204,6 +208,24 @@ class ModelScene(QGraphicsScene):
         connection.updatePath()
         return connection
 
+    def addEntryPointConnection(
+        self,
+        entrypointText,
+        startItem,
+        endItem
+    ):
+
+        connection = EntrypointConnectionItem(
+            entrypointText,
+            startItem,
+            endItem,
+            self
+        )
+
+        self.addItem(connection)
+        connection.restoreLabels()
+        connection.updatePath()
+        return connection
 
     def addAttacker(self, position, name = None):
         newAttackerAttachment = AttackerAttachment()
@@ -237,7 +259,7 @@ class ModelScene(QGraphicsScene):
                 print("Found Asset", item)
                 # self.showAssetContextMenu(event.screenPos(), item)
                 self.showAssetContextMenu(event.screenPos())
-            elif isinstance(item, ConnectionItem):
+            elif isinstance(item, (AssociationConnectionItem,EntrypointConnectionItem)):
                 print("Found Connection Item", item)
                 self.showConnectionItemContextMenu(event.screenPos(), item)
         else:
@@ -342,24 +364,42 @@ class ModelScene(QGraphicsScene):
                 
                 # Create and show the connection dialog
                 if self.endItem:
-                    dialog = ConnectionDialog(self.startItem, self.endItem,self.langGraph, self.lcs,self.model)
-                    if dialog.exec() == QDialog.Accepted:
-                        selectedItem = dialog.associationOrAttackStepListWidget.currentItem()
-                        if selectedItem:
-                            print("Selected Association Text is: "+ selectedItem.text())
-                            # connection = ConnectionItem(selectedItem.text(),self.startItem, self.endItem,self)
-                            # self.addItem(connection)
-                            command = CreateConnectionCommand(
-                                self,
-                                self.startItem,
-                                self.endItem,
-                                selectedItem.text(),
-                                selectedItem.association
-                            )
-                            self.undoStack.push(command)
-                        else:
-                            print("No end item found")
-                            self.removeItem(self.lineItem)
+                    if self.startItem.assetType != 'Attacker' and self.endItem.assetType != 'Attacker':
+                        dialog = AssociationConnectionDialog(self.startItem, self.endItem,self.langGraph, self.lcs,self.model)
+                        if dialog.exec() == QDialog.Accepted:
+                            selectedItem = dialog.associationListWidget.currentItem()
+                            if selectedItem:
+                                print("Selected Association Text is: "+ selectedItem.text())
+                                # connection = AssociationConnectionItem(selectedItem.text(),self.startItem, self.endItem,self)
+                                # self.addItem(connection)
+                                command = CreateAssociationConnectionCommand(
+                                    self,
+                                    self.startItem,
+                                    self.endItem,
+                                    selectedItem.text(),
+                                    selectedItem.association
+                                )
+                                self.undoStack.push(command)
+                            else:
+                                print("No end item found")
+                                self.removeItem(self.lineItem)
+                    else:
+                        dialog = EntrypointConnectionDialog(self.startItem, self.endItem,self.langGraph, self.lcs,self.model)
+                        if dialog.exec() == QDialog.Accepted:
+                            selectedItem = dialog.attackStepListWidget.currentItem()
+                            if selectedItem:
+                                print("Selected Entrypoint Text is: "+ selectedItem.text())
+                                command = CreateEntrypointConnectionCommand(
+                                    self,
+                                    self.startItem,
+                                    self.endItem,
+                                    selectedItem.text(),
+                                    selectedItem.entrypoint
+                                )
+                                self.undoStack.push(command)
+                            else:
+                                print("No end item found")
+                                self.removeItem(self.lineItem)
                 else:
                     print("No end item found")
                     self.removeItem(self.lineItem)
@@ -474,7 +514,7 @@ class ModelScene(QGraphicsScene):
            self.deleteAssets(selectedItems)
            
     def showConnectionItemContextMenu(self,position, connectionItem):
-        print("ConnectionItem Context menu activated")
+        print("AssociationConnectionItem Context menu activated")
         menu = QMenu()
         connectionItemDeleteAction = QAction("Delete Connection", self)
         
@@ -512,11 +552,14 @@ class ModelScene(QGraphicsScene):
                     print("Attacker Selected")
                     self.mainWindow.updateAttackStepsWindow(item)
                     self.mainWindow.updatePropertiesWindow(None)
+                    self.mainWindow.updateAssetRelationsWindow(None)
                 else:
                     self.mainWindow.updatePropertiesWindow(item)  
-                    self.mainWindow.updateAttackStepsWindow(None)      
+                    self.mainWindow.updateAttackStepsWindow(None) 
+                    self.mainWindow.updateAssetRelationsWindow(item)     
         else:
             self.mainWindow.itemDetailsWindow.updateItemDetailsWindow(None)
             self.mainWindow.updatePropertiesWindow(None)
             self.mainWindow.updateAttackStepsWindow(None)
+            self.mainWindow.updateAssetRelationsWindow(None)
 

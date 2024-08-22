@@ -1,22 +1,24 @@
-from PySide6.QtCore import QRectF, Qt,QPointF
-from PySide6.QtGui import QPixmap, QFont, QColor,QBrush,QPen,QPainterPath
-from PySide6.QtWidgets import  QGraphicsItem
+from PySide6.QtCore import QRectF, Qt,QPointF,QSize,QSizeF,QTimer
+from PySide6.QtGui import QPixmap, QFont, QColor,QBrush,QPen,QPainterPath,QFontMetrics,QLinearGradient,QImage,QPainter
+from PySide6.QtWidgets import  QGraphicsItem,QWidget
 
 from .EditableTextItem import EditableTextItem
 
 class AssetBase(QGraphicsItem):
-    
-    assetSequenceId = 100 #Starting Sequence Id with normal start at 100(randomly taken)
-    
+    assetSequenceId = 100  # Starting Sequence Id with normal start at 100(randomly taken) 
+
     def __init__(self, assetType, assetName, imagePath, parent=None):
         super().__init__(parent)
         self.setZValue(1)  # rect items are on top
         self.assetType = assetType
         self.assetName = assetName
-        self.assetSequenceId = AssetBase.generateNextSequenceId() #For Test only this field was added. Need to rethink design with respect to mal toolbox
+        self.assetSequenceId = AssetBase.generateNextSequenceId()
         self.imagePath = imagePath
+        print("image path = "+ self.imagePath)
+
         # self.image = QPixmap(self.imagePath).scaled(30, 30, Qt.KeepAspectRatio)  # Scale the image here
-        self.image = QPixmap(self.imagePath)
+        # self.image = QPixmap(self.imagePath)
+        self.image = self.loadImageWithQuality(self.imagePath, QSize(512, 512))
 
         self.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemSendsGeometryChanges)
 
@@ -26,85 +28,163 @@ class AssetBase(QGraphicsItem):
 
         self.connections = []
         self.initial_position = QPointF()
+
+        # Visual Styling
+        self.width = 240
+        self.height = 70
+        self.size = QRectF(-self.width / 2, -self.height / 2, self.width, self.height)
+
+        self.assetTypeBackgroundColor = QColor(0, 200, 0) #Green
+        self.assetNameBackgroundColor = QColor(20, 20, 20, 200) # Gray
+
+        self.iconPath = None
+        self.iconVisible = True
+        self.iconPixmap = QPixmap()
+
+        self.titlePath = QPainterPath()  # The path for the title
+        self.typePath = QPainterPath()  # The path for the type
+        self.statusPath = QPainterPath()  # A path showing the status of the node
+
+        self.horizontalMargin = 15  # Horizontal margin
+        self.verticalMargin = 15  # Vertical margin
         
-        #Asset Item Styling - Start
-        self.assetTypeBackgroundColor = QColor(204, 204, 255)
-        self.assetNameBackgroundColor = QColor(255, 255, 255)
-        #Asset Item Styling - End
-        
+        self.timer = QTimer()
+        self.statusColor =  QColor(0, 255, 0)
+        self.attackerToggleState = False
+        self.timer.timeout.connect(self.updateStatusColor)
+        #timer to trigger every 500ms (0.5 seconds)
+        self.timer.start(500)
+
+        self.build()
+
     @classmethod
     def generateNextSequenceId(cls):
-        print("generateNextSequenceId is called")
         cls.assetSequenceId += 1
         return cls.assetSequenceId
 
     def boundingRect(self):
-        # Define the bounding rectangle dimensions
-        rectWidth = 250  # Adjust width as necessary
-        rectHeight = 100
-        return QRectF(0, 0, rectWidth, rectHeight)
+        return self.size
 
-    def paint(self, painter, option, widget):
-        rect = self.boundingRect()
+    def paint(self, painter, option, widget=None):
+        painter.setPen(self.assetNameBackgroundColor.lighter())
+        painter.setBrush(self.assetNameBackgroundColor)
+        painter.drawPath(self.path)
 
-        # Calculate the height proportions
-        upperHeight = rect.height() * 0.6
-        lowerHeight = rect.height() * 0.4
+        gradient = QLinearGradient()
+        gradient.setStart(0, -90)
+        gradient.setFinalStop(0, 0)
+        gradient.setColorAt(0, self.assetTypeBackgroundColor)  # Start color
+        gradient.setColorAt(1, self.assetTypeBackgroundColor.darker())  # End color
 
-        # upper and lower rectangle regions
-        upperHalfRect = QRectF(0, 0, rect.width(), upperHeight)
-        lowerHalfRect = QRectF(0, upperHeight, rect.width(), lowerHeight)
+        painter.setBrush(QBrush(gradient))
+        painter.setPen(self.assetTypeBackgroundColor)
+        painter.drawPath(self.titleBgPath.simplified())
 
-        # upper half of the rectangle with a specific RGB background
-        painter.setBrush(self.assetTypeBackgroundColor )  # Light blue brush for the upper half
         painter.setPen(Qt.NoPen)
-        painter.drawRect(upperHalfRect)
+        painter.setBrush(Qt.white)
+        painter.drawPath(self.titlePath)
+        painter.drawPath(self.typePath)
 
-        # lower half of the rectangle with a different RGB background
-        # painter.setBrush(QColor(254, 204, 2))  # Color1 is top
-        painter.setBrush(self.assetNameBackgroundColor )  # Color2 is bottom
+        # Draw the status path
+        painter.setBrush(self.statusColor)
+        painter.setPen(self.statusColor.darker())
+        painter.drawPath(self.statusPath.simplified())
 
-        painter.drawRect(lowerHalfRect)
+        # Draw the icon if it's visible
+        if self.iconVisible and not self.image.isNull():
+            originalIconSize = self.image.size()
+            targetIconSize = QSize(24, 24)  # Desired size for the icon
 
-        # Draw a line between the upper and lower halves
-        painter.setPen(QPen(Qt.black))
-        painter.drawLine(0, upperHeight, rect.width(), upperHeight)
+            # Resize the icon using smooth transformation
+            # resizedImageIcon = self.image.scaled(targetIconSize, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            resizedImageIcon = self.image
 
-        # Draw the image in the upper half
-        imageRect = QRectF(10, 10, 40, 40)  # Adjusted position for the image in the upper half
-        painter.drawPixmap(imageRect.toRect(), self.image)
 
-        # Set font size, increased by 10%
-        fontSize = 12 * 1.2
+            # Calculate the position and size for the icon background
+            iconRect = QRectF(-self.width / 2 + 10, -self.height / 2 + 10, targetIconSize.width(), targetIconSize.height())
+            margin = 5  # Margin around the icon
 
-        # Set font for block name (light font)
-        lightFont = QFont("Arial", fontSize, QFont.Light)
-        painter.setFont(lightFont)
+            # Draw the background for the icon with additional margin
+            backgroundRect = QRectF(
+                iconRect.topLeft() - QPointF(margin, margin),
+                QSizeF(targetIconSize.width() + 2 * margin, targetIconSize.height() + 2 * margin)
+            )
+            painter.setBrush(Qt.white)  # Set the brush color to white
+            painter.drawRect(backgroundRect.toRect())  # Convert QRectF to QRect and draw the white background rectangle
 
-        # Draw block name (upper half of rectangle)
-        nameRect = QRectF(80, 5, rect.width(), upperHeight - 10)  # Adjusted position for the text
-        painter.setPen(QColor(100, 100, 100))
-        painter.drawText(nameRect, Qt.AlignVCenter, self.assetType)
+            # Draw the resized icon on top of the white background
+            painter.drawPixmap(iconRect.toRect(), resizedImageIcon)  # Convert QRectF to QRect and draw the resized icon
 
-        # Set position for the type text item (bottom half of rectangle)
-        self.typeTextItem.setPos(75, upperHeight + 5)  # Adjusted position for the type text item
-
-        # Draw the border around the entire rectangle (no rounded corners)
+        # Draw the highlight if selected
         if self.isSelected():
-            pen = QPen(QColor(0, 0, 255), 4)  # Blue border with a thickness of 4
-            painter.setPen(pen)
-        else:
-            painter.setPen(QPen(Qt.black))
-
-        painter.setBrush(Qt.NoBrush)  # Ensure the border doesn't fill with color
-        painter.drawRect(rect)  # Draw border around the entire rectangle
+            painter.setPen(QPen(self.assetTypeBackgroundColor.lighter(), 2))
+            painter.setBrush(Qt.NoBrush)
+            painter.drawPath(self.path)
 
 
+    def build(self):
+        self.titleText = self.assetType
+        self.titlePath = QPainterPath()
+        self.typePath = QPainterPath()
+        self.statusPath = QPainterPath()
 
+        # Set the font for title and category
+        titleFont = QFont("Arial", pointSize=12)
+        typeFont = QFont("Arial", pointSize=12)
+
+        # Use fixed width and height
+        fixedWidth = self.width
+        fixedHeight = self.height
+
+        # Draw the background of the node
+        self.path = QPainterPath()
+        self.path.addRoundedRect(-fixedWidth / 2, -fixedHeight / 2, fixedWidth, fixedHeight, 6, 6)
+
+        self.titleBgPath = QPainterPath()
+        self.titleBgPath.addRoundedRect(-fixedWidth / 2, -fixedHeight / 2, fixedWidth, titleFont.pointSize() + 2 * self.verticalMargin, 6, 6)
+
+        # Draw status path
+        self.statusPath.setFillRule(Qt.WindingFill)
+        self.statusPath.addRoundedRect(fixedWidth / 2 - 12, -fixedHeight / 2 + 2, 10, 10, 2, 2)
+
+        # Center title in the upper half
+        titleFontMetrics = QFontMetrics(titleFont)
+        self.titlePath.addText(
+            -titleFontMetrics.horizontalAdvance(self.titleText) / 2,  # Center horizontally
+            -fixedHeight / 2 + self.verticalMargin + titleFontMetrics.ascent(),  # Center vertically within its section
+            titleFont,
+            self.titleText
+        )
+
+        # Set the font and default color for typeTextItem
+        self.typeTextItem.setFont(typeFont)
+        self.typeTextItem.setDefaultTextColor(Qt.white)  # Set text color to white
+
+        # Initial position of typeTextItem
+        self.updateTypeTextItemPosition()
+
+        # Connect the lostFocus signal to update the position when the text loses focus
+        self.typeTextItem.lostFocus.connect(self.updateTypeTextItemPosition)
+
+        # self.widget.move(-self.widget.size().width() / 2, fixedHeight / 2 - self.widget.size().height() + 5)
+
+    def updateTypeTextItemPosition(self):
+        #to update the position of the typeTextItem so that it remains centered within the lower half of the node whenever the text changes.
+
+        typeFontMetrics = QFontMetrics(self.typeTextItem.font())
+        fixedHeight = self.height
+        titleFontMetrics = QFontMetrics(QFont("Arial", pointSize=12))
+
+        # Calculate the new position for typeTextItem
+        typeTextItemPosX = -typeFontMetrics.horizontalAdvance(self.typeTextItem.toPlainText()) / 2
+        typeTextItemPosY = -fixedHeight / 2 + titleFontMetrics.height() + 2 * self.verticalMargin
+
+        # Update position
+        self.typeTextItem.setPos(typeTextItemPosX, typeTextItemPosY)
 
     def addConnection(self, connection):
         self.connections.append(connection)
-        
+
     def removeConnection(self, connection):
         if connection in self.connections:
             self.connections.remove(connection)
@@ -132,37 +212,67 @@ class AssetBase(QGraphicsItem):
         self.assetName = self.typeTextItem.toPlainText()
         self.typeTextItem.setTextInteractionFlags(Qt.NoTextInteraction)
         self.typeTextItem.deselectText()
+        
+        self.updateTypeTextItemPosition()
+        
         if self.assetType == "Attacker":
             self.attackerAttachment.name = self.assetName
         else:
             self.asset.name = self.assetName
-        
         associatedScene = self.typeTextItem.scene()
         if associatedScene:
             print("Asset Name Changed by user")
-            #Update the Object Explorer when number of items change
             associatedScene.mainWindow.updateChildsInObjectExplorerSignal.emit()
 
-
     def focusOutEvent(self, event):
-        # Clear focus from typeTextItem when focus is lost
         self.typeTextItem.clearFocus()
         super().focusOutEvent(event)
 
     def mousePressEvent(self, event):
-        # Store the initial position when the item is clicked
         self.initial_position = self.pos()
-        
+
         if self.typeTextItem.hasFocus() and not self.typeTextItem.contains(event.pos()):
             self.typeTextItem.clearFocus()
         elif not self.typeTextItem.contains(event.pos()):
             self.typeTextItem.deselectText()
         else:
             super().mousePressEvent(event)
-            
+
     def getItemAttributeValues(self):
         return {
-            "Asset Sequence ID" : self.assetSequenceId,
-            "Asset Name" : self.assetName,
-            "Asset Type" : self.assetType
+            "Asset Sequence ID": self.assetSequenceId,
+            "Asset Name": self.assetName,
+            "Asset Type": self.assetType
         }
+
+    def setIcon(self, iconPath=None):
+        self.iconPath = iconPath
+        if self.image:
+            self.iconPixmap = QPixmap(iconPath)
+        else:
+            self.iconPixmap = QPixmap()
+
+    def toggleIconVisibility(self):
+        self.iconVisible = not self.iconVisible
+        self.update()
+
+    def updateStatusColor(self):
+        if self.assetType =='Attacker':
+            self.attackerToggleState = not self.attackerToggleState
+            if self.attackerToggleState:
+                self.statusColor =  QColor(0, 255, 0) #Green
+            else: 
+                self.statusColor =  QColor(255, 0, 0) #Red
+        
+        #Otherwise return Green for all assets
+        else:
+            self.statusColor =  QColor(0, 255, 0)
+        
+        self.update()
+    
+    def loadImageWithQuality(self, path, size):
+        image = QImage(path)
+        if not image.isNull():
+            return QPixmap.fromImage(image.scaled(size, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        return QPixmap()
+        
