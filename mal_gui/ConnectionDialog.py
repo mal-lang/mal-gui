@@ -158,12 +158,12 @@ class EntrypointConnectionDialog(ConnectionDialog):
             assetType = self.langGraph.get_asset_by_name(assetItem.asset.type)
 
             # Find asset attack steps already part of attacker entry points
-            entry_point_attack_steps = next(
-                (entry_point_tuple[1] for entry_point_tuple
-                 in attacker.entry_points
-                 if entry_point_tuple[0] == assetItem.asset),
-                 []
-            )
+            entry_point_tuple = attacker.get_entry_point_tuple(
+                assetItem.asset)
+            if entry_point_tuple is not None:
+                entry_point_attack_steps = entry_point_tuple[1]
+            else:
+                entry_point_attack_steps = []
 
             for attackStep in assetType.attack_steps:
                 if attackStep.type not in ['or', 'and']:

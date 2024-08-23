@@ -242,7 +242,12 @@ class MainWindow(QMainWindow):
     def updateAttackStepsWindow(self, attackerAssetItem):
         if attackerAssetItem is not None:
             self.attackStepsDockedWindow.clear()
-            self.attackStepsDockedWindow.addItems(attackerAssetItem.attackerAttachment.entry_points)
+            for asset, attack_step_names in \
+                    attackerAssetItem.attackerAttachment.entry_points:
+                for attack_step_name in attack_step_names:
+                    self.attackStepsDockedWindow.addItem(
+                        asset.name + ':' + attack_step_name
+                    )
         else:
             self.attackStepsDockedWindow.clear()
             

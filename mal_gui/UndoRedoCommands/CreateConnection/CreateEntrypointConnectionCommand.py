@@ -23,7 +23,7 @@ class CreateEntrypointConnectionCommand(QUndoCommand):
             self.attackerItem,
             self.assetItem
         )
-        self.attackerItem.attackerAttachment.add_entrypoint(
+        self.attackerItem.attackerAttachment.add_entry_point(
             self.assetItem.asset, self.attackStepName
         )
 
@@ -31,6 +31,6 @@ class CreateEntrypointConnectionCommand(QUndoCommand):
         self.connection.removeLabels()
         self.scene.removeItem(self.connection)
 
-        self.attacker.attackerAttachment.remove_entrypoint(
+        self.attacker.attackerAttachment.remove_entry_point(
             self.assetItem.asset, self.attackStepName
         )
