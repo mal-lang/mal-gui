@@ -250,17 +250,24 @@ class MainWindow(QMainWindow):
                     )
         else:
             self.attackStepsDockedWindow.clear()
-            
+
     def updateAssetRelationsWindow(self, assetItem):
-        # assetItem.asset.associations[0]._properties.items()
+        self.assetRelationsDockedWindow.clear()
         if assetItem is not None:
-            for association in assetItem.asset.associations:
-                self.assetRelationsDockedWindow.clear()
-                for propertyKey,propertyValue in association._properties.items():
-                    self.assetRelationsDockedWindow.addItem(str(propertyKey)+ "-->"+ str(propertyValue) )
-        else:
-            self.assetRelationsDockedWindow.clear()
-            
+            asset = assetItem.asset
+            for association in asset.associations:
+                left_field_name, right_field_name = \
+                    self.scene.model.get_association_field_names(association)
+                if asset in getattr(association, left_field_name):
+                    opposite_field_name = right_field_name
+                else:
+                    opposite_field_name = left_field_name
+
+                for associated_asset in getattr(association,
+                        opposite_field_name):
+                    self.assetRelationsDockedWindow.addItem(
+                        opposite_field_name + "-->" + associated_asset.name)
+
     def createActions(self):
 
         self.zoomInAction = QAction(QIcon("images/zoomIn.png"), "ZoomIn", self)
