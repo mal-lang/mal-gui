@@ -210,15 +210,15 @@ class ModelScene(QGraphicsScene):
 
     def addEntryPointConnection(
         self,
-        entrypointText,
-        startItem,
-        endItem
+        attackStepName,
+        attackerItem,
+        assetItem
     ):
 
         connection = EntrypointConnectionItem(
-            entrypointText,
-            startItem,
-            endItem,
+            attackStepName,
+            attackerItem,
+            assetItem,
             self
         )
 
@@ -384,17 +384,24 @@ class ModelScene(QGraphicsScene):
                                 print("No end item found")
                                 self.removeItem(self.lineItem)
                     else:
-                        dialog = EntrypointConnectionDialog(self.startItem, self.endItem,self.langGraph, self.lcs,self.model)
+
+                        if self.startItem.assetType == self.endItem.assetType:
+                            raise TypeError("Start and end item can not both be type 'Attacker'")
+
+                        attackerItem = self.startItem if self.startItem.assetType == 'Attacker' else self.endItem
+                        assetItem = self.endItem if self.startItem.assetType == 'Attacker' else self.startItem
+
+                        dialog = EntrypointConnectionDialog(
+                            attackerItem, assetItem, self.langGraph, self.lcs,self.model)
                         if dialog.exec() == QDialog.Accepted:
                             selectedItem = dialog.attackStepListWidget.currentItem()
                             if selectedItem:
                                 print("Selected Entrypoint Text is: "+ selectedItem.text())
                                 command = CreateEntrypointConnectionCommand(
                                     self,
-                                    self.startItem,
-                                    self.endItem,
+                                    attackerItem,
+                                    assetItem,
                                     selectedItem.text(),
-                                    selectedItem.entrypoint
                                 )
                                 self.undoStack.push(command)
                             else:

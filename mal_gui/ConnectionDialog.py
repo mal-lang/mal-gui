@@ -53,6 +53,7 @@ class AssociationConnectionDialog(ConnectionDialog):
         if langGraphEndAsset is None:
             raise LookupError(f'Failed to find asset "{endAsset.type}" '
                 'in language graph.')
+
         self._str_to_assoc = {}
         for assoc in langGraphStartAsset.associations:
             assetPairs = []
@@ -137,47 +138,45 @@ class AssociationConnectionDialog(ConnectionDialog):
         self.accept()
         
 class EntrypointConnectionDialog(ConnectionDialog):
-    def __init__(self, startItem, endItem,langGraph, lcs,model,parent=None):
+    def __init__(self, attackerItem, assetItem, langGraph, lcs, model, parent=None):
         super().__init__(parent)
 
         self.langGraph = langGraph
         self.lcs = lcs
         self.model = model
-        
+
         self.setWindowTitle("Select Entry Point")
         self.setMinimumWidth(300)
 
-        print(f'START ITEM TYPE {startItem.assetType}')
-        print(f'END ITEM TYPE {endItem.assetType}')
+        print(f'Attacker ITEM TYPE {attackerItem.assetType}')
+        print(f'Asset ITEM TYPE {assetItem.assetType}')
 
-        targetAsset = None
         self.attackStepListWidget = QListWidget()
+        attacker = attackerItem.attackerAttachment
 
-        if startItem.assetType == 'Attacker':
-            targetAsset = endItem.asset
-            attacker = startItem.attackerAttachment
-        elif endItem.assetType == 'Attacker':
-            targetAsset = startItem.asset
-            attacker = endItem.attackerAttachment
+        if assetItem.asset is not None:
+            assetType = self.langGraph.get_asset_by_name(assetItem.asset.type)
 
-        if targetAsset is not None:
-            assetType = self.langGraph.get_asset_by_name(targetAsset.type)
+            # Find asset attack steps already part of attacker entry points
+            entry_point_attack_steps = next(
+                (entry_point_tuple[1] for entry_point_tuple
+                 in attacker.entry_points
+                 if entry_point_tuple[0] == assetItem.asset),
+                 []
+            )
+
             for attackStep in assetType.attack_steps:
-                # attackStep.name should actually be the user selection
-                # instead
                 if attackStep.type not in ['or', 'and']:
                     continue
-                attackStepName = targetAsset.name + ":" + attackStep.name
-                if attackStepName not in attacker.entry_points:
+
+                if attackStep.name not in entry_point_attack_steps:
                     print(attackStep.name)
-                    # attacker.entry_points.append(targetAsset,
-                    # [attackStepName])
-                    
-                    self.attackStepListWidget.addItem(QListWidgetItem(attackStep.name))
-            
+                    item = QListWidgetItem(attackStep.name)
+                    self.attackStepListWidget.addItem(item)
+
             self.layout = QVBoxLayout()
 
-            self.label = QLabel(f"{attacker.name}:{targetAsset.name}")
+            self.label = QLabel(f"{attacker.name}:{assetItem.asset.name}")
             self.layout.addWidget(self.label)
 
             self.filterEdit = QLineEdit()
@@ -204,19 +203,11 @@ class EntrypointConnectionDialog(ConnectionDialog):
 
         # Select the first item by default
         self.attackStepListWidget.setCurrentRow(0)
-    
+
     def filterItems(self, text):
         for i in range(self.attackStepListWidget.count()):
             item = self.attackStepListWidget.item(i)
             item.setHidden(text.lower() not in item.text().lower())
 
     def OkButtonClicked(self):
-        selectedItem = self.attackStepListWidget.currentItem()
-        if selectedItem:
-            selectedEntrypointText = selectedItem.text()
-            # QMessageBox.information(self, "Selected Item", f"You selected: {selectedEntrypointText}")
-    
-            #Attacker's EntryPoint
-            entrypoint = selectedItem.text()
-            selectedItem.entrypoint = entrypoint
         self.accept()

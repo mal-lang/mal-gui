@@ -158,38 +158,27 @@ class AssociationConnectionItem(IConnectionItem):
 class EntrypointConnectionItem(IConnectionItem):
     def __init__(
         self,
-        selectedEntrypointText,
-        startItem,
-        endItem,
+        attackStepName,
+        attackerItem,
+        assetItem,
         scene,
         parent = None
     ):
         super().__init__(parent)
-        
+
         pen = QPen(QColor(255, 0, 0), 2)  # Red color with 2-pixel thickness
         self.setPen(pen)
-        
+
         self.setZValue(0)  # Ensure connection items are behind rect items
-        
-        self.startItem = startItem
-        self.endItem = endItem
+
+        self.attackerItem = attackerItem
+        self.assetItem = assetItem
         self.scene = scene
-        
-        self.startItem.addConnection(self)
-        self.endItem.addConnection(self)
-        
-        if self.startItem.assetType == 'Attacker':
-                attacker = self.startItem.attackerAttachment
-                target = str(self.endItem.assetName)
-        else:
-            attacker = self.endItem.attackerAttachment
-            target = str(self.startItem.assetName)
-            
-        #selectedAssociationText is representing 'AttackStep' name
-        attacker.entry_points.append(target + ' -> ' + selectedEntrypointText)
-        
-        self.labelEntrypoint = self.createLabel(selectedEntrypointText)
-            
+
+        self.attackerItem.addConnection(self)
+        self.assetItem.addConnection(self)
+        self.labelEntrypoint = self.createLabel(attackStepName)
+
     def createLabel(self, text):
         # Create the label
         label = QGraphicsTextItem(text)
@@ -211,20 +200,20 @@ class EntrypointConnectionItem(IConnectionItem):
         """
         Draws a straight line from the start to end items and updates label positions.
         """
-        self.startPos = self.startItem.sceneBoundingRect().center()
-        self.endPos = self.endItem.sceneBoundingRect().center()
+        self.startPos = self.attackerItem.sceneBoundingRect().center()
+        self.endPos = self.assetItem.sceneBoundingRect().center()
         self.setLine(QLineF(self.startPos, self.endPos))
-        
-        # Calculate offsets to position labels outside the bounding rectangles
-        start_rect = self.startItem.sceneBoundingRect()
-        end_rect = self.endItem.sceneBoundingRect()
-        
 
         labelEntrypointPos = self.line().pointAt(0.5)
-        self.labelEntrypoint.setPos(labelEntrypointPos - QPointF(self.labelEntrypoint.boundingRect().width() / 2, self.labelEntrypoint.boundingRect().height() / 2))
-        
+        self.labelEntrypoint.setPos(
+            labelEntrypointPos - QPointF(
+                self.labelEntrypoint.boundingRect().width() / 2,
+                self.labelEntrypoint.boundingRect().height() / 2
+            )
+        )
+
     def removeLabels(self):
         self.scene.removeItem(self.labelEntrypoint)
-    
+
     def restoreLabels(self):
         self.scene.addItem(self.labelEntrypoint)
