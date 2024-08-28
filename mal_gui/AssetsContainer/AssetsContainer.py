@@ -2,17 +2,17 @@ from PySide6.QtCore import QRectF, Qt,QPointF,QSize,QSizeF,QTimer
 from PySide6.QtGui import QPixmap, QFont, QColor,QBrush,QPen,QPainterPath,QFontMetrics,QLinearGradient,QImage,QPainter
 from PySide6.QtWidgets import  QGraphicsItem,QWidget
 
-from .EditableTextItem import EditableTextItem
+from ObjectExplorer.EditableTextItem import EditableTextItem
 
-class AssetBase(QGraphicsItem):
-    assetSequenceId = 100  # Starting Sequence Id with normal start at 100(randomly taken) 
-
-    def __init__(self, assetType, assetName, imagePath, parent=None):
+class AssetsContainer(QGraphicsItem):
+    containerSequenceId = 100  # Starting Sequence Id with normal start at 100(randomly taken) 
+    
+    def __init__(self, containerType, containerName, imagePath, parent=None):
         super().__init__(parent)
         self.setZValue(1)  # rect items are on top
-        self.assetType = assetType
-        self.assetName = assetName
-        self.assetSequenceId = AssetBase.generateNextSequenceId()
+        self.containerType = containerType
+        self.containerName = containerName
+        self.containerSequenceId = AssetsContainer.generateNextSequenceId()
         self.imagePath = imagePath
         print("image path = "+ self.imagePath)
 
@@ -23,10 +23,10 @@ class AssetBase(QGraphicsItem):
         self.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemSendsGeometryChanges)
 
         # Create the editable text item for block type
-        self.typeTextItem = EditableTextItem(self.assetName, self)
-        self.typeTextItem.lostFocus.connect(self.updateAssetName)
+        self.typeTextItem = EditableTextItem(self.containerName, self)
+        self.typeTextItem.lostFocus.connect(self.updateContainerName)
 
-        self.connections = []
+        self.containerizedAssetsList = []
         self.initial_position = QPointF()
 
         # Visual Styling
@@ -34,8 +34,8 @@ class AssetBase(QGraphicsItem):
         self.height = 70
         self.size = QRectF(-self.width / 2, -self.height / 2, self.width, self.height)
 
-        self.assetTypeBackgroundColor = QColor(0, 200, 0) #Green
-        self.assetNameBackgroundColor = QColor(20, 20, 20, 200) # Gray
+        self.containerTypeBackgroundColor = QColor(0, 200, 255) #Blue
+        self.containerNameBackgroundColor = QColor(20, 20, 20, 200) # Gray
 
         self.iconPath = None
         self.iconVisible = True
@@ -59,25 +59,25 @@ class AssetBase(QGraphicsItem):
 
     @classmethod
     def generateNextSequenceId(cls):
-        cls.assetSequenceId += 1
-        return cls.assetSequenceId
+        cls.containerSequenceId += 1
+        return cls.containerSequenceId
 
     def boundingRect(self):
         return self.size
 
     def paint(self, painter, option, widget=None):
-        painter.setPen(self.assetNameBackgroundColor.lighter())
-        painter.setBrush(self.assetNameBackgroundColor)
+        painter.setPen(self.containerNameBackgroundColor.lighter())
+        painter.setBrush(self.containerNameBackgroundColor)
         painter.drawPath(self.path)
 
         gradient = QLinearGradient()
         gradient.setStart(0, -90)
         gradient.setFinalStop(0, 0)
-        gradient.setColorAt(0, self.assetTypeBackgroundColor)  # Start color
-        gradient.setColorAt(1, self.assetTypeBackgroundColor.darker())  # End color
+        gradient.setColorAt(0, self.containerTypeBackgroundColor)  # Start color
+        gradient.setColorAt(1, self.containerTypeBackgroundColor.darker())  # End color
 
         painter.setBrush(QBrush(gradient))
-        painter.setPen(self.assetTypeBackgroundColor)
+        painter.setPen(self.containerTypeBackgroundColor)
         painter.drawPath(self.titleBgPath.simplified())
 
         painter.setPen(Qt.NoPen)
@@ -117,13 +117,13 @@ class AssetBase(QGraphicsItem):
 
         # Draw the highlight if selected
         if self.isSelected():
-            painter.setPen(QPen(self.assetTypeBackgroundColor.lighter(), 2))
+            painter.setPen(QPen(self.containerTypeBackgroundColor.lighter(), 2))
             painter.setBrush(Qt.NoBrush)
             painter.drawPath(self.path)
 
 
     def build(self):
-        self.titleText = self.assetType
+        self.titleText = self.containerType
         self.titlePath = QPainterPath()
         self.typePath = QPainterPath()
         self.statusPath = QPainterPath()
@@ -181,23 +181,12 @@ class AssetBase(QGraphicsItem):
 
         # Update position
         self.typeTextItem.setPos(typeTextItemPosX, typeTextItemPosY)
-        
-        #For Attacker make the background of type As Red - Change Request from Professor Mathias
-        if self.assetType == 'Attacker':
-            self.assetTypeBackgroundColor = QColor(255, 0, 0) #Red
 
-    def addConnection(self, connection):
-        self.connections.append(connection)
 
-    def removeConnection(self, connection):
-        if connection in self.connections:
-            self.connections.remove(connection)
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
             if self.pos() != self.initial_position:
-                for connection in self.connections:
-                    connection.updatePath()
                 self.initial_position = self.pos()
             if self.scene():
                 self.scene().update()  # Ensure the scene is updated - this fixed trailing borders issue
@@ -212,21 +201,18 @@ class AssetBase(QGraphicsItem):
         else:
             event.ignore()
 
-    def updateAssetName(self):
-        self.assetName = self.typeTextItem.toPlainText()
+    def updateContainerName(self):
+        self.containerName = self.typeTextItem.toPlainText()
         self.typeTextItem.setTextInteractionFlags(Qt.NoTextInteraction)
         self.typeTextItem.deselectText()
         
         self.updateTypeTextItemPosition()
         
-        if self.assetType == "Attacker":
-            self.attackerAttachment.name = self.assetName
-        else:
-            self.asset.name = self.assetName
+        self.container.name = self.containerName
+        
         associatedScene = self.typeTextItem.scene()
         if associatedScene:
-            print("Asset Name Changed by user")
-            associatedScene.mainWindow.updateChildsInObjectExplorerSignal.emit()
+            print("Container Name Changed by user")
 
     def focusOutEvent(self, event):
         self.typeTextItem.clearFocus()
@@ -244,9 +230,9 @@ class AssetBase(QGraphicsItem):
 
     def getItemAttributeValues(self):
         return {
-            "Asset Sequence ID": self.assetSequenceId,
-            "Asset Name": self.assetName,
-            "Asset Type": self.assetType
+            "Container Sequence ID": self.containerSequenceId,
+            "Container Name": self.containerName,
+            "Container Type": self.containerType
         }
 
     def setIcon(self, iconPath=None):
@@ -261,17 +247,7 @@ class AssetBase(QGraphicsItem):
         self.update()
 
     def updateStatusColor(self):
-        if self.assetType =='Attacker':
-            self.attackerToggleState = not self.attackerToggleState
-            if self.attackerToggleState:
-                self.statusColor =  QColor(0, 255, 0) #Green
-            else: 
-                self.statusColor =  QColor(255, 0, 0) #Red
-        
-        #Otherwise return Green for all assets
-        else:
-            self.statusColor =  QColor(0, 255, 0)
-        
+        self.statusColor =  QColor(0, 255, 0)
         self.update()
     
     def loadImageWithQuality(self, path, size):

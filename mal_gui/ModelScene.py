@@ -6,6 +6,7 @@ from ConnectionItem import AssociationConnectionItem,EntrypointConnectionItem
 from ConnectionDialog import AssociationConnectionDialog,EntrypointConnectionDialog
 from ObjectExplorer.AssetBase import AssetBase
 from ObjectExplorer.EditableTextItem import EditableTextItem
+from AssetsContainer.AssetsContainer import AssetsContainer
 
 import pickle
 import base64
@@ -19,6 +20,7 @@ from UndoRedoCommands.DragDrop.DragDropCommand import DragDropCommand
 from UndoRedoCommands.CreateConnection.CreateAssociationConnectionCommand import CreateAssociationConnectionCommand
 from UndoRedoCommands.CreateConnection.CreateEntrypointConnectionCommand import CreateEntrypointConnectionCommand
 from UndoRedoCommands.DeleteConnection.DeleteConnectionCommand import DeleteConnectionCommand
+from UndoRedoCommands.Containerize.ContainerizeAssetsCommand import ContainerizeAssetsCommand
 
 
 from maltoolbox.language import LanguageGraph, LanguageClassesFactory
@@ -262,6 +264,9 @@ class ModelScene(QGraphicsScene):
             elif isinstance(item, (AssociationConnectionItem,EntrypointConnectionItem)):
                 print("Found Connection Item", item)
                 self.showConnectionItemContextMenu(event.screenPos(), item)
+            elif isinstance(item,AssetsContainer):
+                print("Found Assets Container item",item)
+                self.showAssetsContainerContextMenu(event.screenPos(), item)
         else:
             self.showSceneContextMenu(event.screenPos(),event.scenePos())
 
@@ -288,7 +293,7 @@ class ModelScene(QGraphicsScene):
                 return #Fix: Without this return the AssetBaseItem was moving along while drawing line.
         elif event.button() == Qt.LeftButton:
             item = self.itemAt(event.scenePos(), QTransform())
-            if item and isinstance(item, (AssetBase, EditableTextItem)):
+            if item and isinstance(item, (AssetBase, EditableTextItem,AssetsContainer)):
                 if isinstance(item, EditableTextItem):
                     assetItem = item.parentItem()
                     if isinstance(assetItem, AssetBase):
@@ -450,6 +455,34 @@ class ModelScene(QGraphicsScene):
         print("Delete asset is called..")
         command = DeleteCommand(self, selectedAssets)
         self.undoStack.push(command)
+        
+    def containerizeAssets(self,selectedAssets):
+        print("Containerization of assets requested..")
+        command = ContainerizeAssetsCommand(self,selectedAssets)
+        self.undoStack.push(command)
+        
+    def decontainerizeAssets(self,currentlySelectedContainer):
+        # Add items back to the scene
+        
+        currentPositionOfContainer = currentlySelectedContainer.scenePos()
+        availableConnectionsInItem = []
+        
+        for itemEntry in currentlySelectedContainer.containerizedAssetsList:
+            item = itemEntry['item']
+            originalPositionOfItem = currentPositionOfContainer  + itemEntry['offset']
+            self.addItem(item)
+            item.setPos(originalPositionOfItem)
+        
+            if hasattr(item, 'connections'):
+                availableConnectionsInItem.extend(item.connections.copy())
+        
+        # Restore connections
+        for connection in availableConnectionsInItem:
+            self.addItem(connection)
+            connection.restoreLabels()
+            connection.updatePath()
+            
+        self.removeItem(currentlySelectedContainer)
 
     def serializeGraphicsItems(self, items, cutIntended):
         objdetails = []
@@ -505,10 +538,12 @@ class ModelScene(QGraphicsScene):
         assetCutAction = QAction("Cut Asset", self)
         assetCopyAction = QAction("Copy Asset", self)
         assetDeleteAction = QAction("Delete Asset", self)
+        assetContainerizationAction = QAction("Group Asset(s)", self)
         
         menu.addAction(assetCutAction)
         menu.addAction(assetCopyAction)
         menu.addAction(assetDeleteAction)
+        menu.addAction(assetContainerizationAction)
         action = menu.exec(position) 
         
         selectedItems = self.selectedItems()  # Get all selected items
@@ -519,6 +554,8 @@ class ModelScene(QGraphicsScene):
            self.copyAssets(selectedItems)
         if action == assetDeleteAction:
            self.deleteAssets(selectedItems)
+        if action == assetContainerizationAction:
+           self.containerizeAssets(selectedItems)
            
     def showConnectionItemContextMenu(self,position, connectionItem):
         print("AssociationConnectionItem Context menu activated")
@@ -531,6 +568,17 @@ class ModelScene(QGraphicsScene):
         #In future we may want more option. So "if" condition.
         if action == connectionItemDeleteAction:
             self.deleteConnection(connectionItem)
+
+    def showAssetsContainerContextMenu(self,position,currentlySelectedContainer):
+        print("Assets Container Context menu activated")
+        menu = QMenu()
+        assetsUngroupAction = QAction("Ungroup Asset(s)", self)
+        
+        menu.addAction(assetsUngroupAction)
+        action = menu.exec(position)
+        
+        if action == assetsUngroupAction:
+            self.decontainerizeAssets(currentlySelectedContainer)
 
     def showSceneContextMenu(self, screenPos,scenePos):
         print("Scene Context menu activated")

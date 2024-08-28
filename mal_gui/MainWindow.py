@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt,QMimeData,QByteArray,QSize,Signal,QPointF
 from ModelScene import ModelScene
 from ModelView import ModelView
 from ObjectExplorer.AssetBase import AssetBase
+from AssetsContainer.AssetsContainer import AssetsContainer
 
 from ConnectionItem import AssociationConnectionItem
 
@@ -185,11 +186,11 @@ class MainWindow(QMainWindow):
             if isinstance(connection, AssociationConnectionItem):
                 connection.updatePath()
     
-    def showAssetIconCheckBoxChanged(self,checked):
-        print("self.showAssetIconCheckBoxChanged clicked")
-        for assetItem in self.scene.items():
-            if isinstance(assetItem, AssetBase):
-                assetItem.toggleIconVisibility()
+    def showImageIconCheckBoxChanged(self,checked):
+        print("self.showImageIconCheckBoxChanged clicked")
+        for item in self.scene.items():
+            if isinstance(item, (AssetBase,AssetsContainer)):
+                item.toggleIconVisibility()
                 
     def fitToViewButtonClicked(self):
         print("Fit To View Button Clicked..")  
@@ -349,12 +350,12 @@ class MainWindow(QMainWindow):
         
         self.toolbar.addSeparator()
 
-        showAssetIconCheckBoxLabel  = QLabel("Show Asset Icon")
-        showAssetIconCheckBox = QCheckBox()
-        showAssetIconCheckBox.setCheckState(Qt.CheckState.Checked)
-        self.toolbar.addWidget(showAssetIconCheckBoxLabel)
-        self.toolbar.addWidget(showAssetIconCheckBox)
-        showAssetIconCheckBox.stateChanged.connect(self.showAssetIconCheckBoxChanged)
+        showImageIconCheckBoxLabel  = QLabel("Show Image Icon")
+        showImageIconCheckBox = QCheckBox()
+        showImageIconCheckBox.setCheckState(Qt.CheckState.Checked)
+        self.toolbar.addWidget(showImageIconCheckBoxLabel)
+        self.toolbar.addWidget(showImageIconCheckBox)
+        showImageIconCheckBox.stateChanged.connect(self.showImageIconCheckBoxChanged)
 
         self.toolbar.addSeparator()
 
