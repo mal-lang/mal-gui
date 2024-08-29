@@ -36,11 +36,6 @@ class ContainerizeAssetsCommand(QUndoCommand):
         #Display the container at centroid location
         self.scene.addItem(self.newAssetsContainer)
         self.newAssetsContainer.setPos(self.centroid)
-          
-        # Store the connections before removing the items
-        for connection in self.connections:
-            connection.removeLabels()
-            self.scene.removeItem(connection)
         
         for item in self.items:
             if isinstance(item,AssetBase):
@@ -70,7 +65,10 @@ class ContainerizeAssetsCommand(QUndoCommand):
             if isRedo:
                 #Store item and offset because items moving towards centroid
                 self.newAssetsContainer.containerizedAssetsList.append({'item': item, 'offset': item.offsetFromCentroid})
-                self.scene.removeItem(item)
+                item.setPos(self.centroid)
+                self.updateConnections(item)
+                
+                self.newAssetsContainer.itemMoved = lambda: self.updateItemsPositionRelativeToContainer()
             else:
                 self.newAssetsContainer.containerizedAssetsList.clear()
             return
@@ -89,3 +87,13 @@ class ContainerizeAssetsCommand(QUndoCommand):
         item.offsetFromCentroid = item.scenePos() - centroid
         item.timer.timeout.connect(lambda: self.updateItemPosition(item, item.scenePos(),centroid,isRedo=True))
         item.timer.start(self.animationTimerInterval)
+    
+    def updateConnections(self, item):
+        if hasattr(item, 'connections'):
+            for connection in item.connections:
+                connection.updatePath()
+    
+    def updateItemsPositionRelativeToContainer(self):
+        for itemEntry in self.newAssetsContainer.containerizedAssetsList:
+            item = itemEntry['item']
+            item.setPos(self.newAssetsContainer.pos())

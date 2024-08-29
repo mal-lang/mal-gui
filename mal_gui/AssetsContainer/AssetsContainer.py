@@ -255,4 +255,10 @@ class AssetsContainer(QGraphicsItem):
         if not image.isNull():
             return QPixmap.fromImage(image.scaled(size, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         return QPixmap()
+    
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemPositionChange and self.scene():
+            if hasattr(self, 'itemMoved') and callable(self.itemMoved):
+                self.itemMoved()
+        return super().itemChange(change, value)
         

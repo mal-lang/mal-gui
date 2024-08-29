@@ -7,6 +7,7 @@ from ConnectionDialog import AssociationConnectionDialog,EntrypointConnectionDia
 from ObjectExplorer.AssetBase import AssetBase
 from ObjectExplorer.EditableTextItem import EditableTextItem
 from AssetsContainer.AssetsContainer import AssetsContainer
+from AssetsContainer.AssetsContainerRectangleBox import AssetsContainerRectangleBox
 
 import pickle
 import base64
@@ -72,6 +73,9 @@ class ModelScene(QGraphicsScene):
         self.isDraggingItem = False
         self.draggedItems = []
         self.initialPositions = {}
+        
+        #Container
+        self.containerBox = None
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasFormat('text/plain'):
@@ -267,6 +271,9 @@ class ModelScene(QGraphicsScene):
             elif isinstance(item,AssetsContainer):
                 print("Found Assets Container item",item)
                 self.showAssetsContainerContextMenu(event.screenPos(), item)
+            elif isinstance(item,AssetsContainerRectangleBox):
+                print("Found Assets Container Box",item)
+                self.showAssetsContainerBoxContextMenu(event.screenPos(), item)
         else:
             self.showSceneContextMenu(event.screenPos(),event.scenePos())
 
@@ -484,6 +491,52 @@ class ModelScene(QGraphicsScene):
             
         self.removeItem(currentlySelectedContainer)
 
+    def expandContainer(self,currentlySelectedContainer):        
+        containedItemForBoundingRectCalculation = []
+        
+        #copied below logic from ContainerizeAssetsCommandUndo 
+        
+        currentCentroidPositionOfContainer = currentlySelectedContainer.scenePos()
+
+        for itemEntry in currentlySelectedContainer.containerizedAssetsList:
+            item = itemEntry['item']
+            offsetPositionOfItem = currentCentroidPositionOfContainer + itemEntry['offset']
+            self.addItem(item)
+            item.setPos(offsetPositionOfItem)
+            
+            #updateConnections so that association lines are visible properly
+            self.updateConnections(item)
+            
+            #Store the item in a list for later bounding rect calculation
+            containedItemForBoundingRectCalculation.append(item)
+        
+        # # Restore connections - Avoiding this because container and asset may be connected and may get duplicated - So its Future Work
+        # for connection in self.connections:
+        #     self.scene.addItem(connection)
+        #     connection.restoreLabels()
+        #     connection.updatePath()
+        
+        
+        rectangleBoundingAllContainerizedAssets = self.calculateSurroundingRectangleForGroupedAssetsInContainer(containedItemForBoundingRectCalculation)
+        self.containerBox = AssetsContainerRectangleBox(rectangleBoundingAllContainerizedAssets)
+        
+        self.addItem(self.containerBox) 
+        self.containerBox.associatedCompressedContainer = currentlySelectedContainer   
+        # self.removeItem(currentlySelectedContainer)
+        currentlySelectedContainer.setVisible(False)
+        
+    
+    def compressContainer(self,currentlySelectedContainerBox):
+        compressedContainer = currentlySelectedContainerBox.associatedCompressedContainer
+        currentCentroidPositionOfContainer = compressedContainer.scenePos() 
+        for itemEntry in compressedContainer.containerizedAssetsList:
+            item = itemEntry['item']
+            item.setPos(currentCentroidPositionOfContainer)
+            self.updateConnections(item)
+        compressedContainer.setVisible(True)
+        
+        self.removeItem(currentlySelectedContainerBox)
+    
     def serializeGraphicsItems(self, items, cutIntended):
         objdetails = []
         selectedSequenceIds = {item.assetSequenceId for item in items}  # Set of selected item IDs
@@ -573,12 +626,27 @@ class ModelScene(QGraphicsScene):
         print("Assets Container Context menu activated")
         menu = QMenu()
         assetsUngroupAction = QAction("Ungroup Asset(s)", self)
-        
+        assetsExpandContainerAction = QAction("Expand Container", self)
+
         menu.addAction(assetsUngroupAction)
+        menu.addAction(assetsExpandContainerAction)
         action = menu.exec(position)
         
         if action == assetsUngroupAction:
             self.decontainerizeAssets(currentlySelectedContainer)
+        elif action == assetsExpandContainerAction:
+            self.expandContainer(currentlySelectedContainer)
+    
+    def showAssetsContainerBoxContextMenu(self,position,currentlySelectedContainerBox):
+        print("Assets Container Box Context menu activated")
+        menu = QMenu()
+        assetsCompressContainerBoxAction = QAction("Compress Container Box", self)
+        menu.addAction(assetsCompressContainerBoxAction)
+        
+        action = menu.exec(position)
+        
+        if action == assetsCompressContainerBoxAction:
+            self.compressContainer(currentlySelectedContainerBox)
 
     def showSceneContextMenu(self, screenPos,scenePos):
         print("Scene Context menu activated")
@@ -617,4 +685,37 @@ class ModelScene(QGraphicsScene):
             self.mainWindow.updatePropertiesWindow(None)
             self.mainWindow.updateAttackStepsWindow(None)
             self.mainWindow.updateAssetRelationsWindow(None)
+    
+    def calculateSurroundingRectangleForGroupedAssetsInContainer(self,containedItemForBoundingRectCalculation):
+        
+        if not containedItemForBoundingRectCalculation:
+            return QRectF()
 
+
+        minX = float('inf')
+        maxX = float('-inf')
+        minY = float('inf')
+        maxY = float('-inf')
+        margin = 10.0
+        for item in containedItemForBoundingRectCalculation:
+            # Get the item's bounding rectangle in scene coordinates
+            itemBoundingRect = item.mapRectToScene(item.boundingRect())
+
+            # Update the bounding box dimensions
+            minX = min(minX, itemBoundingRect.left())
+            maxX = max(maxX, itemBoundingRect.right())
+            minY = min(minY, itemBoundingRect.top())
+            maxY = max(maxY, itemBoundingRect.bottom())
+
+        # Expand the rectangle by the margin on all sides
+        minX -= margin
+        maxX += margin
+        minY -= margin
+        maxY += margin
+
+        return QRectF(QPointF(minX, minY), QPointF(maxX, maxY))
+    
+    def updateConnections(self, item):
+        if hasattr(item, 'connections'):
+            for connection in item.connections:
+                connection.updatePath()
