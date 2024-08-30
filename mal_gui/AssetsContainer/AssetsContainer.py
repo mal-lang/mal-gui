@@ -3,22 +3,28 @@ from PySide6.QtGui import QPixmap, QFont, QColor,QBrush,QPen,QPainterPath,QFontM
 from PySide6.QtWidgets import  QGraphicsItem,QWidget
 
 from ObjectExplorer.EditableTextItem import EditableTextItem
+from AssetsContainer.AssetsContainerRectangleBox import AssetsContainerRectangleBox
 
 class AssetsContainer(QGraphicsItem):
     containerSequenceId = 100  # Starting Sequence Id with normal start at 100(randomly taken) 
     
-    def __init__(self, containerType, containerName, imagePath, parent=None):
+    def __init__(self, containerType, containerName, imagePath,plusSymbolImagePath,minusSymbolImagePath, parent=None):
         super().__init__(parent)
         self.setZValue(1)  # rect items are on top
         self.containerType = containerType
         self.containerName = containerName
         self.containerSequenceId = AssetsContainer.generateNextSequenceId()
         self.imagePath = imagePath
+        self.plusSymbolImagePath = plusSymbolImagePath
+        self.minusSymbolImagePath = minusSymbolImagePath
+        self.plusOrMinusSymbolImageRect = QRectF()
+        self.isPlusSymbolVisible = True  # Track the current symbol state
+        self.containerBox = None
         print("image path = "+ self.imagePath)
 
-        # self.image = QPixmap(self.imagePath).scaled(30, 30, Qt.KeepAspectRatio)  # Scale the image here
-        # self.image = QPixmap(self.imagePath)
         self.image = self.loadImageWithQuality(self.imagePath, QSize(512, 512))
+        self.plusSymbolImage = self.loadImageWithQuality(self.plusSymbolImagePath, QSize(512, 512))
+        self.minusSymbolImage = self.loadImageWithQuality(self.minusSymbolImagePath, QSize(512, 512))
 
         self.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemSendsGeometryChanges)
 
@@ -27,7 +33,7 @@ class AssetsContainer(QGraphicsItem):
         self.typeTextItem.lostFocus.connect(self.updateContainerName)
 
         self.containerizedAssetsList = []
-        self.initial_position = QPointF()
+        self.initialPosition = QPointF()
 
         # Visual Styling
         self.width = 240
@@ -115,6 +121,32 @@ class AssetsContainer(QGraphicsItem):
             # Draw the resized icon on top of the white background
             painter.drawPixmap(iconRect.toRect(), resizedImageIcon)  # Convert QRectF to QRect and draw the resized icon
 
+        # Determine which symbol to draw based on the current state
+        currentSymbolImage = self.plusSymbolImage if self.isPlusSymbolVisible else self.minusSymbolImage
+        if not currentSymbolImage.isNull():
+            targetSymbolImageSize = QSize(12, 12)  # Desired size for the second icon
+
+            # Get the bounding rect of the titleBgPath
+            titleBgRect = self.titleBgPath.boundingRect()
+
+            # Calculate the position for the symbol at the bottom-right corner of titleBgPath
+            self.plusOrMinusSymbolImageRect = QRectF(
+                titleBgRect.right() - targetSymbolImageSize.width() - 10,  # x position
+                titleBgRect.bottom() - targetSymbolImageSize.height() - 5,  # y position
+                targetSymbolImageSize.width(),
+                targetSymbolImageSize.height()
+            )
+            
+            painter.setBrush(Qt.white)
+            painter.drawRect(self.plusOrMinusSymbolImageRect)
+            
+            resizedSymbolImage = currentSymbolImage.scaled(targetSymbolImageSize, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+            # Draw the plus or minus symbol with a white background
+            painter.drawPixmap(self.plusOrMinusSymbolImageRect.toRect(), resizedSymbolImage)
+
+
+
         # Draw the highlight if selected
         if self.isSelected():
             painter.setPen(QPen(self.containerTypeBackgroundColor.lighter(), 2))
@@ -186,8 +218,8 @@ class AssetsContainer(QGraphicsItem):
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
-            if self.pos() != self.initial_position:
-                self.initial_position = self.pos()
+            if self.pos() != self.initialPosition:
+                self.initialPosition = self.pos()
             if self.scene():
                 self.scene().update()  # Ensure the scene is updated - this fixed trailing borders issue
         return super().itemChange(change, value)
@@ -208,7 +240,7 @@ class AssetsContainer(QGraphicsItem):
         
         self.updateTypeTextItemPosition()
         
-        self.container.name = self.containerName
+        # self.container.name = self.containerName
         
         associatedScene = self.typeTextItem.scene()
         if associatedScene:
@@ -219,9 +251,15 @@ class AssetsContainer(QGraphicsItem):
         super().focusOutEvent(event)
 
     def mousePressEvent(self, event):
-        self.initial_position = self.pos()
+        self.initialPosition = self.pos()
 
-        if self.typeTextItem.hasFocus() and not self.typeTextItem.contains(event.pos()):
+        if self.plusOrMinusSymbolImageRect.contains(event.pos()):
+            print("Plus or minus button clicked")
+            # Toggle the symbol visibility
+            # self.isPlusSymbolVisible = not self.isPlusSymbolVisible
+            # self.update()
+            self.toggleContainerExpansion()
+        elif self.typeTextItem.hasFocus() and not self.typeTextItem.contains(event.pos()):
             self.typeTextItem.clearFocus()
         elif not self.typeTextItem.contains(event.pos()):
             self.typeTextItem.deselectText()
@@ -261,4 +299,32 @@ class AssetsContainer(QGraphicsItem):
             if hasattr(self, 'itemMoved') and callable(self.itemMoved):
                 self.itemMoved()
         return super().itemChange(change, value)
+    
+    def toggleContainerExpansion(self):
+        if self.isPlusSymbolVisible:
+            # Expand
+            self.isPlusSymbolVisible = False
+            self.showContainerBox()
+        else:
+            # Collapse
+            self.isPlusSymbolVisible = True
+            self.hideContainerBox()
+        self.update()
         
+    def showContainerBox(self):
+        if not self.containerBox:
+            rect = QRectF(0, 0, self.width, 100)  # Example height for the expanded box
+            self.containerBox = AssetsContainerRectangleBox(rect, self)
+            self.updateContainerBoxPosition()
+            self.scene().addItem(self.containerBox)
+
+    def hideContainerBox(self):
+        if self.containerBox:
+            self.scene().removeItem(self.containerBox)
+            self.containerBox = None
+    
+    def updateContainerBoxPosition(self):
+        if self.containerBox:
+            containerBottomLeft = self.pos() + QPointF(-self.width / 2, self.boundingRect().height() / 2)
+            containerBoxPosition = containerBottomLeft + QPointF(0, self.height / 2)
+            self.containerBox.setPos(containerBoxPosition)

@@ -132,3 +132,9 @@ Link: https://uxwing.com/recycle-bin-line-icon
 
 35. Asset Container Icon 
 Link: https://uxwing.com/big-data-network-icon/
+
+36. Asset Container Plus Symbol
+Link: https://uxwing.com/plus-sign-icon/
+
+37. Asset Container Minus Symbol
+Link: https://uxwing.com/minus-sign-icon/

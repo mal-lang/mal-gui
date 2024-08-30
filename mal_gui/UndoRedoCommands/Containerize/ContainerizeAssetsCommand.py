@@ -22,7 +22,7 @@ class ContainerizeAssetsCommand(QUndoCommand):
             if hasattr(item, 'connections'):
                 self.connections.extend(item.connections.copy())
                 
-        self.newAssetsContainer = AssetsContainer("AssetContainer", "ContainerName", "images/assetContainer.png")
+        self.newAssetsContainer = AssetsContainer("AssetContainer", "ContainerName", "images/assetContainer.png","images/assetContainerPlusSymbol.png","images/assetContainerMinusSymbol.png")
         self.newAssetsContainer.build()
 
     def redo(self):

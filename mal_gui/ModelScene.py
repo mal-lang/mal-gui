@@ -525,6 +525,16 @@ class ModelScene(QGraphicsScene):
         # self.removeItem(currentlySelectedContainer)
         currentlySelectedContainer.setVisible(False)
         
+        #MAKE COMPRESSED CONTAINER BOX HEADER FOR EXPANDED CONTAINER BOX - START
+        
+        # currentlySelectedContainer.setVisible(True)
+        # containerBoxRect = self.containerBox.rect()
+        # newPos = QPointF(containerBoxRect.left(), containerBoxRect.top() - currentlySelectedContainer.boundingRect().height())
+        # currentlySelectedContainer.setPos(newPos)
+        # currentlySelectedContainerWidth = containerBoxRect.width()
+        # currentlySelectedContainer.setScale(currentlySelectedContainerWidth / currentlySelectedContainer.boundingRect().width())
+        
+        #MAKE COMPRESSED CONTAINER BOX HEADER FOR EXPANDED CONTAINER BOX - END
     
     def compressContainer(self,currentlySelectedContainerBox):
         compressedContainer = currentlySelectedContainerBox.associatedCompressedContainer
