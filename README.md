@@ -3,7 +3,9 @@ A graphical user interface tool used to create MAL instance models.
 
 ## Installation
 
-Install the package by running `pip install mal-gui`.
+Install the package by running `pip install .` in this directory.
+
+TODO: publish to pypi
 
 ## Run
 
