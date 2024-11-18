@@ -97,10 +97,14 @@ class MainWindow(QMainWindow):
         self.model = Model("Untitled Model", self.lcs)
 
 
+        PACKAGE_DIR = Path(__file__).resolve().parent
         for asset in self.langGraph.assets:
             if not asset.is_abstract:
-                self.assetFactory.registerAsset(asset.name,
-                    assetImages[asset.name])
+                asset_image_path = str(PACKAGE_DIR / assetImages[asset.name])
+                self.assetFactory.registerAsset(
+                    asset.name,
+                    asset_image_path
+                )
         
         #assetFactory registration should complete before injecting into ModelScene
         self.scene = ModelScene(self.assetFactory, self.langGraph, self.lcs,self.model, self)
