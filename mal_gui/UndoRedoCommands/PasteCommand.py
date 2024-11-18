@@ -23,20 +23,16 @@ class PasteCommand(QUndoCommand):
         if serializedData:
             self.deserializedData = self.scene.deserializeGraphicsItems(serializedData)
             print(json.dumps(self.deserializedData, indent = 2))
-            items = []
             newItemMap = {}  # Map old assetId to new item
 
             # First pass: create items with new assetIds
             for data in self.deserializedData:
                 assetType = data['assetType']
-                assetName = data['assetName']
                 oldAssetSequenceId = data['assetSequenceId']
                 assetProperties = data['assetProperties']
 
                 positionTuple = data['position']
                 position = QPointF(positionTuple[0], positionTuple[1])
-                
-
 
                 # AddAsset Equivalent - Start - To Be Discussed
                 if assetType == "Attacker":

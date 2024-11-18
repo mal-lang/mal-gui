@@ -105,10 +105,6 @@ class AssociationConnectionItem(IConnectionItem):
         self.endPos = self.endItem.sceneBoundingRect().center()
         self.setLine(QLineF(self.startPos, self.endPos))
         
-        # Calculate offsets to position labels outside the bounding rectangles
-        start_rect = self.startItem.sceneBoundingRect()
-        end_rect = self.endItem.sceneBoundingRect()
-        
         labelAssocLeftFieldPos = self.line().pointAt(0.2)
         self.labelAssocLeftField.setPos(labelAssocLeftFieldPos - QPointF(self.labelAssocLeftField.boundingRect().width() / 2, self.labelAssocLeftField.boundingRect().height() / 2))
 
@@ -129,7 +125,6 @@ class AssociationConnectionItem(IConnectionItem):
         """
         offset_distance = 10  # Distance to move the label outside the rectangle
         offset = QPointF()
-        angle_radians = angle * 3.14159 / 180  # Convert angle to radians
         
         if angle < 90 or angle > 270:
             offset.setX(rect.width() / 2 + offset_distance)

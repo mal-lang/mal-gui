@@ -32,7 +32,6 @@ class AssociationConnectionDialog(ConnectionDialog):
         print(f'START ITEM TYPE {startItem.assetType}')
         print(f'END ITEM TYPE {endItem.assetType}')
 
-        targetAsset = None
         self.associationListWidget = QListWidget()
 
         startAsset = startItem.asset

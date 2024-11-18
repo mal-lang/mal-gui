@@ -108,7 +108,6 @@ class AssetsContainer(QGraphicsItem):
 
         # Draw the icon if it's visible
         if self.iconVisible and not self.image.isNull():
-            originalIconSize = self.image.size()
             targetIconSize = QSize(24, 24)  # Desired size for the icon
 
             # Resize the icon using smooth transformation
@@ -223,7 +222,6 @@ class AssetsContainer(QGraphicsItem):
 
         # Update position
         self.typeTextItem.setPos(typeTextItemPosX, typeTextItemPosY)
-
 
 
     def itemChange(self, change, value):
