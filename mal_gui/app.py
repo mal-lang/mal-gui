@@ -24,7 +24,7 @@ class FileSelectionDialog(QDialog):
         # Load the config file
         self.config = configparser.ConfigParser()
         # self.config.read('config.ini')
-        self.config.read('/Users/akashkumarsinha/Desktop/KTH_Project/KTH_Cyber_FinalCommit2/mal-toolbox-gui/mal_gui/config.ini')
+        self.config.read('config.ini')
         self.marFilePath = self.config.get('Settings', 'marFilePath')
         print(f"Initial marFilePath path: {self.marFilePath}")
         self.malLanguageMarFilePathText.setText(self.marFilePath)
