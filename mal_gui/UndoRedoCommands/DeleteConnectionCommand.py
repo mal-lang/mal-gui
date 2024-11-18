@@ -10,7 +10,6 @@ class DeleteConnectionCommand(QUndoCommand):
         # self.connection.delete()
         self.connection.removeLabels()
         self.scene.removeItem(self.connection)
-        
 
     def undo(self):
         self.scene.addItem(self.connection)

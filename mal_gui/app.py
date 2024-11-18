@@ -40,7 +40,7 @@ class FileSelectionDialog(QDialog):
         horizontalLayout = QHBoxLayout()
 
         self.malLanguageMarFilePathText = QLineEdit(self)
-        
+
         # Load the config file
         self.config = configparser.ConfigParser()
         # self.config.read('config.ini')
@@ -48,7 +48,7 @@ class FileSelectionDialog(QDialog):
         self.marFilePath = self.config.get('Settings', 'marFilePath', fallback=None)
         print(f"Initial marFilePath path: {self.marFilePath}")
         self.malLanguageMarFilePathText.setText(self.marFilePath)
-        
+
         horizontalLayout.addWidget(self.malLanguageMarFilePathText)
 
         browseButton = QPushButton("Browse")
@@ -72,10 +72,10 @@ class FileSelectionDialog(QDialog):
 
     def openFileDialog(self):
         fileDialog = QFileDialog()
-        
+
         # fileDialog.setNameFilter("JAR or MAR files (*.jar *.mar )") --> Need to confirm with Andrei
-        # fileDialog.setWindowTitle("Select a JAR or MAR File") 
-        
+        # fileDialog.setWindowTitle("Select a JAR or MAR File")
+
         fileDialog.setNameFilter("MAR files (*.mar)")
         fileDialog.setWindowTitle("Select a MAR File")
 
@@ -88,13 +88,13 @@ class FileSelectionDialog(QDialog):
 
         # Check if the path ends with .mar or .jar --> Need to confirm with Andrei
         # if selectedFile.endswith(('.jar','.mar')):
-        
+
         if selectedFile.endswith('.mar'):
             self.selectedFile = selectedFile
             self.accept()  # Close the dialog and return accepted
         else:
             QMessageBox.warning(self, "Invalid File", "Please select a valid .mar file.")
-    
+
     def getSelectedFile(self):
         return self.selectedFile
 

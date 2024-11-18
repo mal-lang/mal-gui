@@ -58,7 +58,7 @@ class DraggableListWidget(QListWidget):
 
 class MainWindow(QMainWindow):
     updateChildsInObjectExplorerSignal = Signal()
-    
+
     def __init__(self,app,malLanguageMarFilePath):
         super().__init__()
         self.app = app #declare an app member
@@ -84,7 +84,7 @@ class MainWindow(QMainWindow):
             "SoftwareVulnerability": image_path("softwareVulnerability.png"),
             "User": image_path("user.png")
         }
-        
+
         self.eyeUnhideIconImage = image_path("eyeUnhide.png")
         self.eyeHideIconImage = image_path("eyeHide.png")
         self.rgbColorIconImage = image_path("rgbColor.png")
@@ -93,7 +93,7 @@ class MainWindow(QMainWindow):
         self.assetFactory = AssetFactory()
         attacker_icon = image_path("attacker.png")
         self.assetFactory.registerAsset("Attacker", attacker_icon)
-        
+
         # Create the MAL language graph, language classes factory, and
         # instance model
         # self.langGraph = LanguageGraph.from_mar_archive("langs/org.mal-lang.coreLang-1.0.0.mar")
@@ -116,7 +116,6 @@ class MainWindow(QMainWindow):
         self.createMenus()
         self.createToolbar()
 
-
         self.view.zoomChanged.connect(self.updateZoomLabel)
 
         #Association Information
@@ -131,13 +130,12 @@ class MainWindow(QMainWindow):
 
         # self.setDockNestingEnabled(True)
         # self.setCorner()
-        
+
         self.updateChildsInObjectExplorerSignal.connect(self.updateExplorerDockedWindow)
-        
+
         self.dockAble()
 
     def dockAble(self):
-
         # ObjectExplorer - LeftSide pannel is Draggable TreeView
         dockObjectExplorer = QDockWidget("Object Explorer",self)
         self.objectExplorerTree = DraggableTreeView(self.scene,self.eyeUnhideIconImage,self.eyeHideIconImage,self.rgbColorIconImage)
@@ -161,15 +159,14 @@ class MainWindow(QMainWindow):
         #EDOC Tab with treeview
         componentTabTree = QTreeWidget()
         componentTabTree.setHeaderLabel(None)
-        
-        
+
         #ItemDetails with treeview
         self.itemDetailsWindow = ItemDetailsWindow()
-        
+
         dockItemDetails = QDockWidget("Item Details",self)
         dockItemDetails.setWidget(self.itemDetailsWindow)
         self.addDockWidget(Qt.LeftDockWidgetArea, dockItemDetails)
-        
+
         #Properties Tab with tableview
         self.propertiesDockedWindow = PropertiesWindow()
         self.propertiesTable = self.propertiesDockedWindow.propertiesTable
@@ -177,22 +174,22 @@ class MainWindow(QMainWindow):
         dockProperties = QDockWidget("Properties",self)
         dockProperties.setWidget(self.propertiesTable)
         self.addDockWidget(Qt.LeftDockWidgetArea, dockProperties)
-        
+
         #AttackSteps Tab with ListView
         self.attackStepsDockedWindow = AttackStepsWindow()
         dockAttackSteps = QDockWidget("Attack Steps",self)
         dockAttackSteps.setWidget(self.attackStepsDockedWindow)
         self.addDockWidget(Qt.LeftDockWidgetArea, dockAttackSteps)
-        
+
         #AssetRelations Tab with ListView
         self.assetRelationsDockedWindow = AssetRelationsWindow()
         dockAssetRelations = QDockWidget("Asset Relations",self)
         dockAssetRelations.setWidget(self.assetRelationsDockedWindow)
         self.addDockWidget(Qt.LeftDockWidgetArea, dockAssetRelations)
-        
+
         #Keep Propeties Window and Attack Step Window Tabbed
         self.tabifyDockWidget(dockProperties, dockAttackSteps)
-        
+
         #Keep the properties Window highlighted and raised
         dockProperties.raise_()
 
@@ -202,61 +199,61 @@ class MainWindow(QMainWindow):
         for connection in self.scene.items():
             if isinstance(connection, AssociationConnectionItem):
                 connection.updatePath()
-    
+
     def showImageIconCheckBoxChanged(self,checked):
         print("self.showImageIconCheckBoxChanged clicked")
         for item in self.scene.items():
             if isinstance(item, (AssetBase,AssetsContainer)):
                 item.toggleIconVisibility()
-                
-    def fitToViewButtonClicked(self):
-        print("Fit To View Button Clicked..")  
-        # Find the bounding rectangle of all items in Scene
-        boundingRect = self.scene.itemsBoundingRect()   
-        self.view.fitInView(boundingRect,Qt.KeepAspectRatio) 
 
-    def updatePropertiesWindow(self, assetItem): 
+    def fitToViewButtonClicked(self):
+        print("Fit To View Button Clicked..")
+        # Find the bounding rectangle of all items in Scene
+        boundingRect = self.scene.itemsBoundingRect()
+        self.view.fitInView(boundingRect,Qt.KeepAspectRatio)
+
+    def updatePropertiesWindow(self, assetItem):
         #Clear the table
         self.propertiesTable.setRowCount(0)
-        
+
         if assetItem is not None and assetItem.assetType != "Attacker":
             asset = assetItem.asset
             defenses = self.model.get_asset_defenses(
                 asset,
                 include_defaults = True
             )
-            
+
             # for association in asset.associations:
             #     print("association= "+ str(association.name))
-            
+
             properties = list(defenses.items())
             # Insert new rows based on the data dictionary
             numRows = len(properties)
             self.propertiesTable.setRowCount(numRows)
             self.propertiesTable.currentItem = assetItem
-            
+
             for row, (propertyKey, propertyValue) in enumerate(properties):
                 print(f"DEF:{propertyKey} VAL:{float(propertyValue)}")
-                
+
                 columnPropertyName = QTableWidgetItem(propertyKey)
                 columnPropertyName.setFlags(Qt.ItemIsEnabled)  # Make the property name read-only
-            
+
                 columnValue = QTableWidgetItem(str(float(propertyValue)))
                 columnValue.setFlags(Qt.ItemIsEditable | Qt.ItemIsEnabled)  # Make the value editable
-            
+
                 columnDefaultValue = QTableWidgetItem("1.0")
                 columnDefaultValue.setFlags(Qt.ItemIsEnabled)  # Make the default value read-only
 
                 self.propertiesTable.setItem(row, 0, columnPropertyName)
                 self.propertiesTable.setItem(row, 1, columnValue)
                 self.propertiesTable.setItem(row, 2, columnDefaultValue)
-            
+
             # Set the item delegate and pass assetItem - based on Andrei's input
             self.propertiesTable.setItemDelegateForColumn(1, EditableDelegate(assetItem))
 
-        else: 
+        else:
             self.propertiesTable.currentItem = None
-            
+
     def updateAttackStepsWindow(self, attackerAssetItem):
         if attackerAssetItem is not None:
             self.attackStepsDockedWindow.clear()
@@ -287,7 +284,7 @@ class MainWindow(QMainWindow):
                         opposite_field_name + "-->" + associated_asset.name)
 
     def createActions(self):
-        
+
         zoom_in_icon = image_path("zoomIn.png")
         self.zoomInAction = QAction(QIcon(zoom_in_icon), "ZoomIn", self)
         self.zoomInAction.triggered.connect(self.zoomIn)
@@ -307,7 +304,7 @@ class MainWindow(QMainWindow):
         self.redoAction = QAction(QIcon(redo_icon), "Redo", self)
         self.redoAction.setShortcut("Ctrl+Shift+z")
         self.redoAction.triggered.connect(self.scene.undoStack.redo)
-        
+
         #cut Action
         cut_icon = image_path("cutIcon.png")
         self.cutAction = QAction(QIcon(cut_icon), "Cut", self)
@@ -319,13 +316,13 @@ class MainWindow(QMainWindow):
         self.copyAction = QAction(QIcon(copy_icon), "Copy", self)
         self.copyAction.setShortcut("Ctrl+c")
         self.copyAction.triggered.connect(lambda: self.scene.copyAssets(self.scene.selectedItems()))
-        
+
         #paste Action
         paste_icon = image_path("pasteIcon.png")
         self.pasteAction = QAction(QIcon(paste_icon), "Paste", self)
         self.pasteAction.setShortcut("Ctrl+v")
         self.pasteAction.triggered.connect(lambda: self.scene.pasteAssets(QPointF(0,0)))
-        
+
         #delete Action
         delete_icon = image_path("deleteIcon.png")
         self.deleteAction = QAction(QIcon(delete_icon), "Delete", self)
@@ -363,7 +360,6 @@ class MainWindow(QMainWindow):
 
         #Add the quit action
         self.toolbar.addAction(self.fileMenuQuitAction)
-
         self.toolbar.addSeparator()
 
         showAssociationCheckBoxLabel  = QLabel("Show Association")
@@ -372,7 +368,7 @@ class MainWindow(QMainWindow):
         self.toolbar.addWidget(showAssociationCheckBoxLabel)
         self.toolbar.addWidget(showAssociationCheckBox)
         showAssociationCheckBox.stateChanged.connect(self.showAssociationCheckBoxChanged)
-        
+
         self.toolbar.addSeparator()
 
         showImageIconCheckBoxLabel  = QLabel("Show Image Icon")
@@ -408,22 +404,22 @@ class MainWindow(QMainWindow):
         self.toolbar.addAction(self.pasteAction)
         self.toolbar.addAction(self.deleteAction)
         self.toolbar.addSeparator()
-        
+
          #Fit To Window
         fit_to_view_icon = image_path("fitToView.png")
         fitToViewButton = QPushButton(QIcon(fit_to_view_icon), "Fit To View")
         self.toolbar.addWidget(fitToViewButton)
         fitToViewButton.clicked.connect(self.fitToViewButtonClicked)
         self.toolbar.addSeparator()
-        
+
         #Material Theme - https://pypi.org/project/qt-material/
         materialThemeLabel  = QLabel("Theme")
         self.themeComboBox = QComboBox()
-        
+
         self.themeComboBox.addItem('None')
         inbuiltThemeListFromPackage = list_themes()
         self.themeComboBox.addItems(inbuiltThemeListFromPackage)
-        
+
         self.toolbar.addWidget(materialThemeLabel)
         self.toolbar.addWidget(self.themeComboBox)
         self.themeComboBox.currentIndexChanged.connect(self.onThemeSelectionChanged)
@@ -460,10 +456,10 @@ class MainWindow(QMainWindow):
                                      "Loading a new project will delete current work (if any). Do you want to continue ?",
                                      QMessageBox.Ok | QMessageBox.Cancel)
             if OpenProjectUserConfirmation == QMessageBox.Ok:
-                
+
                 #clear scene so that canvas becomes blank
                 self.scene.clear()
-                
+
                 self.showInformationPopup("Successfully opened model: " + filePath)
                 self.scene.model = Model.load_from_file(
                     filePath,
@@ -474,7 +470,7 @@ class MainWindow(QMainWindow):
             else:
                 #User canceled, do nothing - Need to check with Andrei for any other behaviour
                 pass
-            
+
     def updatePositionsAndSaveModel(self):
 
         print(f'ASSET ID TO ITEMS KEYS:{self.scene._asset_id_to_item.keys()}')
@@ -518,7 +514,6 @@ class MainWindow(QMainWindow):
     def quitApp(self):
         self.app.quit()
 
-
     def showInformationPopup(self,messageText):
         parentWidget = QWidget() #To maintain object lifetim
         messageBox = QMessageBox(parentWidget)
@@ -528,11 +523,11 @@ class MainWindow(QMainWindow):
         messageBox.setInformativeText(messageText) #default values
         messageBox.setStandardButtons(QMessageBox.Ok) #default Ok Button
         messageBox.exec()
-    
+
     def updateExplorerDockedWindow(self):
         #Clean the existing child and fill each items from scratch- performance BAD- To be discussed/improved
         self.objectExplorerTree.clearAllObjectExplorerChildItems()
-        
+
         #Fill all the items from Scene one by one
         for childAssetItem in self.scene.items():
             if isinstance(childAssetItem,AssetBase):
@@ -542,11 +537,10 @@ class MainWindow(QMainWindow):
 
                 if parentAssetType:
                     self.objectExplorerTree.addChildItem(parentItem,childAssetItem, str(childAssetItem.assetName))
-                    
+
     def onThemeSelectionChanged(self):
         # Get the selected theme
         selectedTheme = self.themeComboBox.currentText()
         print(f"{selectedTheme} is the Theme selected")
         apply_stylesheet(self.app, theme=selectedTheme)
-                
-            
+

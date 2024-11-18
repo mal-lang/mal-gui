@@ -13,14 +13,14 @@ class IConnectionItem(QGraphicsLineItem):
 
     def updatePath(self):
         pass
-    
+
     def removeLabels(self):
         pass
-    
+
     def restoreLabels(self):
         pass
-    
-    
+
+
 class AssociationConnectionItem(IConnectionItem):
     def __init__(
         self,
@@ -31,23 +31,23 @@ class AssociationConnectionItem(IConnectionItem):
         parent = None
     ):
         super().__init__(parent)
-        
+
         pen = QPen(QColor(0, 255, 0), 2)  # Green color with 2-pixel thickness
         self.setPen(pen)
-        
+
         self.setZValue(0)  # Ensure connection items are behind rect items
-        
+
         self.showAssociationFlag = False
-        
+
         self.startItem = startItem
         self.endItem = endItem
         self.scene = scene
-        
+
         self.startItem.addConnection(self)
         self.endItem.addConnection(self)
-        
+
         if self.startItem.assetType != 'Attacker' and self.endItem.assetType != 'Attacker':
-        
+
             self.associationDetails = selectedAssociationText.split("-->")
             assocLeftField = self.associationDetails[0]
             assocMiddleName = self.associationDetails[1]
@@ -58,9 +58,9 @@ class AssociationConnectionItem(IConnectionItem):
             self.labelAssocLeftField = self.createLabel(assocLeftField.split(".")[1])
             self.labelAssocMiddleName = self.createLabel(assocMiddleName)
             self.labelAssocRightField = self.createLabel(assocRightField.split(".")[1])
-        
+
         else:
-            
+
             #Need to check who is attacker and get the name of target and attackStep Name
             # Assumption is Both are not 'Attacker'
             if self.startItem.assetType == 'Attacker':
@@ -69,15 +69,15 @@ class AssociationConnectionItem(IConnectionItem):
             else:
                 attacker = self.endItem.attackerAttachment
                 target = str(self.startItem.assetName)
-            
+
             #selectedAssociationText is representing 'AttackStep' name
             attacker.entry_points.append(target + ' -> ' + selectedAssociationText)
             self.labelAssocLeftField = self.createLabel("")
             self.labelAssocMiddleName = self.createLabel(selectedAssociationText)
             self.labelAssocRightField = self.createLabel("")
-        
-        
-        
+
+
+
         self.updatePath()
 
     def createLabel(self, text):
@@ -104,7 +104,7 @@ class AssociationConnectionItem(IConnectionItem):
         self.startPos = self.startItem.sceneBoundingRect().center()
         self.endPos = self.endItem.sceneBoundingRect().center()
         self.setLine(QLineF(self.startPos, self.endPos))
-        
+
         labelAssocLeftFieldPos = self.line().pointAt(0.2)
         self.labelAssocLeftField.setPos(labelAssocLeftFieldPos - QPointF(self.labelAssocLeftField.boundingRect().width() / 2, self.labelAssocLeftField.boundingRect().height() / 2))
 
@@ -113,9 +113,9 @@ class AssociationConnectionItem(IConnectionItem):
 
         labelAssocRightFieldPos = self.line().pointAt(0.8)
         self.labelAssocRightField.setPos(labelAssocRightFieldPos - QPointF(self.labelAssocRightField.boundingRect().width() / 2, self.labelAssocRightField.boundingRect().height() / 2))
-        
+
         # print("isAssociationVisibilityChecked = "+ str(self.isAssociationVisibilityChecked))
-        
+
         self.labelAssocLeftField.setVisible(self.scene.getShowAssociationCheckBoxStatus())
         self.labelAssocRightField.setVisible(self.scene.getShowAssociationCheckBoxStatus())
 
@@ -125,24 +125,24 @@ class AssociationConnectionItem(IConnectionItem):
         """
         offset_distance = 10  # Distance to move the label outside the rectangle
         offset = QPointF()
-        
+
         if angle < 90 or angle > 270:
             offset.setX(rect.width() / 2 + offset_distance)
         else:
             offset.setX(-(rect.width() / 2 + offset_distance))
-        
+
         if angle < 180:
             offset.setY(rect.height() / 2 + offset_distance)
         else:
             offset.setY(-(rect.height() / 2 + offset_distance))
-        
+
         return offset
-        
+
     def removeLabels(self):
         self.scene.removeItem(self.labelAssocLeftField)
         self.scene.removeItem(self.labelAssocMiddleName)
         self.scene.removeItem(self.labelAssocRightField)
-    
+
     def restoreLabels(self):
         self.scene.addItem(self.labelAssocLeftField)
         self.scene.addItem(self.labelAssocMiddleName)
@@ -151,7 +151,6 @@ class AssociationConnectionItem(IConnectionItem):
     def delete(self):
         self.removeLabels()
         self.scene.removeItem(self)
-        
 
 
 class EntrypointConnectionItem(IConnectionItem):
@@ -193,8 +192,8 @@ class EntrypointConnectionItem(IConnectionItem):
         labelGroup = self.scene.createItemGroup([labelBackground, label])
         labelGroup.setZValue(1)  # Ensure labels are above the line
 
-        return labelGroup 
-    
+        return labelGroup
+
     def updatePath(self):
         """
         Draws a straight line from the start to end items and updates label positions.

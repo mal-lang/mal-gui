@@ -13,9 +13,8 @@ class PasteCommand(QUndoCommand):
         self.pastedItems = []
         self.pastedConnections = []
         self.clipboard = clipboard
-        
+
     def redo(self):
-        
         print("\nPaste Redo is Called")
         serializedData = self.clipboard.text()
         print("\nSerializedData = " + str(len(serializedData)))
@@ -52,22 +51,22 @@ class PasteCommand(QUndoCommand):
                 
                 self.pastedItems.append(newItem)
                 newItemMap[oldAssetSequenceId] = newItem  # Map old assetId to new item
-                
+
                 #AddAsset Equivalent - End
-                    
+
             #Adjust the position of all assetItems with offset values
             # Find the top-leftmost position among the items to be pasted
             minX = min(item.pos().x() for item in self.pastedItems)
             minY = min(item.pos().y() for item in self.pastedItems)
             topLeft = QPointF(minX, minY)
-            
+
             # Calculate the offset from the top-leftmost position to the paste position
-            offset = self.position - topLeft  
-            
+            offset = self.position - topLeft
+
             for item in self.pastedItems:
                 item.setPos(item.pos() + offset)
                 #Ideally After this newAsset.extras and position should be filled- To be discussed
-                self.scene.addItem(item)      
+                self.scene.addItem(item)
 
             # Second pass: re-establish connections with new assetSequenceIds
             for data in self.deserializedData:
@@ -103,11 +102,8 @@ class PasteCommand(QUndoCommand):
                         self.scene.model.add_association(association)
                         newConnection.association = association
 
-        
         #Update the Object Explorer when number of items change
         self.scene.mainWindow.updateChildsInObjectExplorerSignal.emit()
-
-        
 
     def undo(self):
         print("\nPaste Undo is Called")
@@ -122,6 +118,6 @@ class PasteCommand(QUndoCommand):
                 self.scene.model.remove_asset(item.asset)
             self.pastedItems = []
             self.pastedConnections = []
-        
+
         #Update the Object Explorer when number of items change
         self.scene.mainWindow.updateChildsInObjectExplorerSignal.emit()

@@ -37,6 +37,5 @@ class ModelView(QGraphicsView):
         else:
             self.zoomOut()
 
-    # Handling all the mouse press/move/release event to QGraphicsScene ( ModelScene) derived class to avoid 
-    # collision of functionality in 2 different places( ModelView vs ModelScene). 
-    
+    # Handling all the mouse press/move/release event to QGraphicsScene ( ModelScene) derived class to avoid
+    # collision of functionality in 2 different places( ModelView vs ModelScene).

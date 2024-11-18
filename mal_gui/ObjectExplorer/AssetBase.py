@@ -15,7 +15,7 @@ from PySide6.QtWidgets import  QGraphicsItem
 from .EditableTextItem import EditableTextItem
 
 class AssetBase(QGraphicsItem):
-    assetSequenceId = 100  # Starting Sequence Id with normal start at 100(randomly taken) 
+    assetSequenceId = 100  # Starting Sequence Id with normal start at 100(randomly taken)
 
     def __init__(self, assetType, assetName, imagePath, parent=None):
         super().__init__(parent)
@@ -57,7 +57,7 @@ class AssetBase(QGraphicsItem):
 
         self.horizontalMargin = 15  # Horizontal margin
         self.verticalMargin = 15  # Vertical margin
-        
+
         self.timer = QTimer()
         self.statusColor =  QColor(0, 255, 0)
         self.attackerToggleState = False
@@ -190,7 +190,7 @@ class AssetBase(QGraphicsItem):
 
         # Update position
         self.typeTextItem.setPos(typeTextItemPosX, typeTextItemPosY)
-        
+
         #For Attacker make the background of type As Red - Change Request from Professor Mathias
         if self.assetType == 'Attacker':
             self.assetTypeBackgroundColor = QColor(255, 0, 0) #Red
@@ -225,9 +225,9 @@ class AssetBase(QGraphicsItem):
         self.assetName = self.typeTextItem.toPlainText()
         self.typeTextItem.setTextInteractionFlags(Qt.NoTextInteraction)
         self.typeTextItem.deselectText()
-        
+
         self.updateTypeTextItemPosition()
-        
+
         if self.assetType == "Attacker":
             self.attackerAttachment.name = self.assetName
         else:
@@ -276,16 +276,16 @@ class AssetBase(QGraphicsItem):
                 self.statusColor =  QColor(0, 255, 0) #Green
             else: 
                 self.statusColor =  QColor(255, 0, 0) #Red
-        
+
         #Otherwise return Green for all assets
         else:
             self.statusColor =  QColor(0, 255, 0)
-        
+
         self.update()
-    
+
     def loadImageWithQuality(self, path, size):
         image = QImage(path)
         if not image.isNull():
             return QPixmap.fromImage(image.scaled(size, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         return QPixmap()
-        
+

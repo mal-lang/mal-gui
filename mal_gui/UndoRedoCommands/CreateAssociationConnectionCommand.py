@@ -17,7 +17,6 @@ class CreateAssociationConnectionCommand(QUndoCommand):
         self.associationText = associationText
         self.connection = None
         self.association = selectedItemAssociation
-        
 
     def redo(self):
         self.connection = self.scene.addAssociationConnection(

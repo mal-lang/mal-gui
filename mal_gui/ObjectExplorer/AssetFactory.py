@@ -34,4 +34,3 @@ class AssetFactory():
             requestedAsset = AssetBase(assetType, assetName, assetImage)
             requestedAsset.build()
             return requestedAsset
-

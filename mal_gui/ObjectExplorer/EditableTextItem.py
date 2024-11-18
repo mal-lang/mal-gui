@@ -24,7 +24,7 @@ class EditableTextItem(QGraphicsTextItem):
         cursor = self.textCursor()
         cursor.select(QTextCursor.Document)
         self.setTextCursor(cursor)
-        
+
     def deselectText(self):
         cursor = self.textCursor()
         cursor.setPosition(0)  # Set cursor position to the start of the document

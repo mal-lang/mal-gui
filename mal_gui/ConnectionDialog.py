@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
 class ConnectionDialog(QDialog):
     def filterItems(self, text):
         pass
-    
+
     def OkButtonClicked(self):
         pass
 
@@ -25,7 +25,7 @@ class AssociationConnectionDialog(ConnectionDialog):
         self.langGraph = langGraph
         self.lcs = lcs
         self.model = model
-        
+
         self.setWindowTitle("Select Association Type")
         self.setMinimumWidth(300)
 
@@ -121,7 +121,7 @@ class AssociationConnectionDialog(ConnectionDialog):
 
         # Select the first item by default
         self.associationListWidget.setCurrentRow(0)
-    
+
     def filterItems(self, text):
         for i in range(self.associationListWidget.count()):
             item = self.associationListWidget.item(i)
@@ -132,7 +132,7 @@ class AssociationConnectionDialog(ConnectionDialog):
         if selectedItem:
             selectedAssociationText = selectedItem.text()
             # QMessageBox.information(self, "Selected Item", f"You selected: {selectedAssociationText}")
-            
+
             (assoc, leftAsset, rightAsset) = self._str_to_assoc[selectedAssociationText]
             # TODO: Create association based on its full name instead in order
             # to avoid conflicts when multiple associations with the same name
@@ -144,7 +144,7 @@ class AssociationConnectionDialog(ConnectionDialog):
             selectedItem.association = association
             # self.model.add_association(association)
         self.accept()
-        
+
 class EntrypointConnectionDialog(ConnectionDialog):
     def __init__(self, attackerItem, assetItem, langGraph, lcs, model, parent=None):
         super().__init__(parent)
@@ -192,7 +192,6 @@ class EntrypointConnectionDialog(ConnectionDialog):
             self.filterEdit.textChanged.connect(self.filterItems)
             self.layout.addWidget(self.filterEdit)
             self.layout.addWidget(self.attackStepListWidget)
-
 
         buttonLayout = QHBoxLayout()
         self.okButton = QPushButton("OK")

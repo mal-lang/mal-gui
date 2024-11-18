@@ -23,10 +23,10 @@ class CutCommand(QUndoCommand):
         for connection in self.connections:
             connection.removeLabels()
             self.scene.removeItem(connection)
-        
+
         for item in self.items:
             self.scene.removeItem(item)
-            
+
         #Update the Object Explorer when number of items change
         self.scene.mainWindow.updateChildsInObjectExplorerSignal.emit()
 
@@ -34,14 +34,14 @@ class CutCommand(QUndoCommand):
         # Add items back to the scene
         for item in self.items:
             self.scene.addItem(item)
-        
+
         # Restore connections
         for connection in self.connections:
             self.scene.addItem(connection)
             connection.restoreLabels()
             connection.updatePath()
-        
+
         self.clipboard.clear()
-        
+
         #Update the Object Explorer when number of items change
         self.scene.mainWindow.updateChildsInObjectExplorerSignal.emit()

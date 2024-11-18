@@ -10,7 +10,6 @@ class AssociationDefinitions(QWidget):
         self.mainWindow = parent
 
         self.tableAssociationView = QTableView(self)
-
         self.associationInfoModel = QStandardItemModel()
 
         #headers for the columns
@@ -40,5 +39,3 @@ class AssociationDefinitions(QWidget):
 
     def getAssociationInfo(self):
         return self.associationInfo
-
-

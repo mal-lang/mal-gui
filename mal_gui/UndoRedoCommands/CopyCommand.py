@@ -11,7 +11,7 @@ class CopyCommand(QUndoCommand):
         self.cutItemFlag = False
         serializedData = self.scene.serializeGraphicsItems(self.items, self.cutItemFlag)
         self.clipboard.clear()
-        self.clipboard.setText(serializedData) 
+        self.clipboard.setText(serializedData)
 
     def undo(self):
         self.clipboard.clear()

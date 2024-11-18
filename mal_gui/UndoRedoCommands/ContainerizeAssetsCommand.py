@@ -12,7 +12,7 @@ class ContainerizeAssetsCommand(QUndoCommand):
         self.items = [item for item in items if item.assetType != 'Attacker']
         self.connections = []
         self.centroid = QPointF(0,0)
-        
+
         #Timer specific values for animation
         self.animationDuration = 2000 # in milliseconds
         self.animationTimerInterval = 20 # in milliseconds
@@ -23,7 +23,7 @@ class ContainerizeAssetsCommand(QUndoCommand):
         for item in self.items:
             if hasattr(item, 'connections'):
                 self.connections.extend(item.connections.copy())
-                
+
         self.newAssetsContainer = AssetsContainer(
             "AssetContainer",
             "ContainerName",
@@ -40,11 +40,11 @@ class ContainerizeAssetsCommand(QUndoCommand):
         centerX = sum(xCoordinatesListOfAssets) / len(xCoordinatesListOfAssets)
         centerY = sum(yCoordinatesListOfAssets) / len(yCoordinatesListOfAssets)
         self.centroid = QPointF(centerX, centerY)
-        
+
         #Display the container at centroid location
         self.scene.addItem(self.newAssetsContainer)
         self.newAssetsContainer.setPos(self.centroid)
-        
+
         for item in self.items:
             if isinstance(item,AssetBase):
                 self.moveItemFromCurrentPositionToCentroid(item, self.centroid)
@@ -56,16 +56,16 @@ class ContainerizeAssetsCommand(QUndoCommand):
             originalPositionOfItem = self.centroid + itemEntry['offset']
             self.scene.addItem(item)
             item.setPos(originalPositionOfItem)
-        
+
         # Restore connections
         for connection in self.connections:
             self.scene.addItem(connection)
             connection.restoreLabels()
             connection.updatePath()
-            
+
         self.scene.removeItem(self.newAssetsContainer)
-    
-    
+
+
     def updateItemPosition(self, item,  startPos, endPos,isRedo):
         if item.stepCounter >= self.numberOfStepsForTheAnimation:
             item.timer.timeout.disconnect()
@@ -75,32 +75,32 @@ class ContainerizeAssetsCommand(QUndoCommand):
                 self.newAssetsContainer.containerizedAssetsList.append({'item': item, 'offset': item.offsetFromCentroid})
                 item.setPos(self.centroid)
                 self.updateConnections(item)
-                
+
                 self.newAssetsContainer.itemMoved = lambda: self.updateItemsPositionRelativeToContainer()
             else:
                 self.newAssetsContainer.containerizedAssetsList.clear()
             return
-        
+
         deltaX = (endPos.x() - startPos.x()) / self.numberOfStepsForTheAnimation
         deltaY = (endPos.y() - startPos.y()) / self.numberOfStepsForTheAnimation
         newPos = QPointF(startPos.x() + deltaX, startPos.y() + deltaY)
         item.setPos(newPos)
 
         item.stepCounter += 1
-        
-        
+
+
     def moveItemFromCurrentPositionToCentroid(self,item,centroid):
         item.timer = QTimer()
         item.stepCounter = 0
         item.offsetFromCentroid = item.scenePos() - centroid
         item.timer.timeout.connect(lambda: self.updateItemPosition(item, item.scenePos(),centroid,isRedo=True))
         item.timer.start(self.animationTimerInterval)
-    
+
     def updateConnections(self, item):
         if hasattr(item, 'connections'):
             for connection in item.connections:
                 connection.updatePath()
-    
+
     def updateItemsPositionRelativeToContainer(self):
         for itemEntry in self.newAssetsContainer.containerizedAssetsList:
             item = itemEntry['item']
