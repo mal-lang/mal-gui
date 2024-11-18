@@ -14,21 +14,21 @@ from PySide6.QtCore import QLineF, Qt, QPointF,QRectF
 
 from .connection_item import AssociationConnectionItem,EntrypointConnectionItem
 from .connection_dialog import AssociationConnectionDialog,EntrypointConnectionDialog
-from .ObjectExplorer.asset_base import AssetBase
-from .ObjectExplorer.editable_text_item import EditableTextItem
-from .AssetsContainer.assets_container import AssetsContainer
-from .AssetsContainer.assets_container_rectangle_box import AssetsContainerRectangleBox
+from .object_explorer.asset_base import AssetBase
+from .object_explorer.editable_text_item import EditableTextItem
+from .assets_container.assets_container import AssetsContainer
+from .assets_container.assets_container_rectangle_box import AssetsContainerRectangleBox
 
-from .UndoRedoCommands.cut_command import CutCommand
-from .UndoRedoCommands.copy_command import CopyCommand
-from .UndoRedoCommands.paste_command import PasteCommand
-from .UndoRedoCommands.delete_command import DeleteCommand
-from .UndoRedoCommands.move_command import MoveCommand
-from .UndoRedoCommands.drag_drop_command import DragDropCommand
-from .UndoRedoCommands.create_association_connection_command import CreateAssociationConnectionCommand
-from .UndoRedoCommands.create_entrypoint_connection_command import CreateEntrypointConnectionCommand
-from .UndoRedoCommands.delete_connection_command import DeleteConnectionCommand
-from .UndoRedoCommands.containerize_assets_command import ContainerizeAssetsCommand
+from .undo_redo_commands.cut_command import CutCommand
+from .undo_redo_commands.copy_command import CopyCommand
+from .undo_redo_commands.paste_command import PasteCommand
+from .undo_redo_commands.delete_command import DeleteCommand
+from .undo_redo_commands.move_command import MoveCommand
+from .undo_redo_commands.drag_drop_command import DragDropCommand
+from .undo_redo_commands.create_association_connection_command import CreateAssociationConnectionCommand
+from .undo_redo_commands.create_entrypoint_connection_command import CreateEntrypointConnectionCommand
+from .undo_redo_commands.delete_connection_command import DeleteConnectionCommand
+from .undo_redo_commands.containerize_assets_command import ContainerizeAssetsCommand
 
 from maltoolbox.model import AttackerAttachment
 

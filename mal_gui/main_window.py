@@ -24,16 +24,16 @@ from qt_material import apply_stylesheet,list_themes
 
 from .model_scene import ModelScene
 from .model_view import ModelView
-from .ObjectExplorer.asset_base import AssetBase
-from .ObjectExplorer.asset_factory import AssetFactory
-from .AssetsContainer.assets_container import AssetsContainer
+from .object_explorer.asset_base import AssetBase
+from .object_explorer.asset_factory import AssetFactory
+from .assets_container.assets_container import AssetsContainer
 from .connection_item import AssociationConnectionItem
 
-from .DockedWindows.draggable_tree_view import DraggableTreeView
-from .DockedWindows.item_details_window import ItemDetailsWindow
-from .DockedWindows.properties_window import PropertiesWindow,EditableDelegate
-from .DockedWindows.attack_steps_window import AttackStepsWindow
-from .DockedWindows.asset_relations_window import AssetRelationsWindow
+from .docked_windows.draggable_tree_view import DraggableTreeView
+from .docked_windows.item_details_window import ItemDetailsWindow
+from .docked_windows.properties_window import PropertiesWindow,EditableDelegate
+from .docked_windows.attack_steps_window import AttackStepsWindow
+from .docked_windows.asset_relations_window import AssetRelationsWindow
 
 from maltoolbox.language import LanguageGraph, LanguageClassesFactory
 from maltoolbox.model import Model

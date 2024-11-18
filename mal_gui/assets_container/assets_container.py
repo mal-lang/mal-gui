@@ -12,7 +12,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import  QGraphicsItem
 
-from ..ObjectExplorer.editable_text_item import EditableTextItem
+from ..object_explorer.editable_text_item import EditableTextItem
 from .assets_container_rectangle_box import AssetsContainerRectangleBox
 
 class AssetsContainer(QGraphicsItem):
