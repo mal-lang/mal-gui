@@ -1,4 +1,4 @@
-from PySide6.QtGui import QUndoCommand, QUndoStack
+from PySide6.QtGui import QUndoCommand
 class DragDropCommand(QUndoCommand):
     def __init__(self, scene, item, parent=None):
         super().__init__(parent)

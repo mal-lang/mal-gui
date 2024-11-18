@@ -1,5 +1,4 @@
 from PySide6.QtGui import QUndoCommand
-from ConnectionItem import AssociationConnectionItem
 
 class CreateAssociationConnectionCommand(QUndoCommand):
     def __init__(

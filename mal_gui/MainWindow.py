@@ -1,24 +1,34 @@
 from pathlib import Path
-import json
 
-from PySide6.QtWidgets import QWidget,QLineEdit,QSplitter, QMainWindow,QToolBar,QDockWidget, QListWidget,QVBoxLayout,QComboBox,QListWidgetItem, QLabel,QTreeView,QTreeWidget, QTreeWidgetItem,QCheckBox,QPushButton,QFileDialog,QMessageBox,QTableWidget, QTableWidgetItem
-from PySide6.QtGui import QDrag,QPixmap,QAction,QIcon,QIntValidator
-from PySide6.QtCore import Qt,QMimeData,QByteArray,QSize,Signal,QPointF
+from PySide6.QtWidgets import (
+    QWidget,
+    QLineEdit,
+    QSplitter,
+    QMainWindow,
+    QToolBar,
+    QDockWidget,
+    QListWidget,
+    QComboBox,
+    QLabel,
+    QTreeWidget,
+    QCheckBox,
+    QPushButton,
+    QFileDialog,
+    QMessageBox,
+    QTableWidgetItem
+)
+from PySide6.QtGui import QDrag, QAction, QIcon, QIntValidator
+from PySide6.QtCore import Qt, QMimeData, QByteArray, QSize, Signal, QPointF
 
 from ModelScene import ModelScene
 from ModelView import ModelView
 from ObjectExplorer.AssetBase import AssetBase
-from AssetsContainer.AssetsContainer import AssetsContainer
-
-from ConnectionItem import AssociationConnectionItem
-
-from AssociationTableView import AssociationDefinitions
-
 from ObjectExplorer.AssetFactory import AssetFactory
+from AssetsContainer.AssetsContainer import AssetsContainer
+from ConnectionItem import AssociationConnectionItem
 
 from maltoolbox.language import LanguageGraph, LanguageClassesFactory
 from maltoolbox.model import Model
-
 
 from DockedWindows.ObjectExplorerDockedWindow.DraggableTreeView import DraggableTreeView
 from DockedWindows.ItemDetailsDockedWindow.ItemDetailsWindow import ItemDetailsWindow

@@ -1,8 +1,7 @@
-from PySide6.QtWidgets import QGraphicsView,QGraphicsRectItem
-from PySide6.QtCore import Qt, QRectF, QPointF, Signal
-from PySide6.QtGui import QPen, QPainter
+from PySide6.QtWidgets import QGraphicsView
+from PySide6.QtCore import Signal
+from PySide6.QtGui import QPainter
 
-from ObjectExplorer.AssetBase import AssetBase
 
 class ModelView(QGraphicsView):
     zoomChanged = Signal(float)

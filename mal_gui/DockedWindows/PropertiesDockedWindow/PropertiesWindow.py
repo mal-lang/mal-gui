@@ -1,6 +1,12 @@
 from PySide6.QtCore import Qt, QLocale,QObject
 from PySide6.QtGui import QDoubleValidator
-from PySide6.QtWidgets import  QLineEdit, QStyledItemDelegate, QMessageBox,QTableWidget,QHeaderView
+from PySide6.QtWidgets import (
+    QLineEdit,
+    QStyledItemDelegate,
+    QMessageBox,
+    QTableWidget,
+    QHeaderView
+)
 
 class FloatValidator(QDoubleValidator):
     def __init__(self, parent=None):

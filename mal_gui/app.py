@@ -1,8 +1,19 @@
-from PySide6.QtWidgets import QApplication,QDialog,QVBoxLayout,QHBoxLayout,QLabel,QLineEdit,QPushButton,QDialogButtonBox,QFileDialog,QMessageBox
-from MainWindow import MainWindow
-import sys 
-
 import configparser
+import sys
+
+from PySide6.QtWidgets import (
+    QApplication,
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QDialogButtonBox,
+    QFileDialog,
+    QMessageBox
+)
+from MainWindow import MainWindow
 
 class FileSelectionDialog(QDialog):
     def __init__(self, parent=None):

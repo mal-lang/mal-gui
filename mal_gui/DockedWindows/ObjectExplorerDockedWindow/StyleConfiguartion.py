@@ -1,12 +1,10 @@
-import sys
-from PySide6.QtWidgets import (
-    QApplication, QTreeWidget, QTreeWidgetItem, QPushButton, QVBoxLayout, QWidget, QMessageBox, QDialog, QLineEdit, QColorDialog, QFormLayout, QDialogButtonBox, QLabel, QSlider, QComboBox
-)
-from PySide6.QtCore import Qt, QEvent, QMimeData, Signal, QObject
-from PySide6.QtGui import QIcon, QResizeEvent, QDrag, QColor, QFont
-
 from enum import Enum
-from collections import namedtuple
+
+from PySide6.QtWidgets import (
+    QPushButton, QDialog, QLineEdit, QColorDialog, QFormLayout, QDialogButtonBox, QLabel
+)
+from PySide6.QtCore import Signal
+from PySide6.QtGui import QColor
 
 from ObjectExplorer.AssetBase import AssetBase
 

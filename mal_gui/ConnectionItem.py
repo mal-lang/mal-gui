@@ -1,6 +1,10 @@
 from PySide6.QtCore import Qt, QPointF, QLineF
 from PySide6.QtGui import QBrush, QColor,QPen
-from PySide6.QtWidgets import QGraphicsLineItem, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup
+from PySide6.QtWidgets import (
+    QGraphicsLineItem,
+    QGraphicsTextItem,
+    QGraphicsRectItem,
+)
 
 
 class IConnectionItem(QGraphicsLineItem):

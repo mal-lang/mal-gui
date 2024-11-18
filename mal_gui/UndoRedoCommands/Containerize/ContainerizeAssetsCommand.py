@@ -1,6 +1,6 @@
 from PySide6.QtGui import QUndoCommand
 from AssetsContainer.AssetsContainer import AssetsContainer
-from PySide6.QtCore import QPointF,QPropertyAnimation,QByteArray,QTimer
+from PySide6.QtCore import QPointF, QTimer
 from ObjectExplorer.AssetBase import AssetBase
 
 class ContainerizeAssetsCommand(QUndoCommand):

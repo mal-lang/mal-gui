@@ -1,9 +1,6 @@
 from PySide6.QtWidgets import QWidget,QTableView,QVBoxLayout
 from PySide6.QtGui import QStandardItemModel,QStandardItem
 
-import os
-import csv
-
 
 class AssociationDefinitions(QWidget):
     def __init__(self, parent=None):

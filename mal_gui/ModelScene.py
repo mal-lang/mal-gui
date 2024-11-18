@@ -1,5 +1,15 @@
-from PySide6.QtWidgets import QGraphicsScene, QMenu, QApplication, QGraphicsLineItem,QDialog,QGraphicsRectItem
-from PySide6.QtGui import QCursor, QTransform,QAction,QUndoStack,QPen
+import pickle
+import base64
+
+from PySide6.QtWidgets import (
+    QGraphicsScene,
+    QMenu,
+    QApplication,
+    QGraphicsLineItem,
+    QDialog,
+    QGraphicsRectItem
+)
+from PySide6.QtGui import QTransform,QAction,QUndoStack,QPen
 from PySide6.QtCore import QLineF, Qt, QPointF,QRectF
 
 from ConnectionItem import AssociationConnectionItem,EntrypointConnectionItem
@@ -8,9 +18,6 @@ from ObjectExplorer.AssetBase import AssetBase
 from ObjectExplorer.EditableTextItem import EditableTextItem
 from AssetsContainer.AssetsContainer import AssetsContainer
 from AssetsContainer.AssetsContainerRectangleBox import AssetsContainerRectangleBox
-
-import pickle
-import base64
 
 from UndoRedoCommands.Cut.CutCommand import CutCommand
 from UndoRedoCommands.Copy.CopyCommand import CopyCommand
@@ -23,9 +30,7 @@ from UndoRedoCommands.CreateConnection.CreateEntrypointConnectionCommand import 
 from UndoRedoCommands.DeleteConnection.DeleteConnectionCommand import DeleteConnectionCommand
 from UndoRedoCommands.Containerize.ContainerizeAssetsCommand import ContainerizeAssetsCommand
 
-
-from maltoolbox.language import LanguageGraph, LanguageClassesFactory
-from maltoolbox.model import Model, AttackerAttachment
+from maltoolbox.model import AttackerAttachment
 
 class ModelScene(QGraphicsScene):
     def __init__(self, assetFactory,langGraph, lcs,model, mainWindow):

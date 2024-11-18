@@ -1,5 +1,14 @@
-import csv
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QPushButton,QSizePolicy,QMessageBox
+from PySide6.QtWidgets import (
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QSizePolicy,
+)
 
 class ConnectionDialog(QDialog):
     def filterItems(self, text):

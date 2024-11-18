@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QGraphicsRectItem
-from PySide6.QtGui import QBrush, QColor,QPen
+from PySide6.QtGui import QBrush, QColor, QPen
 
 class AssetsContainerRectangleBox(QGraphicsRectItem):
     def __init__(self, rect, parent=None):

@@ -1,11 +1,9 @@
+import json
+
 from PySide6.QtGui import QUndoCommand
 from PySide6.QtCore import QPointF
 
-from ObjectExplorer.AssetBase import AssetBase
 from ConnectionItem import AssociationConnectionItem
-
-from maltoolbox.model import Model, AttackerAttachment
-import json
 
 class PasteCommand(QUndoCommand):
     def __init__(self, scene, position, clipboard, parent=None):

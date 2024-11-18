@@ -1,6 +1,16 @@
-from PySide6.QtCore import QRectF, Qt,QPointF,QSize,QSizeF,QTimer
-from PySide6.QtGui import QPixmap, QFont, QColor,QBrush,QPen,QPainterPath,QFontMetrics,QLinearGradient,QImage,QPainter
-from PySide6.QtWidgets import  QGraphicsItem,QWidget
+from PySide6.QtCore import QRectF, Qt, QPointF, QSize, QSizeF, QTimer
+from PySide6.QtGui import (
+    QPixmap,
+    QFont,
+    QColor,
+    QBrush,
+    QPen,
+    QPainterPath,
+    QFontMetrics,
+    QLinearGradient,
+    QImage
+)
+from PySide6.QtWidgets import  QGraphicsItem
 
 from .EditableTextItem import EditableTextItem
 
