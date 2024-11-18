@@ -3,6 +3,7 @@ from PySide6.QtCore import QPointF, QTimer
 
 from ..ObjectExplorer.AssetBase import AssetBase
 from ..AssetsContainer.AssetsContainer import AssetsContainer
+from ..file_utils import image_path
 
 class ContainerizeAssetsCommand(QUndoCommand):
     def __init__(self, scene, items, parent=None):
@@ -23,7 +24,13 @@ class ContainerizeAssetsCommand(QUndoCommand):
             if hasattr(item, 'connections'):
                 self.connections.extend(item.connections.copy())
                 
-        self.newAssetsContainer = AssetsContainer("AssetContainer", "ContainerName", "images/assetContainer.png","images/assetContainerPlusSymbol.png","images/assetContainerMinusSymbol.png")
+        self.newAssetsContainer = AssetsContainer(
+            "AssetContainer",
+            "ContainerName",
+            image_path("assetContainer.png"),
+            image_path("assetContainerPlusSymbol.png"),
+            image_path("assetContainerMinusSymbol.png")
+        )
         self.newAssetsContainer.build()
 
     def redo(self):

@@ -22,6 +22,9 @@ from PySide6.QtCore import Qt, QMimeData, QByteArray, QSize, Signal, QPointF
 
 from qt_material import apply_stylesheet,list_themes
 
+from maltoolbox.language import LanguageGraph, LanguageClassesFactory
+from maltoolbox.model import Model
+
 from .ModelScene import ModelScene
 from .ModelView import ModelView
 from .ObjectExplorer.AssetBase import AssetBase
@@ -35,8 +38,7 @@ from .DockedWindows.PropertiesWindow import PropertiesWindow,EditableDelegate
 from .DockedWindows.AttackStepsWindow import AttackStepsWindow
 from .DockedWindows.AssetRelationsWindow import AssetRelationsWindow
 
-from maltoolbox.language import LanguageGraph, LanguageClassesFactory
-from maltoolbox.model import Model
+from .file_utils import image_path
 
 # Used to create absolute paths of assets
 PACKAGE_DIR = Path(__file__).resolve().parent
@@ -64,32 +66,32 @@ class MainWindow(QMainWindow):
         self.modelFileName = None
 
         assetImages = {
-            "Application": "images/application.png",
-            "Credentials": "images/credentials.png",
-            "Data": "images/datastore.png",
-            "Group": "images/group.png",
-            "Hardware": "images/hardware.png",
-            "HardwareVulnerability": "images/hardwareVulnerability.png",
-            "IDPS": "images/idps.png",
-            "Identity": "images/identity.png",
-            "Privileges": "images/privileges.png",
-            "Information": "images/information.png",
-            "Network": "images/network.png",
-            "ConnectionRule": "images/connectionRule.png",
-            "PhysicalZone": "images/physicalZone.png",
-            "RoutingFirewall": "images/routingFirewall.png",
-            "SoftwareProduct": "images/softwareProduct.png",
-            "SoftwareVulnerability": "images/softwareVulnerability.png",
-            "User": "images/user.png"
+            "Application": image_path("application.png"),
+            "Credentials": image_path("credentials.png"),
+            "Data": image_path("datastore.png"),
+            "Group": image_path("group.png"),
+            "Hardware": image_path("hardware.png"),
+            "HardwareVulnerability": image_path("hardwareVulnerability.png"),
+            "IDPS": image_path("idps.png"),
+            "Identity": image_path("identity.png"),
+            "Privileges": image_path("privileges.png"),
+            "Information": image_path("information.png"),
+            "Network": image_path("network.png"),
+            "ConnectionRule": image_path("connectionRule.png"),
+            "PhysicalZone": image_path("physicalZone.png"),
+            "RoutingFirewall": image_path("routingFirewall.png"),
+            "SoftwareProduct": image_path("softwareProduct.png"),
+            "SoftwareVulnerability": image_path("softwareVulnerability.png"),
+            "User": image_path("user.png")
         }
         
-        self.eyeUnhideIconImage = str(PACKAGE_DIR / "images" / "eyeUnhide.png")
-        self.eyeHideIconImage = str(PACKAGE_DIR / "images" / "eyeHide.png")
-        self.rgbColorIconImage = str(PACKAGE_DIR / "images" / "rgbColor.png")
+        self.eyeUnhideIconImage = image_path("eyeUnhide.png")
+        self.eyeHideIconImage = image_path("eyeHide.png")
+        self.rgbColorIconImage = image_path("rgbColor.png")
 
         #Create a registry as a dictionary containing name as key and class as value
         self.assetFactory = AssetFactory()
-        attacker_icon = str(PACKAGE_DIR / "images" / "attacker.png")
+        attacker_icon = image_path("attacker.png")
         self.assetFactory.registerAsset("Attacker", attacker_icon)
         
         # Create the MAL language graph, language classes factory, and
@@ -101,12 +103,11 @@ class MainWindow(QMainWindow):
 
         for asset in self.langGraph.assets:
             if not asset.is_abstract:
-                asset_image_path = str(PACKAGE_DIR / assetImages[asset.name])
                 self.assetFactory.registerAsset(
                     asset.name,
-                    asset_image_path
+                    assetImages[asset.name]
                 )
-        
+
         #assetFactory registration should complete before injecting into ModelScene
         self.scene = ModelScene(self.assetFactory, self.langGraph, self.lcs,self.model, self)
         self.view = ModelView(self.scene, self)
@@ -287,46 +288,46 @@ class MainWindow(QMainWindow):
 
     def createActions(self):
         
-        zoom_in_icon = str(PACKAGE_DIR / "images" / "zoomIn.png")
+        zoom_in_icon = image_path("zoomIn.png")
         self.zoomInAction = QAction(QIcon(zoom_in_icon), "ZoomIn", self)
         self.zoomInAction.triggered.connect(self.zoomIn)
 
-        zoom_out_icon = str(PACKAGE_DIR / "images" / "zoomOut.png")
+        zoom_out_icon = image_path("zoomOut.png")
         self.zoomOutAction = QAction(QIcon(zoom_out_icon), "ZoomOut", self)
         self.zoomOutAction.triggered.connect(self.zoomOut)
 
         #undo Action
-        undo_icon = str(PACKAGE_DIR / "images" / "undoIcon.png")
+        undo_icon = image_path("undoIcon.png")
         self.undoAction = QAction(QIcon(undo_icon), "Undo", self)
         self.undoAction.setShortcut("Ctrl+z")
         self.undoAction.triggered.connect(self.scene.undoStack.undo)
 
         #redo Action
-        redo_icon = str(PACKAGE_DIR / "images" / "redoIcon.png")
+        redo_icon = image_path("redoIcon.png")
         self.redoAction = QAction(QIcon(redo_icon), "Redo", self)
         self.redoAction.setShortcut("Ctrl+Shift+z")
         self.redoAction.triggered.connect(self.scene.undoStack.redo)
         
         #cut Action
-        cut_icon = str(PACKAGE_DIR / "images" / "cutIcon.png")
+        cut_icon = image_path("cutIcon.png")
         self.cutAction = QAction(QIcon(cut_icon), "Cut", self)
         self.cutAction.setShortcut("Ctrl+x")
         self.cutAction.triggered.connect(lambda: self.scene.cutAssets(self.scene.selectedItems()))
 
         #copy Action
-        copy_icon = str(PACKAGE_DIR / "images" / "copyIcon.png")
+        copy_icon = image_path("copyIcon.png")
         self.copyAction = QAction(QIcon(copy_icon), "Copy", self)
         self.copyAction.setShortcut("Ctrl+c")
         self.copyAction.triggered.connect(lambda: self.scene.copyAssets(self.scene.selectedItems()))
         
         #paste Action
-        paste_icon = str(PACKAGE_DIR / "images" / "pasteIcon.png")
+        paste_icon = image_path("pasteIcon.png")
         self.pasteAction = QAction(QIcon(paste_icon), "Paste", self)
         self.pasteAction.setShortcut("Ctrl+v")
         self.pasteAction.triggered.connect(lambda: self.scene.pasteAssets(QPointF(0,0)))
         
         #delete Action
-        delete_icon = str(PACKAGE_DIR / "images" / "deleteIcon.png")
+        delete_icon = image_path("deleteIcon.png")
         self.deleteAction = QAction(QIcon(delete_icon), "Delete", self)
         self.deleteAction.setShortcut("Delete")
         self.deleteAction.triggered.connect(lambda: self.scene.deleteAssets(self.scene.selectedItems()))
@@ -409,7 +410,7 @@ class MainWindow(QMainWindow):
         self.toolbar.addSeparator()
         
          #Fit To Window
-        fit_to_view_icon = str(PACKAGE_DIR / "images" / "fitToView.png")
+        fit_to_view_icon = image_path("fitToView.png")
         fitToViewButton = QPushButton(QIcon(fit_to_view_icon), "Fit To View")
         self.toolbar.addWidget(fitToViewButton)
         fitToViewButton.clicked.connect(self.fitToViewButtonClicked)
