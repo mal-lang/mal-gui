@@ -12,8 +12,8 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import  QGraphicsItem
 
-from ..ObjectExplorer.EditableTextItem import EditableTextItem
-from .AssetsContainerRectangleBox import AssetsContainerRectangleBox
+from ..ObjectExplorer.editable_text_item import EditableTextItem
+from .assets_container_rectangle_box import AssetsContainerRectangleBox
 
 class AssetsContainer(QGraphicsItem):
     containerSequenceId = 100  # Starting Sequence Id with normal start at 100(randomly taken) 

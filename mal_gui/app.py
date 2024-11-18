@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QMessageBox
 )
-from .MainWindow import MainWindow
+from .main_window import MainWindow
 
 class FileSelectionDialog(QDialog):
     def __init__(self, parent=None):
