@@ -20,23 +20,24 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QDrag, QAction, QIcon, QIntValidator
 from PySide6.QtCore import Qt, QMimeData, QByteArray, QSize, Signal, QPointF
 
-from ModelScene import ModelScene
-from ModelView import ModelView
-from ObjectExplorer.AssetBase import AssetBase
-from ObjectExplorer.AssetFactory import AssetFactory
-from AssetsContainer.AssetsContainer import AssetsContainer
-from ConnectionItem import AssociationConnectionItem
+from qt_material import apply_stylesheet,list_themes
+
+from .ModelScene import ModelScene
+from .ModelView import ModelView
+from .ObjectExplorer.AssetBase import AssetBase
+from .ObjectExplorer.AssetFactory import AssetFactory
+from .AssetsContainer.AssetsContainer import AssetsContainer
+from .ConnectionItem import AssociationConnectionItem
+
+from .DockedWindows.DraggableTreeView import DraggableTreeView
+from .DockedWindows.ItemDetailsWindow import ItemDetailsWindow
+from .DockedWindows.PropertiesWindow import PropertiesWindow,EditableDelegate
+from .DockedWindows.AttackStepsWindow import AttackStepsWindow
+from .DockedWindows.AssetRelationsWindow import AssetRelationsWindow
 
 from maltoolbox.language import LanguageGraph, LanguageClassesFactory
 from maltoolbox.model import Model
 
-from DockedWindows.ObjectExplorerDockedWindow.DraggableTreeView import DraggableTreeView
-from DockedWindows.ItemDetailsDockedWindow.ItemDetailsWindow import ItemDetailsWindow
-from DockedWindows.PropertiesDockedWindow.PropertiesWindow import PropertiesWindow,EditableDelegate
-from DockedWindows.AttackStepsDockedWindow.AttackStepsWindow import AttackStepsWindow
-from DockedWindows.AssetRelationsDockedWindow.AssetRelationsWindow import AssetRelationsWindow
-
-from qt_material import apply_stylesheet,list_themes
 
 class DraggableListWidget(QListWidget):
     def mousePressEvent(self, event):

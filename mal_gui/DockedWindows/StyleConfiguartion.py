@@ -1,12 +1,18 @@
 from enum import Enum
 
 from PySide6.QtWidgets import (
-    QPushButton, QDialog, QLineEdit, QColorDialog, QFormLayout, QDialogButtonBox, QLabel
+    QPushButton,
+    QDialog,
+    QLineEdit,
+    QColorDialog,
+    QFormLayout,
+    QDialogButtonBox,
+    QLabel
 )
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QColor
 
-from ObjectExplorer.AssetBase import AssetBase
+from ..ObjectExplorer.AssetBase import AssetBase
 
 class Visibility(Enum):
     HIDE = 1

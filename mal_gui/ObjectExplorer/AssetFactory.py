@@ -1,5 +1,5 @@
 from collections import namedtuple
-from ObjectExplorer.AssetBase import AssetBase
+from .AssetBase import AssetBase
 
 class AssetFactory():
     def __init__(self, parent=None):

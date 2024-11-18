@@ -1,7 +1,8 @@
 from PySide6.QtGui import QUndoCommand
-from AssetsContainer.AssetsContainer import AssetsContainer
 from PySide6.QtCore import QPointF, QTimer
-from ObjectExplorer.AssetBase import AssetBase
+
+from ..ObjectExplorer.AssetBase import AssetBase
+from ..AssetsContainer.AssetsContainer import AssetsContainer
 
 class ContainerizeAssetsCommand(QUndoCommand):
     def __init__(self, scene, items, parent=None):

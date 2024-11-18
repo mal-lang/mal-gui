@@ -1,5 +1,14 @@
-import configparser
 import sys
+
+if __name__ == "__main__" and __package__ is None:
+    print(
+        "Warning: You are running 'app.py' directly.\n"
+        "Please install the package and use the 'malgui' command instead\n"
+        "or use 'python3 -m mal_gui.app' from the parent directory."
+    )
+    sys.exit(1)  # Exit to prevent accidental misuse
+
+import configparser
 
 from PySide6.QtWidgets import (
     QApplication,
@@ -13,7 +22,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QMessageBox
 )
-from MainWindow import MainWindow
+from .MainWindow import MainWindow
 
 class FileSelectionDialog(QDialog):
     def __init__(self, parent=None):
@@ -36,7 +45,7 @@ class FileSelectionDialog(QDialog):
         self.config = configparser.ConfigParser()
         # self.config.read('config.ini')
         self.config.read('config.ini')
-        self.marFilePath = self.config.get('Settings', 'marFilePath')
+        self.marFilePath = self.config.get('Settings', 'marFilePath', fallback=None)
         print(f"Initial marFilePath path: {self.marFilePath}")
         self.malLanguageMarFilePathText.setText(self.marFilePath)
         
@@ -82,12 +91,6 @@ class FileSelectionDialog(QDialog):
         
         if selectedFile.endswith('.mar'):
             self.selectedFile = selectedFile
-            
-            self.config.set('Settings', 'marFilePath', self.selectedFile)
-            with open('config.ini', 'w') as configfile:
-                self.config.write(configfile)
-            
-            
             self.accept()  # Close the dialog and return accepted
         else:
             QMessageBox.warning(self, "Invalid File", "Please select a valid .mar file.")
@@ -96,10 +99,9 @@ class FileSelectionDialog(QDialog):
         return self.selectedFile
 
 
-
-if __name__ == "__main__":
+def main():
     app = QApplication(sys.argv)
-    
+
     dialog = FileSelectionDialog()
     if dialog.exec() == QDialog.Accepted:
         selectedFilePath = dialog.getSelectedFile()
@@ -112,4 +114,7 @@ if __name__ == "__main__":
         app.exec()
     else:
         app.quit()
-    
+
+
+if __name__ == "__main__":
+    main()

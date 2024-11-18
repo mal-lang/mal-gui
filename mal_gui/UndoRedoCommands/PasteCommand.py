@@ -3,7 +3,7 @@ import json
 from PySide6.QtGui import QUndoCommand
 from PySide6.QtCore import QPointF
 
-from ConnectionItem import AssociationConnectionItem
+from ..ConnectionItem import AssociationConnectionItem
 
 class PasteCommand(QUndoCommand):
     def __init__(self, scene, position, clipboard, parent=None):
