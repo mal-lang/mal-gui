@@ -38,6 +38,8 @@ from .docked_windows.asset_relations_window import AssetRelationsWindow
 from maltoolbox.language import LanguageGraph, LanguageClassesFactory
 from maltoolbox.model import Model
 
+# Used to create absolute paths of assets
+PACKAGE_DIR = Path(__file__).resolve().parent
 
 class DraggableListWidget(QListWidget):
     def mousePressEvent(self, event):
@@ -81,13 +83,14 @@ class MainWindow(QMainWindow):
             "User": "images/user.png"
         }
         
-        self.eyeUnhideIconImage = "images/eyeUnhide.png"
-        self.eyeHideIconImage = "images/eyeHide.png"
-        self.rgbColorIconImage = "images/rgbColor.png"
+        self.eyeUnhideIconImage = str(PACKAGE_DIR / "images" / "eyeUnhide.png")
+        self.eyeHideIconImage = str(PACKAGE_DIR / "images" / "eyeHide.png")
+        self.rgbColorIconImage = str(PACKAGE_DIR / "images" / "rgbColor.png")
 
         #Create a registry as a dictionary containing name as key and class as value
         self.assetFactory = AssetFactory()
-        self.assetFactory.registerAsset("Attacker", "images/attacker.png")
+        attacker_icon = str(PACKAGE_DIR / "images" / "attacker.png")
+        self.assetFactory.registerAsset("Attacker", attacker_icon)
         
         # Create the MAL language graph, language classes factory, and
         # instance model
@@ -96,8 +99,6 @@ class MainWindow(QMainWindow):
         self.lcs = LanguageClassesFactory(self.langGraph)
         self.model = Model("Untitled Model", self.lcs)
 
-
-        PACKAGE_DIR = Path(__file__).resolve().parent
         for asset in self.langGraph.assets:
             if not asset.is_abstract:
                 asset_image_path = str(PACKAGE_DIR / assetImages[asset.name])
@@ -285,40 +286,48 @@ class MainWindow(QMainWindow):
                         opposite_field_name + "-->" + associated_asset.name)
 
     def createActions(self):
-
-        self.zoomInAction = QAction(QIcon("images/zoomIn.png"), "ZoomIn", self)
+        
+        zoom_in_icon = str(PACKAGE_DIR / "images" / "zoomIn.png")
+        self.zoomInAction = QAction(QIcon(zoom_in_icon), "ZoomIn", self)
         self.zoomInAction.triggered.connect(self.zoomIn)
 
-        self.zoomOutAction = QAction(QIcon("images/zoomOut.png"), "ZoomOut", self)
+        zoom_out_icon = str(PACKAGE_DIR / "images" / "zoomOut.png")
+        self.zoomOutAction = QAction(QIcon(zoom_out_icon), "ZoomOut", self)
         self.zoomOutAction.triggered.connect(self.zoomOut)
 
         #undo Action
-        self.undoAction = QAction(QIcon("images/undoIcon.png"), "Undo", self)
+        undo_icon = str(PACKAGE_DIR / "images" / "undoIcon.png")
+        self.undoAction = QAction(QIcon(undo_icon), "Undo", self)
         self.undoAction.setShortcut("Ctrl+z")
         self.undoAction.triggered.connect(self.scene.undoStack.undo)
 
         #redo Action
-        self.redoAction = QAction(QIcon("images/redoIcon.png"), "Redo", self)
+        redo_icon = str(PACKAGE_DIR / "images" / "redoIcon.png")
+        self.redoAction = QAction(QIcon(redo_icon), "Redo", self)
         self.redoAction.setShortcut("Ctrl+Shift+z")
         self.redoAction.triggered.connect(self.scene.undoStack.redo)
         
         #cut Action
-        self.cutAction = QAction(QIcon("images/cutIcon.png"), "Cut", self)
+        cut_icon = str(PACKAGE_DIR / "images" / "cutIcon.png")
+        self.cutAction = QAction(QIcon(cut_icon), "Cut", self)
         self.cutAction.setShortcut("Ctrl+x")
         self.cutAction.triggered.connect(lambda: self.scene.cutAssets(self.scene.selectedItems()))
 
         #copy Action
-        self.copyAction = QAction(QIcon("images/copyIcon.png"), "Copy", self)
+        copy_icon = str(PACKAGE_DIR / "images" / "copyIcon.png")
+        self.copyAction = QAction(QIcon(copy_icon), "Copy", self)
         self.copyAction.setShortcut("Ctrl+c")
         self.copyAction.triggered.connect(lambda: self.scene.copyAssets(self.scene.selectedItems()))
         
         #paste Action
-        self.pasteAction = QAction(QIcon("images/pasteIcon.png"), "Paste", self)
+        paste_icon = str(PACKAGE_DIR / "images" / "pasteIcon.png")
+        self.pasteAction = QAction(QIcon(paste_icon), "Paste", self)
         self.pasteAction.setShortcut("Ctrl+v")
         self.pasteAction.triggered.connect(lambda: self.scene.pasteAssets(QPointF(0,0)))
         
         #delete Action
-        self.deleteAction = QAction(QIcon("images/deleteIcon.png"), "Delete", self)
+        delete_icon = str(PACKAGE_DIR / "images" / "deleteIcon.png")
+        self.deleteAction = QAction(QIcon(delete_icon), "Delete", self)
         self.deleteAction.setShortcut("Delete")
         self.deleteAction.triggered.connect(lambda: self.scene.deleteAssets(self.scene.selectedItems()))
 
@@ -400,7 +409,8 @@ class MainWindow(QMainWindow):
         self.toolbar.addSeparator()
         
          #Fit To Window
-        fitToViewButton = QPushButton(QIcon("images/fitToView.png"), "Fit To View")
+        fit_to_view_icon = str(PACKAGE_DIR / "images" / "fitToView.png")
+        fitToViewButton = QPushButton(QIcon(fit_to_view_icon), "Fit To View")
         self.toolbar.addWidget(fitToViewButton)
         fitToViewButton.clicked.connect(self.fitToViewButtonClicked)
         self.toolbar.addSeparator()
