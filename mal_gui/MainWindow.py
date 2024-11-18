@@ -22,18 +22,18 @@ from PySide6.QtCore import Qt, QMimeData, QByteArray, QSize, Signal, QPointF
 
 from qt_material import apply_stylesheet,list_themes
 
-from .model_scene import ModelScene
-from .model_view import ModelView
-from .ObjectExplorer.asset_base import AssetBase
-from .ObjectExplorer.asset_factory import AssetFactory
-from .AssetsContainer.assets_container import AssetsContainer
-from .connection_item import AssociationConnectionItem
+from .ModelScene import ModelScene
+from .ModelView import ModelView
+from .ObjectExplorer.AssetBase import AssetBase
+from .ObjectExplorer.AssetFactory import AssetFactory
+from .AssetsContainer.AssetsContainer import AssetsContainer
+from .ConnectionItem import AssociationConnectionItem
 
-from .DockedWindows.draggable_tree_view import DraggableTreeView
-from .DockedWindows.item_details_window import ItemDetailsWindow
-from .DockedWindows.properties_window import PropertiesWindow,EditableDelegate
-from .DockedWindows.attack_steps_window import AttackStepsWindow
-from .DockedWindows.asset_relations_window import AssetRelationsWindow
+from .DockedWindows.DraggableTreeView import DraggableTreeView
+from .DockedWindows.ItemDetailsWindow import ItemDetailsWindow
+from .DockedWindows.PropertiesWindow import PropertiesWindow,EditableDelegate
+from .DockedWindows.AttackStepsWindow import AttackStepsWindow
+from .DockedWindows.AssetRelationsWindow import AssetRelationsWindow
 
 from maltoolbox.language import LanguageGraph, LanguageClassesFactory
 from maltoolbox.model import Model

@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QPushButton, QTreeWidget, QTreeWidgetItem
 from PySide6.QtCore import QMimeData, QEvent
 from PySide6.QtGui import QDrag, QIcon, QResizeEvent
 
-from .style_configuration import (
+from .StyleConfiguartion import (
     Visibility,
     CustomDialog,
     CustomDialogGlobal,

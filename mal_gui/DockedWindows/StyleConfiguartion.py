@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QColor
 
-from ..ObjectExplorer.asset_base import AssetBase
+from ..ObjectExplorer.AssetBase import AssetBase
 
 class Visibility(Enum):
     HIDE = 1
