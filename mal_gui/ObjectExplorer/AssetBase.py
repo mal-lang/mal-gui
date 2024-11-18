@@ -24,7 +24,7 @@ class AssetBase(QGraphicsItem):
         self.assetName = assetName
         self.assetSequenceId = AssetBase.generateNextSequenceId()
         self.imagePath = imagePath
-        print("image path = "+ self.imagePath)
+        print("image path = ", self.imagePath)
 
         # self.image = QPixmap(self.imagePath).scaled(30, 30, Qt.KeepAspectRatio)  # Scale the image here
         # self.image = QPixmap(self.imagePath)

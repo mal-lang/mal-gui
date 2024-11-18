@@ -105,7 +105,7 @@ class MainWindow(QMainWindow):
             if not asset.is_abstract:
                 self.assetFactory.registerAsset(
                     asset.name,
-                    assetImages[asset.name]
+                    assetImages.get(asset.name, image_path('unknown.png'))
                 )
 
         #assetFactory registration should complete before injecting into ModelScene
