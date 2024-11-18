@@ -223,15 +223,6 @@ class AssetsContainer(QGraphicsItem):
         # Update position
         self.typeTextItem.setPos(typeTextItemPosX, typeTextItemPosY)
 
-
-    def itemChange(self, change, value):
-        if change == QGraphicsItem.ItemPositionChange:
-            if self.pos() != self.initialPosition:
-                self.initialPosition = self.pos()
-            if self.scene():
-                self.scene().update()  # Ensure the scene is updated - this fixed trailing borders issue
-        return super().itemChange(change, value)
-
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.typeTextItem.setTextInteractionFlags(Qt.TextEditorInteraction)
