@@ -1,6 +1,6 @@
 [project]
 name = "mal-gui"
-version = "0.0.1"
+version = "0.0.2"
 description = "A graphical user interface tool used to create MAL instance models."
 authors = [
     {name="Akash Sinha", email="aksinha@kth.se"},
@@ -23,6 +23,12 @@ dependencies = [
 
 [project.scripts]
 malgui = "mal_gui.app:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"mal_gui" = ["images/*"]
 
 [tool.setuptools.packages.find]
 where = ["."]
