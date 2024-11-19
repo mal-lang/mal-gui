@@ -2,6 +2,11 @@
 name = "mal-gui"
 version = "0.0.1"
 description = "A graphical user interface tool used to create MAL instance models."
+authors = [
+    {name="Akash Sinha", email="aksinha@kth.se"},
+    {name="Andrei Buhaiu", email="buhaiu@kth.se"},
+    {name="Joakim Loxdal", email="loxdal@kth.se"},
+]
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
