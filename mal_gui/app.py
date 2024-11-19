@@ -1,4 +1,7 @@
+import os
 import sys
+
+from appdirs import user_config_dir
 
 if __name__ == "__main__" and __package__ is None:
     print(
@@ -34,22 +37,27 @@ class FileSelectionDialog(QDialog):
         verticalLayout = QVBoxLayout()
 
         # Label to instruct the user
-        self.label = QLabel("Select MAL Language mar file to load:")
+        self.label = QLabel("Select MAL Language .mar file to load:")
         verticalLayout.addWidget(self.label)
 
         horizontalLayout = QHBoxLayout()
+        self.malLangFilePathText = QLineEdit(self)
 
-        self.malLanguageMarFilePathText = QLineEdit(self)
+        # Load the config file containing latest lang file path
+        config_file_dir = user_config_dir("mal-gui", "mal-lang")
+        self.config_file_path = config_file_dir + '/config.ini'
 
-        # Load the config file
+        # Make sure config file exists
+        os.makedirs(os.path.dirname(self.config_file_path), exist_ok=True)
+
         self.config = configparser.ConfigParser()
-        # self.config.read('config.ini')
-        self.config.read('config.ini')
-        self.marFilePath = self.config.get('Settings', 'marFilePath', fallback=None)
-        print(f"Initial marFilePath path: {self.marFilePath}")
-        self.malLanguageMarFilePathText.setText(self.marFilePath)
+        self.config.read(self.config_file_path)
+        self.selectedLangFile = self.config.get(
+            'Settings', 'langFilePath', fallback=None)
+        print(f"Initial langFilePath path: {self.selectedLangFile}")
+        self.malLangFilePathText.setText(self.selectedLangFile)
 
-        horizontalLayout.addWidget(self.malLanguageMarFilePathText)
+        horizontalLayout.addWidget(self.malLangFilePathText)
 
         browseButton = QPushButton("Browse")
         horizontalLayout.addWidget(browseButton)
@@ -67,7 +75,7 @@ class FileSelectionDialog(QDialog):
         self.setLayout(verticalLayout)
 
         browseButton.clicked.connect(self.openFileDialog)
-        loadButton.clicked.connect(self.loadFile)
+        loadButton.clicked.connect(self.saveLangFilePath)
         quitButton.clicked.connect(self.reject)
 
     def openFileDialog(self):
@@ -80,23 +88,31 @@ class FileSelectionDialog(QDialog):
         fileDialog.setWindowTitle("Select a MAR File")
 
         if fileDialog.exec() == QFileDialog.Accepted:
-            selectedFilePath = fileDialog.selectedFiles()[0]
-            self.malLanguageMarFilePathText.setText(selectedFilePath)
+            selectedLangFilePath = fileDialog.selectedFiles()[0]
+            self.malLangFilePathText.setText(selectedLangFilePath)
 
-    def loadFile(self):
-        selectedFile = self.malLanguageMarFilePathText.text()
+    def saveLangFilePath(self):
+        """
+        Set current language MAR archive file and store
+        latest chosen language in user config file
+        """
 
-        # Check if the path ends with .mar or .jar --> Need to confirm with Andrei
-        # if selectedFile.endswith(('.jar','.mar')):
+        selectedLangFile = self.malLangFilePathText.text()
 
-        if selectedFile.endswith('.mar'):
-            self.selectedFile = selectedFile
+        if selectedLangFile.endswith('.mar'):
+            self.selectedLangFile = selectedLangFile
+
+            # Remember language choice in user settings
+            self.config.set('Settings', 'langFilePath', self.selectedLangFile)
+            with open(self.config_file_path, 'w') as configfile:
+                self.config.write(configfile)
+
             self.accept()  # Close the dialog and return accepted
         else:
             QMessageBox.warning(self, "Invalid File", "Please select a valid .mar file.")
 
     def getSelectedFile(self):
-        return self.selectedFile
+        return self.selectedLangFile
 
 
 def main():
@@ -104,12 +120,10 @@ def main():
 
     dialog = FileSelectionDialog()
     if dialog.exec() == QDialog.Accepted:
-        selectedFilePath = dialog.getSelectedFile()
-
-        window = MainWindow(app,selectedFilePath)
+        selectedLangFilePath = dialog.getSelectedFile()
+        window = MainWindow(app, selectedLangFilePath)
         window.show()
-
-        print(f"Selected MAR file Path: {selectedFilePath}")
+        print(f"Selected MAR file Path: {selectedLangFilePath}")
 
         app.exec()
     else:

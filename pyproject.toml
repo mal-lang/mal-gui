@@ -17,7 +17,8 @@ dependencies = [
     "PySide6_Essentials==6.7.0",
     "shiboken6==6.7.0",
     "mal-toolbox>=0.1.8",
-    "qt-material==2.14"
+    "qt-material==2.14",
+    "appdirs==1.4.4"
 ]
 
 [project.scripts]
