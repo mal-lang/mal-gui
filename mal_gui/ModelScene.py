@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import pickle
 import base64
+from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import (
     QGraphicsScene,
@@ -30,10 +33,20 @@ from .UndoRedoCommands.CreateEntrypointConnectionCommand import CreateEntrypoint
 from .UndoRedoCommands.DeleteConnectionCommand import DeleteConnectionCommand
 from .UndoRedoCommands.ContainerizeAssetsCommand import ContainerizeAssetsCommand
 
-from maltoolbox.model import AttackerAttachment
+from maltoolbox.model import Model, AttackerAttachment
+
+if TYPE_CHECKING:
+    from MainWindow import MainWindow
 
 class ModelScene(QGraphicsScene):
-    def __init__(self, assetFactory,langGraph, lcs,model, mainWindow):
+    def __init__(
+            self,
+            assetFactory,
+            langGraph,
+            lcs,
+            model: Model,
+            mainWindow: MainWindow
+        ):
         super().__init__()
 
         self.assetFactory = assetFactory
@@ -675,7 +688,7 @@ class ModelScene(QGraphicsScene):
             item = selectedItems[0]
             if isinstance(item, AssetBase):
                 # self.mainWindow is a reference to main window
-                self.mainWindow.itemDetailsWindow.updateItemDetailsWindow(item)
+                self.mainWindow.item_details_window.updateItemDetailsWindow(item)
                 if item.assetType == 'Attacker':
                     print("Attacker Selected")
                     self.mainWindow.updateAttackStepsWindow(item)
@@ -686,7 +699,7 @@ class ModelScene(QGraphicsScene):
                     self.mainWindow.updateAttackStepsWindow(None) 
                     self.mainWindow.updateAssetRelationsWindow(item)     
         else:
-            self.mainWindow.itemDetailsWindow.updateItemDetailsWindow(None)
+            self.mainWindow.item_details_window.updateItemDetailsWindow(None)
             self.mainWindow.updatePropertiesWindow(None)
             self.mainWindow.updateAttackStepsWindow(None)
             self.mainWindow.updateAssetRelationsWindow(None)

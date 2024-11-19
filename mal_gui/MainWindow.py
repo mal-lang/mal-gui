@@ -15,7 +15,8 @@ from PySide6.QtWidgets import (
     QPushButton,
     QFileDialog,
     QMessageBox,
-    QTableWidgetItem
+    QTableWidgetItem,
+    QApplication
 )
 from PySide6.QtGui import QDrag, QAction, QIcon, QIntValidator
 from PySide6.QtCore import Qt, QMimeData, QByteArray, QSize, Signal, QPointF
@@ -57,15 +58,15 @@ class DraggableListWidget(QListWidget):
 
 
 class MainWindow(QMainWindow):
-    updateChildsInObjectExplorerSignal = Signal()
+    update_childs_in_object_explorer_signal = Signal()
 
-    def __init__(self,app,malLanguageMarFilePath):
+    def __init__(self, app: QApplication, lang_file_path: str):
         super().__init__()
-        self.app = app #declare an app member
         self.setWindowTitle("MAL GUI")
-        self.modelFileName = None
+        self.app = app # declare an app member
+        self.model_file_name = None
 
-        assetImages = {
+        asset_images = {
             "Application": image_path("application.png"),
             "Credentials": image_path("credentials.png"),
             "Data": image_path("datastore.png"),
@@ -85,191 +86,185 @@ class MainWindow(QMainWindow):
             "User": image_path("user.png")
         }
 
-        self.eyeUnhideIconImage = image_path("eyeUnhide.png")
-        self.eyeHideIconImage = image_path("eyeHide.png")
-        self.rgbColorIconImage = image_path("rgbColor.png")
-
-        #Create a registry as a dictionary containing name as key and class as value
-        self.assetFactory = AssetFactory()
+        # Create a registry as a dictionary containing
+        # name as key and class as value
+        self.asset_factory = AssetFactory()
         attacker_icon = image_path("attacker.png")
-        self.assetFactory.registerAsset("Attacker", attacker_icon)
+        self.asset_factory.registerAsset("Attacker", attacker_icon)
 
-        # Create the MAL language graph, language classes factory, and
-        # instance model
-        # self.langGraph = LanguageGraph.from_mar_archive("langs/org.mal-lang.coreLang-1.0.0.mar")
-        self.langGraph = LanguageGraph.from_mar_archive(malLanguageMarFilePath)
-        self.lcs = LanguageClassesFactory(self.langGraph)
+        # Create the MAL language graph, language classes factory,
+        # and instance model
+        self.lang_graph = LanguageGraph.from_mar_archive(lang_file_path)
+        self.lcs = LanguageClassesFactory(self.lang_graph)
         self.model = Model("Untitled Model", self.lcs)
 
-        for asset in self.langGraph.assets:
+        for asset in self.lang_graph.assets:
             if not asset.is_abstract:
-                self.assetFactory.registerAsset(
+                self.asset_factory.registerAsset(
                     asset.name,
-                    assetImages.get(asset.name, image_path('unknown.png'))
+                    asset_images.get(asset.name, image_path('unknown.png'))
                 )
 
-        #assetFactory registration should complete before injecting into ModelScene
-        self.scene = ModelScene(self.assetFactory, self.langGraph, self.lcs,self.model, self)
+        # AssetFactory registration should complete
+        # before injecting into ModelScene
+        self.scene = ModelScene(
+            self.asset_factory,
+            self.lang_graph,
+            self.lcs,
+            self.model,
+            self
+        )
         self.view = ModelView(self.scene, self)
 
-        self.createActions()
-        self.createMenus()
-        self.createToolbar()
+        self.create_actions()
+        self.create_menus()
+        self.create_toolbar()
 
-        self.view.zoomChanged.connect(self.updateZoomLabel)
-
-        #Association Information
-        # self.associationInfo = AssociationDefinitions(self)
+        self.view.zoomChanged.connect(self.update_zoom_label)
 
         self.splitter = QSplitter()
         self.splitter.addWidget(self.view)
-        # self.splitter.addWidget(self.associationInfo)
-        self.splitter.setSizes([200, 100])  # Set initial sizes of widgets in splitter
-
+        # Set initial sizes of widgets in splitter
+        self.splitter.setSizes([200, 100])
         self.setCentralWidget(self.splitter)
+        self.update_childs_in_object_explorer_signal\
+            .connect(self.update_explorer_docked_window)
+        self.create_side_panels()
 
-        # self.setDockNestingEnabled(True)
-        # self.setCorner()
-
-        self.updateChildsInObjectExplorerSignal.connect(self.updateExplorerDockedWindow)
-
-        self.dockAble()
-
-    def dockAble(self):
+    def create_side_panels(self):
+        """Add side panel objects"""
         # ObjectExplorer - LeftSide pannel is Draggable TreeView
-        dockObjectExplorer = QDockWidget("Object Explorer",self)
-        self.objectExplorerTree = DraggableTreeView(self.scene,self.eyeUnhideIconImage,self.eyeHideIconImage,self.rgbColorIconImage)
+        dock_object_explorer = QDockWidget("Object Explorer",self)
+        eye_unhide_icon_image = image_path("eyeUnhide.png")
+        eye_hide_icon_image = image_path("eyeHide.png")
+        rgb_color_icon_image = image_path("rgbColor.png")
+        self.object_explorer_tree = DraggableTreeView(
+            self.scene,
+            eye_unhide_icon_image,
+            eye_hide_icon_image,
+            rgb_color_icon_image
+        )
 
-        #printing registry
-        print("printing registry: ")
-        for key,values in self.assetFactory.assetRegistry.items():
-            # print(f"Key: {key}")
+        for _, values in self.asset_factory.assetRegistry.items():
             for value in values:
-                # print(f"  Tuple: {value}")
-                # print(f"    Field1: {value.assetType}")
-                # print(f"    Field2: {value.assetName}")
-                # print(f"    Field3: {value.assetImage}")
-                self.objectExplorerTree.setParentItemText(value.assetType,value.assetImage)
-                # self.objectExplorerTree.addChildItem(value.assetType, value.assetType+ "@Number_TBD")
+                self.object_explorer_tree.setParentItemText(
+                    value.assetType, value.assetImage
+                )
 
-
-        dockObjectExplorer.setWidget(self.objectExplorerTree)
-        self.addDockWidget(Qt.LeftDockWidgetArea, dockObjectExplorer)
+        dock_object_explorer.setWidget(self.object_explorer_tree)
+        self.addDockWidget(Qt.LeftDockWidgetArea, dock_object_explorer)
 
         #EDOC Tab with treeview
-        componentTabTree = QTreeWidget()
-        componentTabTree.setHeaderLabel(None)
+        component_tab_tree = QTreeWidget()
+        component_tab_tree.setHeaderLabel(None)
 
         #ItemDetails with treeview
-        self.itemDetailsWindow = ItemDetailsWindow()
-
-        dockItemDetails = QDockWidget("Item Details",self)
-        dockItemDetails.setWidget(self.itemDetailsWindow)
-        self.addDockWidget(Qt.LeftDockWidgetArea, dockItemDetails)
+        self.item_details_window = ItemDetailsWindow()
+        dock_item_details = QDockWidget("Item Details",self)
+        dock_item_details.setWidget(self.item_details_window)
+        self.addDockWidget(Qt.LeftDockWidgetArea, dock_item_details)
 
         #Properties Tab with tableview
-        self.propertiesDockedWindow = PropertiesWindow()
-        self.propertiesTable = self.propertiesDockedWindow.propertiesTable
-
-        dockProperties = QDockWidget("Properties",self)
-        dockProperties.setWidget(self.propertiesTable)
-        self.addDockWidget(Qt.LeftDockWidgetArea, dockProperties)
+        self.properties_docked_window = PropertiesWindow()
+        self.properties_table = self.properties_docked_window.propertiesTable
+        dock_properties = QDockWidget("Properties",self)
+        dock_properties.setWidget(self.properties_table)
+        self.addDockWidget(Qt.LeftDockWidgetArea, dock_properties)
 
         #AttackSteps Tab with ListView
-        self.attackStepsDockedWindow = AttackStepsWindow()
-        dockAttackSteps = QDockWidget("Attack Steps",self)
-        dockAttackSteps.setWidget(self.attackStepsDockedWindow)
-        self.addDockWidget(Qt.LeftDockWidgetArea, dockAttackSteps)
+        self.attack_steps_docked_window = AttackStepsWindow()
+        dock_attack_steps = QDockWidget("Attack Steps",self)
+        dock_attack_steps.setWidget(self.attack_steps_docked_window)
+        self.addDockWidget(Qt.LeftDockWidgetArea, dock_attack_steps)
 
         #AssetRelations Tab with ListView
-        self.assetRelationsDockedWindow = AssetRelationsWindow()
-        dockAssetRelations = QDockWidget("Asset Relations",self)
-        dockAssetRelations.setWidget(self.assetRelationsDockedWindow)
-        self.addDockWidget(Qt.LeftDockWidgetArea, dockAssetRelations)
+        self.asset_relations_docker_window = AssetRelationsWindow()
+        dock_asset_relations = QDockWidget("Asset Relations",self)
+        dock_asset_relations.setWidget(self.asset_relations_docker_window)
+        self.addDockWidget(Qt.LeftDockWidgetArea, dock_asset_relations)
 
         #Keep Propeties Window and Attack Step Window Tabbed
-        self.tabifyDockWidget(dockProperties, dockAttackSteps)
+        self.tabifyDockWidget(dock_properties, dock_attack_steps)
 
         #Keep the properties Window highlighted and raised
-        dockProperties.raise_()
+        dock_properties.raise_()
 
-    def showAssociationCheckBoxChanged(self,checked):
-        print("self.showAssociationCheckBoxChanged clicked")
+    def show_association_checkbox_changed(self, checked):
+        """Called on button click"""
+        print("self.show_association_checkbox_changed clicked")
         self.scene.setShowAssociationCheckBoxStatus(checked)
         for connection in self.scene.items():
             if isinstance(connection, AssociationConnectionItem):
                 connection.updatePath()
 
-    def showImageIconCheckBoxChanged(self,checked):
-        print("self.showImageIconCheckBoxChanged clicked")
+    def show_image_icon_checkbox_changed(self, checked):
+        """Called on button click"""
+        print("self.show_image_icon_checkbox_changed clicked")
         for item in self.scene.items():
             if isinstance(item, (AssetBase,AssetsContainer)):
                 item.toggleIconVisibility()
 
-    def fitToViewButtonClicked(self):
+    def fit_to_view_button_clicked(self):
+        """Called on button click"""
         print("Fit To View Button Clicked..")
         # Find the bounding rectangle of all items in Scene
-        boundingRect = self.scene.itemsBoundingRect()
-        self.view.fitInView(boundingRect,Qt.KeepAspectRatio)
+        bounding_rect = self.scene.itemsBoundingRect()
+        self.view.fitInView(bounding_rect, Qt.KeepAspectRatio)
 
-    def updatePropertiesWindow(self, assetItem):
+    def updatePropertiesWindow(self, asset_item):
         #Clear the table
-        self.propertiesTable.setRowCount(0)
+        self.properties_table.setRowCount(0)
 
-        if assetItem is not None and assetItem.assetType != "Attacker":
-            asset = assetItem.asset
+        if asset_item is not None and asset_item.assetType != "Attacker":
+            asset = asset_item.asset
             defenses = self.model.get_asset_defenses(
-                asset,
-                include_defaults = True
+                asset, include_defaults = True
             )
-
-            # for association in asset.associations:
-            #     print("association= "+ str(association.name))
 
             properties = list(defenses.items())
             # Insert new rows based on the data dictionary
-            numRows = len(properties)
-            self.propertiesTable.setRowCount(numRows)
-            self.propertiesTable.currentItem = assetItem
+            num_rows = len(properties)
+            self.properties_table.setRowCount(num_rows)
+            self.properties_table.currentItem = asset_item
 
-            for row, (propertyKey, propertyValue) in enumerate(properties):
-                print(f"DEF:{propertyKey} VAL:{float(propertyValue)}")
+            for row, (property_key, property_value) in enumerate(properties):
+                print(f"DEF:{property_key} VAL:{float(property_value)}")
 
-                columnPropertyName = QTableWidgetItem(propertyKey)
-                columnPropertyName.setFlags(Qt.ItemIsEnabled)  # Make the property name read-only
+                col_property_name = QTableWidgetItem(property_key)
+                col_property_name.setFlags(Qt.ItemIsEnabled)  # Make the property name read-only
 
-                columnValue = QTableWidgetItem(str(float(propertyValue)))
-                columnValue.setFlags(Qt.ItemIsEditable | Qt.ItemIsEnabled)  # Make the value editable
+                col_value = QTableWidgetItem(str(float(property_value)))
+                col_value.setFlags(Qt.ItemIsEditable | Qt.ItemIsEnabled)  # Make the value editable
 
-                columnDefaultValue = QTableWidgetItem("1.0")
-                columnDefaultValue.setFlags(Qt.ItemIsEnabled)  # Make the default value read-only
+                col_default_value = QTableWidgetItem("1.0")
+                col_default_value.setFlags(Qt.ItemIsEnabled)  # Make the default value read-only
 
-                self.propertiesTable.setItem(row, 0, columnPropertyName)
-                self.propertiesTable.setItem(row, 1, columnValue)
-                self.propertiesTable.setItem(row, 2, columnDefaultValue)
+                self.properties_table.setItem(row, 0, col_property_name)
+                self.properties_table.setItem(row, 1, col_value)
+                self.properties_table.setItem(row, 2, col_default_value)
 
-            # Set the item delegate and pass assetItem - based on Andrei's input
-            self.propertiesTable.setItemDelegateForColumn(1, EditableDelegate(assetItem))
+            # Set the item delegate and pass asset_item - based on Andrei's input
+            self.properties_table.setItemDelegateForColumn(1, EditableDelegate(asset_item))
 
         else:
-            self.propertiesTable.currentItem = None
+            self.properties_table.currentItem = None
 
-    def updateAttackStepsWindow(self, attackerAssetItem):
-        if attackerAssetItem is not None:
-            self.attackStepsDockedWindow.clear()
+    def updateAttackStepsWindow(self, attacker_asset_item):
+        if attacker_asset_item is not None:
+            self.attack_steps_docked_window.clear()
             for asset, attack_step_names in \
-                    attackerAssetItem.attackerAttachment.entry_points:
+                    attacker_asset_item.attackerAttachment.entry_points:
                 for attack_step_name in attack_step_names:
-                    self.attackStepsDockedWindow.addItem(
+                    self.attack_steps_docked_window.addItem(
                         asset.name + ':' + attack_step_name
                     )
         else:
-            self.attackStepsDockedWindow.clear()
+            self.attack_steps_docked_window.clear()
 
-    def updateAssetRelationsWindow(self, assetItem):
-        self.assetRelationsDockedWindow.clear()
-        if assetItem is not None:
-            asset = assetItem.asset
+    def updateAssetRelationsWindow(self, asset_item):
+        self.asset_relations_docker_window.clear()
+        if asset_item is not None:
+            asset = asset_item.asset
             for association in asset.associations:
                 left_field_name, right_field_name = \
                     self.scene.model.get_association_field_names(association)
@@ -280,267 +275,309 @@ class MainWindow(QMainWindow):
 
                 for associated_asset in getattr(association,
                         opposite_field_name):
-                    self.assetRelationsDockedWindow.addItem(
+                    self.asset_relations_docker_window.addItem(
                         opposite_field_name + "-->" + associated_asset.name)
 
-    def createActions(self):
-
+    def create_actions(self):
+        """Create the actions and add to the GUI"""
         zoom_in_icon = image_path("zoomIn.png")
-        self.zoomInAction = QAction(QIcon(zoom_in_icon), "ZoomIn", self)
-        self.zoomInAction.triggered.connect(self.zoomIn)
+        self.zoom_in_action = QAction(QIcon(zoom_in_icon), "ZoomIn", self)
+        self.zoom_in_action.triggered.connect(self.zoom_in)
 
         zoom_out_icon = image_path("zoomOut.png")
-        self.zoomOutAction = QAction(QIcon(zoom_out_icon), "ZoomOut", self)
-        self.zoomOutAction.triggered.connect(self.zoomOut)
+        self.zoom_out_action = QAction(QIcon(zoom_out_icon), "ZoomOut", self)
+        self.zoom_out_action.triggered.connect(self.zoom_out)
 
         #undo Action
         undo_icon = image_path("undoIcon.png")
-        self.undoAction = QAction(QIcon(undo_icon), "Undo", self)
-        self.undoAction.setShortcut("Ctrl+z")
-        self.undoAction.triggered.connect(self.scene.undoStack.undo)
+        self.undo_action = QAction(QIcon(undo_icon), "Undo", self)
+        self.undo_action.setShortcut("Ctrl+z")
+        self.undo_action.triggered.connect(self.scene.undoStack.undo)
 
         #redo Action
         redo_icon = image_path("redoIcon.png")
-        self.redoAction = QAction(QIcon(redo_icon), "Redo", self)
-        self.redoAction.setShortcut("Ctrl+Shift+z")
-        self.redoAction.triggered.connect(self.scene.undoStack.redo)
+        self.redo_action = QAction(QIcon(redo_icon), "Redo", self)
+        self.redo_action.setShortcut("Ctrl+Shift+z")
+        self.redo_action.triggered.connect(self.scene.undoStack.redo)
 
         #cut Action
         cut_icon = image_path("cutIcon.png")
-        self.cutAction = QAction(QIcon(cut_icon), "Cut", self)
-        self.cutAction.setShortcut("Ctrl+x")
-        self.cutAction.triggered.connect(lambda: self.scene.cutAssets(self.scene.selectedItems()))
+        self.cut_action = QAction(QIcon(cut_icon), "Cut", self)
+        self.cut_action.setShortcut("Ctrl+x")
+        self.cut_action.triggered.connect(
+            lambda: self.scene.cutAssets(self.scene.selectedItems()))
 
         #copy Action
         copy_icon = image_path("copyIcon.png")
-        self.copyAction = QAction(QIcon(copy_icon), "Copy", self)
-        self.copyAction.setShortcut("Ctrl+c")
-        self.copyAction.triggered.connect(lambda: self.scene.copyAssets(self.scene.selectedItems()))
+        self.copy_action = QAction(QIcon(copy_icon), "Copy", self)
+        self.copy_action.setShortcut("Ctrl+c")
+        self.copy_action.triggered.connect(
+            lambda: self.scene.copyAssets(self.scene.selectedItems()))
 
         #paste Action
         paste_icon = image_path("pasteIcon.png")
-        self.pasteAction = QAction(QIcon(paste_icon), "Paste", self)
-        self.pasteAction.setShortcut("Ctrl+v")
-        self.pasteAction.triggered.connect(lambda: self.scene.pasteAssets(QPointF(0,0)))
+        self.paste_action = QAction(QIcon(paste_icon), "Paste", self)
+        self.paste_action.setShortcut("Ctrl+v")
+        self.paste_action.triggered.connect(
+            lambda: self.scene.pasteAssets(QPointF(0,0)))
 
         #delete Action
         delete_icon = image_path("deleteIcon.png")
-        self.deleteAction = QAction(QIcon(delete_icon), "Delete", self)
-        self.deleteAction.setShortcut("Delete")
-        self.deleteAction.triggered.connect(lambda: self.scene.deleteAssets(self.scene.selectedItems()))
+        self.delete_action = QAction(QIcon(delete_icon), "Delete", self)
+        self.delete_action.setShortcut("Delete")
+        self.delete_action.triggered.connect(
+            lambda: self.scene.deleteAssets(self.scene.selectedItems()))
 
-    def createMenus(self):
-         #Menubar and menus
-        self.menuBar = self.menuBar()
-        self.fileMenu =  self.menuBar.addMenu("&File")
-        self.fileMenuNewAction = self.fileMenu.addAction("New")
-        self.fileMenuOpenAction = self.fileMenu.addAction("Open")
-        self.fileMenuSaveAction = self.fileMenu.addAction("Save")
-        self.fileMenuSaveAsAction = self.fileMenu.addAction("SaveAs..")
-        self.fileMenuQuitAction = self.fileMenu.addAction("Quit")
-        self.fileMenuOpenAction.triggered.connect(self.loadModel)
-        self.fileMenuSaveAction.triggered.connect(self.saveModel)
-        self.fileMenuSaveAsAction.triggered.connect(self.saveAsModel)
-        self.fileMenuQuitAction.triggered.connect(self.quitApp)
-        self.editMenu = self.menuBar.addMenu("Edit")
-        self.editMenuUndoAction = self.editMenu.addAction(self.undoAction)
-        self.editMenuRedoAction = self.editMenu.addAction(self.redoAction)
-        self.editMenuCutAction = self.editMenu.addAction(self.cutAction)
-        self.editMenuCopyAction = self.editMenu.addAction(self.copyAction)
-        self.editMenuPasteAction = self.editMenu.addAction(self.pasteAction)
-        self.editMenuDeleteAction = self.editMenu.addAction(self.deleteAction)
+    def create_menus(self):
+        """Create the menu and add to the GUI"""
+        self.menu_bar = self.menuBar()
+        self.file_menu =  self.menu_bar.addMenu("&File")
+        self.file_menu_new_action = self.file_menu.addAction("New")
+        self.file_menu_open_action = self.file_menu.addAction("Open")
+        self.file_menu_save_action = self.file_menu.addAction("Save")
+        self.file_menu_save_as_action = self.file_menu.addAction("SaveAs..")
+        self.file_menu_quit_action = self.file_menu.addAction("Quit")
+        self.file_menu_open_action.triggered.connect(self.load_model)
+        self.file_menu_save_action.triggered.connect(self.save_model)
+        self.file_menu_save_as_action.triggered.connect(self.save_as_model)
+        self.file_menu_quit_action.triggered.connect(self.quitApp)
+        self.edit_menu = self.menu_bar.addMenu("Edit")
+        self.edit_menu_undo_action = \
+            self.edit_menu.addAction(self.undo_action)
+        self.edit_menu_redo_action = \
+            self.edit_menu.addAction(self.redo_action)
+        self.edit_menu_cut_action = \
+            self.edit_menu.addAction(self.cut_action)
+        self.edit_menu_copy_action = \
+            self.edit_menu.addAction(self.copy_action)
+        self.edit_menu_paste_action = \
+            self.edit_menu.addAction(self.paste_action)
+        self.edit_menu_delete_action = \
+            self.edit_menu.addAction(self.delete_action)
 
-    def createToolbar(self):
+    def create_toolbar(self):
+        """Create the toolbar and add to the GUI"""
         #toolbar
         self.toolbar = QToolBar("Mainwindow Toolbar")
-        self.toolbar.setIconSize(QSize(20, 20))  # Adjust the size to reduce bigger image- its a magic number
+
+        # Adjust the size to reduce bigger image - its a magic number
+        self.toolbar.setIconSize(QSize(20, 20))
         self.addToolBar(self.toolbar)
+
         # Set the style to show text beside the icon for the entire toolbar
         self.toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
 
         #Add the quit action
-        self.toolbar.addAction(self.fileMenuQuitAction)
+        self.toolbar.addAction(self.file_menu_quit_action)
         self.toolbar.addSeparator()
 
-        showAssociationCheckBoxLabel  = QLabel("Show Association")
-        showAssociationCheckBox = QCheckBox()
-        showAssociationCheckBox.setCheckState(Qt.CheckState.Unchecked)
-        self.toolbar.addWidget(showAssociationCheckBoxLabel)
-        self.toolbar.addWidget(showAssociationCheckBox)
-        showAssociationCheckBox.stateChanged.connect(self.showAssociationCheckBoxChanged)
-
-        self.toolbar.addSeparator()
-
-        showImageIconCheckBoxLabel  = QLabel("Show Image Icon")
-        showImageIconCheckBox = QCheckBox()
-        showImageIconCheckBox.setCheckState(Qt.CheckState.Checked)
-        self.toolbar.addWidget(showImageIconCheckBoxLabel)
-        self.toolbar.addWidget(showImageIconCheckBox)
-        showImageIconCheckBox.stateChanged.connect(self.showImageIconCheckBoxChanged)
+        show_association_checkbox_label = QLabel("Show Association")
+        show_association_checkbox = QCheckBox()
+        show_association_checkbox.setCheckState(Qt.CheckState.Unchecked)
+        self.toolbar.addWidget(show_association_checkbox_label)
+        self.toolbar.addWidget(show_association_checkbox)
+        show_association_checkbox.stateChanged.connect(
+            self.show_association_checkbox_changed)
 
         self.toolbar.addSeparator()
 
-        self.toolbar.addAction(self.zoomInAction)
-        self.toolbar.addAction(self.zoomOutAction)
-        self.zoomLabel = QLabel("100%")
-        self.zoomLineEdit = QLineEdit()
-        self.zoomLineEdit.setValidator(QIntValidator()) # No limit on zoom level, but should be an integer
-        # self.zoomLineEdit.setValidator(QIntValidator(1, 500)) #Akash: If we want to put limit we can use this
-        self.zoomLineEdit.setText("100")
-        self.zoomLineEdit.returnPressed.connect(self.setZoomLevelFromLineEdit)
-        self.zoomLineEdit.setFixedWidth(40)
-        self.toolbar.addWidget(self.zoomLabel)
-        self.toolbar.addWidget(self.zoomLineEdit)
+        show_image_icon_checkbox_label  = QLabel("Show Image Icon")
+        show_image_icon_checkbox = QCheckBox()
+        show_image_icon_checkbox.setCheckState(Qt.CheckState.Checked)
+        self.toolbar.addWidget(show_image_icon_checkbox_label)
+        self.toolbar.addWidget(show_image_icon_checkbox)
+        show_image_icon_checkbox.stateChanged\
+            .connect(self.show_image_icon_checkbox_changed)
+
+        self.toolbar.addSeparator()
+
+        self.toolbar.addAction(self.zoom_in_action)
+        self.toolbar.addAction(self.zoom_out_action)
+        self.zoom_label = QLabel("100%")
+        self.zoom_line_edit = QLineEdit()
+        # No limit on zoom level, but should be an integer
+        self.zoom_line_edit.setValidator(QIntValidator())
+        #Akash: If we want to put limit we can use this
+        # self.zoom_line_edit.setValidator(QIntValidator(1, 500))
+        self.zoom_line_edit.setText("100")
+        self.zoom_line_edit.returnPressed.connect(
+            self.set_zoom_level_from_line_edit)
+        self.zoom_line_edit.setFixedWidth(40)
+        self.toolbar.addWidget(self.zoom_label)
+        self.toolbar.addWidget(self.zoom_line_edit)
 
         self.toolbar.addSeparator()
 
         #undo/redo
-        self.toolbar.addAction(self.undoAction)
-        self.toolbar.addAction(self.redoAction)
+        self.toolbar.addAction(self.undo_action)
+        self.toolbar.addAction(self.redo_action)
         self.toolbar.addSeparator()
         #cut/copy/paste/delete
-        self.toolbar.addAction(self.cutAction)
-        self.toolbar.addAction(self.copyAction)
-        self.toolbar.addAction(self.pasteAction)
-        self.toolbar.addAction(self.deleteAction)
+        self.toolbar.addAction(self.cut_action)
+        self.toolbar.addAction(self.copy_action)
+        self.toolbar.addAction(self.paste_action)
+        self.toolbar.addAction(self.delete_action)
         self.toolbar.addSeparator()
 
          #Fit To Window
         fit_to_view_icon = image_path("fitToView.png")
-        fitToViewButton = QPushButton(QIcon(fit_to_view_icon), "Fit To View")
-        self.toolbar.addWidget(fitToViewButton)
-        fitToViewButton.clicked.connect(self.fitToViewButtonClicked)
+        fit_to_view_button = QPushButton(
+            QIcon(fit_to_view_icon), "Fit To View")
+        self.toolbar.addWidget(fit_to_view_button)
+        fit_to_view_button.clicked.connect(self.fit_to_view_button_clicked)
         self.toolbar.addSeparator()
 
         #Material Theme - https://pypi.org/project/qt-material/
-        materialThemeLabel  = QLabel("Theme")
-        self.themeComboBox = QComboBox()
+        material_theme_label  = QLabel("Theme")
+        self.theme_combo_box = QComboBox()
 
-        self.themeComboBox.addItem('None')
-        inbuiltThemeListFromPackage = list_themes()
-        self.themeComboBox.addItems(inbuiltThemeListFromPackage)
+        self.theme_combo_box.addItem('None')
+        inbuilt_theme_list_from_package = list_themes()
+        self.theme_combo_box.addItems(inbuilt_theme_list_from_package)
 
-        self.toolbar.addWidget(materialThemeLabel)
-        self.toolbar.addWidget(self.themeComboBox)
-        self.themeComboBox.currentIndexChanged.connect(self.onThemeSelectionChanged)
+        self.toolbar.addWidget(material_theme_label)
+        self.toolbar.addWidget(self.theme_combo_box)
+        self.theme_combo_box.currentIndexChanged.connect(
+            self.on_theme_selection_change)
         self.toolbar.addSeparator()
 
-    def zoomIn(self):
+    def zoom_in(self):
+        """Called on zoom in button click"""
         print("Zoom In Clicked")
         self.view.zoomIn()
 
-    def zoomOut(self):
+    def zoom_out(self):
+        """Called on zoom out button click"""
         print("Zoom Out Clicked")
         self.view.zoomOut()
 
-    def setZoomLevelFromLineEdit(self):
-        zoomValue = int(self.zoomLineEdit.text())
+    def set_zoom_level_from_line_edit(self):
+        """Set zoom label to match current zoom factor"""
+        zoomValue = int(self.zoom_line_edit.text())
         self.view.setZoom(zoomValue)
 
-    def updateZoomLabel(self):
-        self.zoomLabel.setText(f"{int(self.view.zoomFactor * 100)}%")
-        self.zoomLineEdit.setText(f"{int(self.view.zoomFactor * 100)}")
+    def update_zoom_label(self):
+        """Set zoom label to match current zoom factor"""
+        self.zoom_label.setText(f"{int(self.view.zoomFactor * 100)}%")
+        self.zoom_line_edit.setText(f"{int(self.view.zoomFactor * 100)}")
 
-    def loadModel(self):
-        """
-        To load SharpCut project from a file.This function is not used currently.
-        """
-        fileExtensionFilter = "YAML Files (*.yaml *.yml);;JSON Files (*.json)"
-        filePath, _ = QFileDialog.getOpenFileName(None, "Select Model File", "",fileExtensionFilter)
+    def load_model(self):
+        """Load a MAL model from a file"""
 
-        if not filePath:
+        file_extension_filter = \
+            "YAML Files (*.yaml *.yml);;JSON Files (*.json)"
+        file_path, _ = QFileDialog.getOpenFileName(
+            None, "Select Model File", "",file_extension_filter)
+
+        if not file_path:
             print("No valid path detected for loading")
             return
+
+        open_project_user_confirmation = QMessageBox.question(
+            self,
+            "Load New Project",
+            "Loading a new project will delete current work (if any). "
+            "Do you want to continue ?",
+            QMessageBox.Ok | QMessageBox.Cancel
+        )
+
+        if open_project_user_confirmation == QMessageBox.Ok:
+            #clear scene so that canvas becomes blank
+            self.scene.clear()
+            self.scene.model = Model.load_from_file(
+                file_path,
+                self.scene.lcs
+            )
+            self.show_information_popup(
+                "Successfully opened model: " + file_path)
+            self.model_file_name = file_path
+            self.scene.drawModel()
         else:
-            OpenProjectUserConfirmation = QMessageBox.question(self, "Load New Project",
-                                     "Loading a new project will delete current work (if any). Do you want to continue ?",
-                                     QMessageBox.Ok | QMessageBox.Cancel)
-            if OpenProjectUserConfirmation == QMessageBox.Ok:
+            # User canceled, do nothing
+            pass
 
-                #clear scene so that canvas becomes blank
-                self.scene.clear()
-
-                self.showInformationPopup("Successfully opened model: " + filePath)
-                self.scene.model = Model.load_from_file(
-                    filePath,
-                    self.scene.lcs
-                )
-                self.modelFileName = filePath
-                self.scene.drawModel()
-            else:
-                #User canceled, do nothing - Need to check with Andrei for any other behaviour
-                pass
-
-    def updatePositionsAndSaveModel(self):
+    def update_positions_and_save_model(self):
+        """Update positions in extras field of asset
+           and save model to self.model_file_name"""
 
         print(f'ASSET ID TO ITEMS KEYS:{self.scene._asset_id_to_item.keys()}')
         for asset in self.scene.model.assets:
             print(f'ASSET NAME:{asset.name} ID:{asset.id} TYPE:{asset.type}')
             item = self.scene._asset_id_to_item[int(asset.id)]
             position = item.pos()
-            asset.extras = {
-                "position": 
-                    {
-                        "x": position.x(),
-                        "y": position.y()
-                    }
+
+            if not asset.extras:
+                asset.extras = {}
+
+            asset.extras["position"] = {
+                "x": position.x(),
+                "y": position.y()
             }
-        self.scene.model.save_to_file(self.modelFileName)
 
-    def saveModel(self):
-        if self.modelFileName:
-            self.updatePositionsAndSaveModel()
+        self.scene.model.save_to_file(self.model_file_name)
+
+    def save_model(self):
+        """Save to file if filename set, else save as new file"""
+        if self.model_file_name:
+            self.update_positions_and_save_model()
         else:
-            self.saveAsModel()
+            self.save_as_model()
 
-    def saveAsModel(self):
-        """
-        To Save SharpCut project from current scene on window. This function is not used currently.
-        """
-        fileDialog = QFileDialog()
-        fileDialog.setAcceptMode(QFileDialog.AcceptSave)
-        fileDialog.setDefaultSuffix("yaml")
-        filePath, _ = fileDialog.getSaveFileName()
+    def save_as_model(self):
+        """ `Save as`. Let user select target file and save model."""
+        file_dialog = QFileDialog()
+        file_dialog.setAcceptMode(QFileDialog.AcceptSave)
+        file_dialog.setDefaultSuffix("yaml")
+        file_path, _ = file_dialog.getSaveFileName()
 
-        if not filePath:
+        if not file_path:
             print("No valid path detected for saving")
             return
         else:
-            self.showInformationPopup("Successfully saved model to: " + filePath)
-            self.scene.model.name = Path(filePath).stem
-            self.modelFileName = filePath
-            self.updatePositionsAndSaveModel()
+            self.scene.model.name = Path(file_path).stem
+            self.model_file_name = file_path
+            self.update_positions_and_save_model()
+            self.show_information_popup(
+                "Successfully saved model to: " + file_path)
 
     def quitApp(self):
         self.app.quit()
 
-    def showInformationPopup(self,messageText):
-        parentWidget = QWidget() #To maintain object lifetim
-        messageBox = QMessageBox(parentWidget)
-        messageBox.setIcon(QMessageBox.Information)
-        messageBox.setWindowTitle("Information") #default values
-        messageBox.setText("This is default informative Text") #default values
-        messageBox.setInformativeText(messageText) #default values
-        messageBox.setStandardButtons(QMessageBox.Ok) #default Ok Button
-        messageBox.exec()
+    def show_information_popup(self, message_text):
+        """Show a popup with given message"""
+        parent_widget = QWidget() #To maintain object lifetim
+        message_box = QMessageBox(parent_widget)
+        message_box.setIcon(QMessageBox.Information)
+        message_box.setWindowTitle("Information")
+        message_box.setText("This is default informative Text")
+        message_box.setInformativeText(message_text)
+        message_box.setStandardButtons(QMessageBox.Ok)
+        message_box.exec()
 
-    def updateExplorerDockedWindow(self):
-        #Clean the existing child and fill each items from scratch- performance BAD- To be discussed/improved
-        self.objectExplorerTree.clearAllObjectExplorerChildItems()
+    def update_explorer_docked_window(self):
+        """
+        Clean the existing child and fill each items from scratch
+        TODO performance BAD - To be discussed/improved
+        """
+        self.object_explorer_tree.clearAllObjectExplorerChildItems()
 
         #Fill all the items from Scene one by one
-        for childAssetItem in self.scene.items():
-            if isinstance(childAssetItem,AssetBase):
+        for child_asset_item in self.scene.items():
+            if isinstance(child_asset_item,AssetBase):
                 # Check if parent exists before adding child
-                # parentAssetType = self.objectExplorerTree.checkAndGetIfParentAssetTypeExists(childAssetItem.assetType)
-                parentItem,parentAssetType = self.objectExplorerTree.checkAndGetIfParentAssetTypeExists(childAssetItem.assetType)
+                parent_item, parent_asset_type = self.object_explorer_tree\
+                    .checkAndGetIfParentAssetTypeExists(
+                        child_asset_item.assetType
+                    )
 
-                if parentAssetType:
-                    self.objectExplorerTree.addChildItem(parentItem,childAssetItem, str(childAssetItem.assetName))
+                if parent_asset_type:
+                    self.object_explorer_tree.addChildItem(
+                        parent_item,child_asset_item,
+                        str(child_asset_item.assetName)
+                    )
 
-    def onThemeSelectionChanged(self):
-        # Get the selected theme
-        selectedTheme = self.themeComboBox.currentText()
-        print(f"{selectedTheme} is the Theme selected")
-        apply_stylesheet(self.app, theme=selectedTheme)
-
+    def on_theme_selection_change(self):
+        """Set the selected theme"""
+        selected_theme = self.theme_combo_box.currentText()
+        print(f"{selected_theme} is the Theme selected")
+        apply_stylesheet(self.app, theme=selected_theme)
