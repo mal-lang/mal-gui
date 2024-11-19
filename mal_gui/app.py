@@ -1,3 +1,6 @@
+"""Entry scripts for the MAL GUI"""
+
+import configparser
 import os
 import sys
 
@@ -10,8 +13,6 @@ if __name__ == "__main__" and __package__ is None:
         "or use 'python3 -m mal_gui.app' from the parent directory."
     )
     sys.exit(1)  # Exit to prevent accidental misuse
-
-import configparser
 
 from PySide6.QtWidgets import (
     QApplication,
@@ -34,14 +35,14 @@ class FileSelectionDialog(QDialog):
         self.setFixedWidth(400)
 
         # Dialog layout
-        verticalLayout = QVBoxLayout()
+        vertical_layout = QVBoxLayout()
 
         # Label to instruct the user
         self.label = QLabel("Select MAL Language .mar file to load:")
-        verticalLayout.addWidget(self.label)
+        vertical_layout.addWidget(self.label)
 
-        horizontalLayout = QHBoxLayout()
-        self.malLangFilePathText = QLineEdit(self)
+        horizontal_layout = QHBoxLayout()
+        self.lang_file_path_text = QLineEdit(self)
 
         # Load the config file containing latest lang file path
         config_file_dir = user_config_dir("mal-gui", "mal-lang")
@@ -52,67 +53,67 @@ class FileSelectionDialog(QDialog):
 
         self.config = configparser.ConfigParser()
         self.config.read(self.config_file_path)
-        self.selectedLangFile = self.config.get(
+        self.selected_lang_file = self.config.get(
             'Settings', 'langFilePath', fallback=None)
-        print(f"Initial langFilePath path: {self.selectedLangFile}")
-        self.malLangFilePathText.setText(self.selectedLangFile)
+        print(f"Initial langFilePath path: {self.selected_lang_file}")
 
-        horizontalLayout.addWidget(self.malLangFilePathText)
+        self.lang_file_path_text.setText(self.selected_lang_file)
+        horizontal_layout.addWidget(self.lang_file_path_text)
 
-        browseButton = QPushButton("Browse")
-        horizontalLayout.addWidget(browseButton)
+        browse_button = QPushButton("Browse")
+        horizontal_layout.addWidget(browse_button)
 
-        verticalLayout.addLayout(horizontalLayout)
+        vertical_layout.addLayout(horizontal_layout)
 
         # Create custom buttons for "Load" and "Quit"
-        self.buttonBox = QDialogButtonBox()
-        loadButton = QPushButton("Load")
-        quitButton = QPushButton("Quit")
-        self.buttonBox.addButton(loadButton, QDialogButtonBox.AcceptRole)
-        self.buttonBox.addButton(quitButton, QDialogButtonBox.RejectRole)
-        verticalLayout.addWidget(self.buttonBox)
+        self.button_box = QDialogButtonBox()
+        load_button = QPushButton("Load")
+        quit_button = QPushButton("Quit")
+        self.button_box.addButton(load_button, QDialogButtonBox.AcceptRole)
+        self.button_box.addButton(quit_button, QDialogButtonBox.RejectRole)
+        vertical_layout.addWidget(self.button_box)
 
-        self.setLayout(verticalLayout)
+        self.setLayout(vertical_layout)
 
-        browseButton.clicked.connect(self.openFileDialog)
-        loadButton.clicked.connect(self.saveLangFilePath)
-        quitButton.clicked.connect(self.reject)
+        browse_button.clicked.connect(self.open_file_dialog)
+        load_button.clicked.connect(self.save_lang_file_path)
+        quit_button.clicked.connect(self.reject)
 
-    def openFileDialog(self):
-        fileDialog = QFileDialog()
+    def open_file_dialog(self):
+        file_dialog = QFileDialog()
 
-        # fileDialog.setNameFilter("JAR or MAR files (*.jar *.mar )") --> Need to confirm with Andrei
-        # fileDialog.setWindowTitle("Select a JAR or MAR File")
+        # file_dialog.setNameFilter("JAR or MAR files (*.jar *.mar )") --> Need to confirm with Andrei
+        # file_dialog.setWindowTitle("Select a JAR or MAR File")
 
-        fileDialog.setNameFilter("MAR files (*.mar)")
-        fileDialog.setWindowTitle("Select a MAR File")
+        file_dialog.setNameFilter("MAR files (*.mar)")
+        file_dialog.setWindowTitle("Select a MAR File")
 
-        if fileDialog.exec() == QFileDialog.Accepted:
-            selectedLangFilePath = fileDialog.selectedFiles()[0]
-            self.malLangFilePathText.setText(selectedLangFilePath)
+        if file_dialog.exec() == QFileDialog.Accepted:
+            selected_lang_path = file_dialog.selectedFiles()[0]
+            self.lang_file_path_text.setText(selected_lang_path)
 
-    def saveLangFilePath(self):
+    def save_lang_file_path(self):
         """
         Set current language MAR archive file and store
         latest chosen language in user config file
         """
 
-        selectedLangFile = self.malLangFilePathText.text()
+        selected_lang_file = self.lang_file_path_text.text()
 
-        if selectedLangFile.endswith('.mar'):
-            self.selectedLangFile = selectedLangFile
+        if selected_lang_file.endswith('.mar'):
+            self.selected_lang_file = selected_lang_file
 
             # Remember language choice in user settings
-            self.config.set('Settings', 'langFilePath', self.selectedLangFile)
-            with open(self.config_file_path, 'w') as configfile:
+            self.config.set('Settings', 'langFilePath', self.selected_lang_file)
+            with open(self.config_file_path, 'w', encoding='utf-8') as configfile:
                 self.config.write(configfile)
 
             self.accept()  # Close the dialog and return accepted
         else:
             QMessageBox.warning(self, "Invalid File", "Please select a valid .mar file.")
 
-    def getSelectedFile(self):
-        return self.selectedLangFile
+    def get_selected_file(self):
+        return self.selected_lang_file
 
 
 def main():
@@ -120,11 +121,10 @@ def main():
 
     dialog = FileSelectionDialog()
     if dialog.exec() == QDialog.Accepted:
-        selectedLangFilePath = dialog.getSelectedFile()
-        window = MainWindow(app, selectedLangFilePath)
+        selected_lang_path = dialog.get_selected_file()
+        window = MainWindow(app, selected_lang_path)
         window.show()
-        print(f"Selected MAR file Path: {selectedLangFilePath}")
-
+        print(f"Selected MAR file Path: {selected_lang_path}")
         app.exec()
     else:
         app.quit()
