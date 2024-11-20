@@ -16,10 +16,10 @@ class DragDropCommand(QUndoCommand):
         self.scene.addItem(self.item)
 
         #Update the Object Explorer when number of items change
-        self.scene.mainWindow.update_childs_in_object_explorer_signal.emit()
+        self.scene.main_window.update_childs_in_object_explorer_signal.emit()
 
     def undo(self):
         self.scene.removeItem(self.item)
 
         #Update the Object Explorer when number of items change
-        self.scene.mainWindow.update_childs_in_object_explorer_signal.emit()
+        self.scene.main_window.update_childs_in_object_explorer_signal.emit()

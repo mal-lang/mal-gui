@@ -235,7 +235,7 @@ class AssetBase(QGraphicsItem):
         associatedScene = self.typeTextItem.scene()
         if associatedScene:
             print("Asset Name Changed by user")
-            associatedScene.mainWindow.updateChildsInObjectExplorerSignal.emit()
+            associatedScene.main_window.update_childs_in_object_explorer_signal.emit()
 
     def focusOutEvent(self, event):
         self.typeTextItem.clearFocus()

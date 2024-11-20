@@ -1,9 +1,14 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from PySide6.QtGui import QUndoCommand
 
+if TYPE_CHECKING:
+    from ..ModelScene import ModelScene
 class CreateEntrypointConnectionCommand(QUndoCommand):
     def __init__(
         self,
-        scene,
+        scene: ModelScene,
         attackerItem,
         assetItem,
         attackStepName,
@@ -17,7 +22,7 @@ class CreateEntrypointConnectionCommand(QUndoCommand):
         self.connection = None
 
     def redo(self):
-        self.connection = self.scene.addEntryPointConnection(
+        self.connection = self.scene.add_entrypoint_connection(
             self.attackStepName,
             self.attackerItem,
             self.assetItem

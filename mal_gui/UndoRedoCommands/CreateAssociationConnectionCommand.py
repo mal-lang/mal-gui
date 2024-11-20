@@ -1,9 +1,13 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
 
+if TYPE_CHECKING:
+    from ModelScene import ModelScene
 class CreateAssociationConnectionCommand(QUndoCommand):
     def __init__(
         self,
-        scene,
+        scene: ModelScene,
         startItem,
         endItem,
         associationText,
@@ -11,7 +15,7 @@ class CreateAssociationConnectionCommand(QUndoCommand):
         parent=None
     ):
         super().__init__(parent)
-        self.scene = scene
+        self.scene  = scene
         self.startItem = startItem
         self.endItem = endItem
         self.associationText = associationText
@@ -19,7 +23,7 @@ class CreateAssociationConnectionCommand(QUndoCommand):
         self.association = selectedItemAssociation
 
     def redo(self):
-        self.connection = self.scene.addAssociationConnection(
+        self.connection = self.scene.add_association_connection(
             self.associationText,
             self.startItem,
             self.endItem

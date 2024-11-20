@@ -1,7 +1,17 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
 
+if TYPE_CHECKING:
+    from ..ModelScene import ModelScene
+
 class DeleteCommand(QUndoCommand):
-    def __init__(self, scene, items, parent=None):
+    def __init__(
+            self,
+            scene: ModelScene,
+            items,
+            parent=None
+        ):
         super().__init__(parent)
         self.scene = scene
         self.items = items
@@ -23,7 +33,7 @@ class DeleteCommand(QUndoCommand):
             self.scene.model.remove_asset(item.asset)
 
         #Update the Object Explorer when number of items change
-        self.scene.mainWindow.updateChildsInObjectExplorerSignal.emit()
+        self.scene.main_window.update_childs_in_object_explorer_signal.emit()
 
     def undo(self):
         # Add items back to the scene
@@ -37,4 +47,4 @@ class DeleteCommand(QUndoCommand):
             connection.updatePath()
 
         #Update the Object Explorer when number of items change
-        self.scene.mainWindow.updateChildsInObjectExplorerSignal.emit()
+        self.scene.main_window.update_childs_in_object_explorer_signal.emit()

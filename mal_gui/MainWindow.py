@@ -192,7 +192,7 @@ class MainWindow(QMainWindow):
     def show_association_checkbox_changed(self, checked):
         """Called on button click"""
         print("self.show_association_checkbox_changed clicked")
-        self.scene.setShowAssociationCheckBoxStatus(checked)
+        self.scene.set_show_assoc_checkbox_status(checked)
         for connection in self.scene.items():
             if isinstance(connection, AssociationConnectionItem):
                 connection.updatePath()
@@ -292,41 +292,41 @@ class MainWindow(QMainWindow):
         undo_icon = image_path("undoIcon.png")
         self.undo_action = QAction(QIcon(undo_icon), "Undo", self)
         self.undo_action.setShortcut("Ctrl+z")
-        self.undo_action.triggered.connect(self.scene.undoStack.undo)
+        self.undo_action.triggered.connect(self.scene.undo_stack.undo)
 
         #redo Action
         redo_icon = image_path("redoIcon.png")
         self.redo_action = QAction(QIcon(redo_icon), "Redo", self)
         self.redo_action.setShortcut("Ctrl+Shift+z")
-        self.redo_action.triggered.connect(self.scene.undoStack.redo)
+        self.redo_action.triggered.connect(self.scene.undo_stack.redo)
 
         #cut Action
         cut_icon = image_path("cutIcon.png")
         self.cut_action = QAction(QIcon(cut_icon), "Cut", self)
         self.cut_action.setShortcut("Ctrl+x")
         self.cut_action.triggered.connect(
-            lambda: self.scene.cutAssets(self.scene.selectedItems()))
+            lambda: self.scene.cut_assets(self.scene.selectedItems()))
 
         #copy Action
         copy_icon = image_path("copyIcon.png")
         self.copy_action = QAction(QIcon(copy_icon), "Copy", self)
         self.copy_action.setShortcut("Ctrl+c")
         self.copy_action.triggered.connect(
-            lambda: self.scene.copyAssets(self.scene.selectedItems()))
+            lambda: self.scene.copy_assets(self.scene.selectedItems()))
 
         #paste Action
         paste_icon = image_path("pasteIcon.png")
         self.paste_action = QAction(QIcon(paste_icon), "Paste", self)
         self.paste_action.setShortcut("Ctrl+v")
         self.paste_action.triggered.connect(
-            lambda: self.scene.pasteAssets(QPointF(0,0)))
+            lambda: self.scene.paste_assets(QPointF(0,0)))
 
         #delete Action
         delete_icon = image_path("deleteIcon.png")
         self.delete_action = QAction(QIcon(delete_icon), "Delete", self)
         self.delete_action.setShortcut("Delete")
         self.delete_action.triggered.connect(
-            lambda: self.scene.deleteAssets(self.scene.selectedItems()))
+            lambda: self.scene.delete_assets(self.scene.selectedItems()))
 
     def create_menus(self):
         """Create the menu and add to the GUI"""

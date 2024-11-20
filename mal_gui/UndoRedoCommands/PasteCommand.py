@@ -1,12 +1,24 @@
+from __future__ import annotations
 import json
+from typing import TYPE_CHECKING
 
 from PySide6.QtGui import QUndoCommand
 from PySide6.QtCore import QPointF
 
 from ..ConnectionItem import AssociationConnectionItem
 
+if TYPE_CHECKING:
+    from ..ModelScene import ModelScene
+
 class PasteCommand(QUndoCommand):
-    def __init__(self, scene, position, clipboard, parent=None):
+    def __init__(
+            self,
+            scene: ModelScene,
+            position,
+            clipboard,
+            parent=None
+        ):
+
         super().__init__(parent)
         self.scene = scene
         self.position = position
@@ -20,7 +32,8 @@ class PasteCommand(QUndoCommand):
         print("\nSerializedData = " + str(len(serializedData)))
         print("\nSerializedData = " + str(serializedData))
         if serializedData:
-            self.deserializedData = self.scene.deserializeGraphicsItems(serializedData)
+            self.deserializedData = \
+                self.scene.deserialize_graphics_items(serializedData)
             print(json.dumps(self.deserializedData, indent = 2))
             newItemMap = {}  # Map old assetId to new item
 
@@ -38,13 +51,13 @@ class PasteCommand(QUndoCommand):
                     # newAttackerAttachment = AttackerAttachment()
                     # self.scene.model.add_attacker(newAttackerAttachment)
 
-                    newItem = self.scene.assetFactory.getAsset(assetType)
+                    newItem = self.scene.asset_factory.getAsset(assetType)
                     # newItem.assetName = "Attacker"
                     # newItem.typeTextItem.setPlainText(str("Attacker"))
                     newItem.setPos(position)
                     # self.scene._attacker_id_to_item[newAttackerAttachment.id] = newItem
                 else:
-                    newItem = self.scene.addAsset(assetType, position)
+                    newItem = self.scene.add_asset(assetType, position)
                     #we can assign the properties to new asset
                     for propertyKey,propertyValue in assetProperties:
                         setattr(newItem.asset, propertyKey, float(propertyValue))
@@ -103,7 +116,7 @@ class PasteCommand(QUndoCommand):
                         newConnection.association = association
 
         #Update the Object Explorer when number of items change
-        self.scene.mainWindow.updateChildsInObjectExplorerSignal.emit()
+        self.scene.main_window.update_childs_in_object_explorer_signal.emit()
 
     def undo(self):
         print("\nPaste Undo is Called")
@@ -120,4 +133,4 @@ class PasteCommand(QUndoCommand):
             self.pastedConnections = []
 
         #Update the Object Explorer when number of items change
-        self.scene.mainWindow.updateChildsInObjectExplorerSignal.emit()
+        self.scene.main_window.update_childs_in_object_explorer_signal.emit()

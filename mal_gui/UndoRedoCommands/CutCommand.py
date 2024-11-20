@@ -1,7 +1,19 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from PySide6.QtGui import QUndoCommand
 
+if TYPE_CHECKING:
+    from ..ModelScene import ModelScene
+
 class CutCommand(QUndoCommand):
-    def __init__(self, scene, items, clipboard, parent=None):
+    def __init__(
+            self,
+            scene: ModelScene,
+            items,
+            clipboard,
+            parent=None
+        ):
         super().__init__(parent)
         self.scene = scene
         self.items = items
@@ -15,9 +27,9 @@ class CutCommand(QUndoCommand):
 
     def redo(self):
         self.cutItemFlag = True
-        serializedData = self.scene.serializeGraphicsItems(self.items, self.cutItemFlag)
+        serializedData = self.scene.serialize_graphics_items(self.items, self.cutItemFlag)
         self.clipboard.clear()
-        self.clipboard.setText(serializedData) 
+        self.clipboard.setText(serializedData)
 
         # Remove connections before removing the items
         for connection in self.connections:
@@ -28,7 +40,7 @@ class CutCommand(QUndoCommand):
             self.scene.removeItem(item)
 
         #Update the Object Explorer when number of items change
-        self.scene.mainWindow.updateChildsInObjectExplorerSignal.emit()
+        self.scene.main_window.update_childs_in_object_explorer_signal.emit()
 
     def undo(self):
         # Add items back to the scene
@@ -44,4 +56,4 @@ class CutCommand(QUndoCommand):
         self.clipboard.clear()
 
         #Update the Object Explorer when number of items change
-        self.scene.mainWindow.updateChildsInObjectExplorerSignal.emit()
+        self.scene.main_window.update_childs_in_object_explorer_signal.emit()
