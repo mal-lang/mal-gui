@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
 from PySide6.QtCore import QPointF, QTimer
 
-from ..ObjectExplorer.AssetBase import AssetBase
-from ..AssetsContainer.AssetsContainer import AssetsContainer
+from ..object_explorer.asset_base import AssetBase
+from ..assets_container.assets_container import AssetsContainer
 from ..file_utils import image_path
 
 if TYPE_CHECKING:
-    from ..ConnectionItem import IConnectionItem
+    from ..connection_item import IConnectionItem
 
 class ContainerizeAssetsCommand(QUndoCommand):
     def __init__(self, scene, items, parent=None):

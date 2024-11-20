@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
 from PySide6.QtCore import QPointF
 
-from ..ConnectionItem import AssociationConnectionItem
+from ..connection_item import AssociationConnectionItem
 
 if TYPE_CHECKING:
-    from ..ModelScene import ModelScene
+    from ..model_scene import ModelScene
 
 class PasteCommand(QUndoCommand):
     def __init__(

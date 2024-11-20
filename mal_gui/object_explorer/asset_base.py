@@ -14,10 +14,10 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import  QGraphicsItem
 
-from .EditableTextItem import EditableTextItem
+from .editable_text_item import EditableTextItem
 
 if TYPE_CHECKING:
-    from ..ConnectionItem import IConnectionItem
+    from ..connection_item import IConnectionItem
 
 class AssetBase(QGraphicsItem):
     # Starting Sequence Id with normal start at 100 (randomly taken)

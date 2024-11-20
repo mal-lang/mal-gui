@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
 
 if TYPE_CHECKING:
-    from ..ModelScene import ModelScene
-    from ..ConnectionItem import IConnectionItem
+    from ..model_scene import ModelScene
+    from ..connection_item import IConnectionItem
 
 class DeleteCommand(QUndoCommand):
     def __init__(

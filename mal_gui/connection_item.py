@@ -10,8 +10,8 @@ from PySide6.QtWidgets import (
 )
 
 if TYPE_CHECKING:
-    from .ModelScene import ModelScene
-    from .ObjectExplorer.AssetBase import AssetBase
+    from .model_scene import ModelScene
+    from .object_explorer.asset_base import AssetBase
 
 class IConnectionItem(QGraphicsLineItem):
     """'interface' for Connection Item"""

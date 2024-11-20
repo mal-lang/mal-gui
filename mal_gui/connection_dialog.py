@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 if TYPE_CHECKING:
-    from .ObjectExplorer.AssetBase import AssetBase
+    from .object_explorer.asset_base import AssetBase
 
 class ConnectionDialog(QDialog):
     def filter_items(self, text):

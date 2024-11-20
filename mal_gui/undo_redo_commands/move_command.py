@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
 
 if TYPE_CHECKING:
-    from ..ObjectExplorer.AssetBase import AssetBase
-    from ..ModelScene import ModelScene
+    from ..object_explorer.asset_base import AssetBase
+    from ..model_scene import ModelScene
 
 class MoveCommand(QUndoCommand):
     def __init__(

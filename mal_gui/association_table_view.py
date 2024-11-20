@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QWidget,QTableView,QVBoxLayout
 from PySide6.QtGui import QStandardItemModel,QStandardItem
 
-from .MainWindow import MainWindow
+from .main_window import MainWindow
 class AssociationDefinitions(QWidget):
     def __init__(self, parent: MainWindow):
         super().__init__(parent)

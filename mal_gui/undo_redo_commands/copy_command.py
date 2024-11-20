@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
 
 if TYPE_CHECKING:
-    from ..ModelScene import ModelScene
-    from ..ObjectExplorer.AssetBase import AssetBase
+    from ..model_scene import ModelScene
+    from ..object_explorer.asset_base import AssetBase
 
 class CopyCommand(QUndoCommand):
     def __init__(self, scene: ModelScene, items: list[AssetBase], clipboard, parent=None):

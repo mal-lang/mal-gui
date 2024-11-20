@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
 
 if TYPE_CHECKING:
-    from ModelScene import ModelScene
+    from mal_gui.model_scene import ModelScene
 
 class DragDropCommand(QUndoCommand):
     def __init__(self, scene: ModelScene, item, parent=None):

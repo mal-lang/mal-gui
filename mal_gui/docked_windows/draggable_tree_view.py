@@ -5,14 +5,14 @@ from PySide6.QtWidgets import QPushButton, QTreeWidget, QTreeWidgetItem
 from PySide6.QtCore import QMimeData, QEvent
 from PySide6.QtGui import QDrag, QIcon, QResizeEvent
 
-from .StyleConfiguartion import (
+from .style_configuration import (
     Visibility,
     CustomDialog,
     CustomDialogGlobal,
 )
 
 if TYPE_CHECKING:
-    from ..ObjectExplorer.AssetBase import AssetBase
+    from ..object_explorer.asset_base import AssetBase
 
 class DraggableTreeView(QTreeWidget):
     def __init__(

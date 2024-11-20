@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
 
 if TYPE_CHECKING:
-    from ..ModelScene import ModelScene
+    from ..model_scene import ModelScene
 class CreateEntrypointConnectionCommand(QUndoCommand):
     def __init__(
         self,
