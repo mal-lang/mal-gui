@@ -1,23 +1,28 @@
 from PySide6.QtWidgets import QWidget,QTableView,QVBoxLayout
 from PySide6.QtGui import QStandardItemModel,QStandardItem
 
-
+from .MainWindow import MainWindow
 class AssociationDefinitions(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent: MainWindow):
         super().__init__(parent)
 
-        self.associationInfo = None
-        self.mainWindow = parent
+        self.association_info = None
+        self.main_window = parent
 
-        self.tableAssociationView = QTableView(self)
-        self.associationInfoModel = QStandardItemModel()
+        self.table_association_view = QTableView(self)
+        self.association_info_model = QStandardItemModel()
 
         #headers for the columns
-        self.associationInfoModel.setHorizontalHeaderLabels(['AssocLeftAsset', 'AssocLeftField', 'AssocName', 'AssocRightField','AssocRightAsset'])
+        self.association_info_model.setHorizontalHeaderLabels(
+            ['AssocLeftAsset', 'AssocLeftField', 'AssocName',
+             'AssocRightField','AssocRightAsset']
+        )
 
-        self.associationInfoModel.removeRows(0, self.associationInfoModel.rowCount())
+        self.association_info_model.removeRows(
+            0, self.association_info_model.rowCount()
+        )
 
-        for assoc in self.mainWindow.scene.langGraph.associations:
+        for assoc in self.main_window.scene.lang_graph.associations:
             items = [
                 QStandardItem(assoc.left_field.asset.name),
                 QStandardItem(assoc.left_field.fieldname),
@@ -25,17 +30,16 @@ class AssociationDefinitions(QWidget):
                 QStandardItem(assoc.right_field.fieldname),
                 QStandardItem(assoc.right_field.asset.name)
             ]
-            self.associationInfoModel.appendRow(items)
+            self.association_info_model.appendRow(items)
 
-        self.associationInfo = self.associationInfoModel
-
-        self.tableAssociationView.setModel(self.associationInfoModel)
+        self.association_info = self.association_info_model
+        self.table_association_view.setModel(self.association_info_model)
 
         layout = QVBoxLayout()
-        layout.addWidget(self.tableAssociationView)
+        layout.addWidget(self.table_association_view)
 
         # Set the layout to the widget
         self.setLayout(layout)
 
-    def getAssociationInfo(self):
-        return self.associationInfo
+    def get_association_info(self):
+        return self.association_info

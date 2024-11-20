@@ -1,27 +1,42 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
 
+if TYPE_CHECKING:
+    from ..ObjectExplorer.AssetBase import AssetBase
+    from ..ModelScene import ModelScene
 
 class MoveCommand(QUndoCommand):
-    def __init__(self, scene, items, startPositions, endPositions, parent=None):
+    def __init__(
+            self,
+            scene: ModelScene,
+            items: list,
+            start_positions,
+            end_positions,
+            parent=None
+        ):
         super().__init__(parent)
         self.scene = scene
         self.items = items
-        self.startPositions = startPositions
-        self.endPositions = endPositions
+        self.start_positions = start_positions
+        self.end_positions = end_positions
 
     def redo(self):
+        """Perform move"""
         print("Move Redo")
         for item in self.items:
-            item.setPos(self.endPositions[item])
-            self.updateConnections(item)
+            item.setPos(self.end_positions[item])
+            self.update_connections(item)
 
     def undo(self):
+        """Undo move"""
         print("Move Undo")
         for item in self.items:
-            item.setPos(self.startPositions[item])
-            self.updateConnections(item)
+            item.setPos(self.start_positions[item])
+            self.update_connections(item)
 
-    def updateConnections(self, item):
+    def update_connections(self, item: AssetBase):
+        """Redraw connecting lines"""
         if hasattr(item, 'connections'):
             for connection in item.connections:
-                connection.updatePath()
+                connection.update_path()

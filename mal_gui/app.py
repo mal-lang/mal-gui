@@ -80,10 +80,8 @@ class FileSelectionDialog(QDialog):
         quit_button.clicked.connect(self.reject)
 
     def open_file_dialog(self):
+        """Ask user for MAR file in dialog"""
         file_dialog = QFileDialog()
-
-        # file_dialog.setNameFilter("JAR or MAR files (*.jar *.mar )") --> Need to confirm with Andrei
-        # file_dialog.setWindowTitle("Select a JAR or MAR File")
 
         file_dialog.setNameFilter("MAR files (*.mar)")
         file_dialog.setWindowTitle("Select a MAR File")
@@ -105,18 +103,21 @@ class FileSelectionDialog(QDialog):
 
             # Remember language choice in user settings
             self.config.set('Settings', 'langFilePath', self.selected_lang_file)
-            with open(self.config_file_path, 'w', encoding='utf-8') as configfile:
-                self.config.write(configfile)
+
+            with open(self.config_file_path, 'w', encoding='utf-8') as conf_file:
+                self.config.write(conf_file)
 
             self.accept()  # Close the dialog and return accepted
         else:
-            QMessageBox.warning(self, "Invalid File", "Please select a valid .mar file.")
+            QMessageBox.warning(
+                self, "Invalid File", "Please select a valid .mar file.")
 
     def get_selected_file(self):
         return self.selected_lang_file
 
 
 def main():
+    """Entrypoint of MAL GUI"""
     app = QApplication(sys.argv)
 
     dialog = FileSelectionDialog()

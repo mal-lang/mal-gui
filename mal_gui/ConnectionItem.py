@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import Qt, QPointF, QLineF
 from PySide6.QtGui import QBrush, QColor,QPen
@@ -10,19 +10,25 @@ from PySide6.QtWidgets import (
 )
 
 if TYPE_CHECKING:
-    from ModelScene import ModelScene
+    from .ModelScene import ModelScene
+    from .ObjectExplorer.AssetBase import AssetBase
 
 class IConnectionItem(QGraphicsLineItem):
-    def createLabel(self, text):
+    """'interface' for Connection Item"""
+    start_item: AssetBase
+    end_item: AssetBase
+    association_details: list[str]
+
+    def create_label(self, text):
         pass
 
-    def updatePath(self):
+    def update_path(self):
         pass
 
-    def removeLabels(self):
+    def remove_labels(self):
         pass
 
-    def restoreLabels(self):
+    def restore_labels(self):
         pass
 
 
@@ -30,8 +36,8 @@ class AssociationConnectionItem(IConnectionItem):
     def __init__(
         self,
         selected_assoc_text: str,
-        start_item,
-        end_item,
+        start_item: AssetBase,
+        end_item: AssetBase,
         scene: ModelScene,
         parent = None
     ):
@@ -46,84 +52,107 @@ class AssociationConnectionItem(IConnectionItem):
         self.end_item = end_item
         self._scene = scene
 
-        self.start_item.addConnection(self)
-        self.end_item.addConnection(self)
+        self.start_item.add_connection(self)
+        self.end_item.add_connection(self)
 
-        if self.start_item.assetType != 'Attacker' and self.end_item.assetType != 'Attacker':
+        if self.start_item.asset_type != 'Attacker'\
+            and self.end_item.asset_type != 'Attacker':
 
-            self.associationDetails = selected_assoc_text.split("-->")
-            assocLeftField = self.associationDetails[0]
-            assocMiddleName = self.associationDetails[1]
-            assocRightField = self.associationDetails[2]
+            self.association_details = selected_assoc_text.split("-->")
+            assoc_left_field = self.association_details[0]
+            assoc_middle_name = self.association_details[1]
+            assoc_right_field = self.association_details[2]
 
             # Create labels with background color
-            self.labelAssocLeftField = self.createLabel(assocLeftField.split(".")[1])
-            self.labelAssocMiddleName = self.createLabel(assocMiddleName)
-            self.labelAssocRightField = self.createLabel(assocRightField.split(".")[1])
+            self.label_assoc_left_field = \
+                self.create_label(assoc_left_field.split(".")[1])
+            self.label_assoc_middle_name = \
+                self.create_label(assoc_middle_name)
+            self.label_assoc_right_field = \
+                self.create_label(assoc_right_field.split(".")[1])
 
         else:
-            #Need to check who is attacker and get
+            # Need to check who is attacker and get
             # the name of target and attackStep Name.
             # Assumption is Both are not 'Attacker'.
-            if self.start_item.assetType == 'Attacker':
+            if self.start_item.asset_type == 'Attacker':
                 attacker = self.start_item.attackerAttachment
-                target = str(self.end_item.assetName)
+                target = str(self.end_item.asset_name)
             else:
                 attacker = self.end_item.attackerAttachment
-                target = str(self.start_item.assetName)
+                target = str(self.start_item.asset_name)
 
             #selected_assoc_text is representing 'AttackStep' name
-            attacker.entry_points.append(target + ' -> ' + selected_assoc_text)
-            self.labelAssocLeftField = self.createLabel("")
-            self.labelAssocMiddleName = self.createLabel(selected_assoc_text)
-            self.labelAssocRightField = self.createLabel("")
+            entry_point_text = target + ' -> ' + selected_assoc_text
+            attacker.entry_points.append(entry_point_text)
+            self.label_assoc_left_field = self.create_label("")
+            self.label_assoc_middle_name = self.create_label(selected_assoc_text)
+            self.label_assoc_right_field = self.create_label("")
 
-        self.updatePath()
+        self.update_path()
 
-    def createLabel(self, text):
-        # Create the label
+    def create_label(self, text):
+        """Create the connection label"""
         label = QGraphicsTextItem(text)
         label.setDefaultTextColor(Qt.black)
 
         # Create a white background for the label
         rect = label.boundingRect()
-        labelBackground = QGraphicsRectItem(rect)
-        labelBackground.setBrush(QBrush(QColor(255, 255, 255, 200)))  # Semi-transparent white background
-        labelBackground.setPen(Qt.NoPen)
+        # Semi-transparent white background
+        label_background = QGraphicsRectItem(rect)
+        label_background.setBrush(QBrush(QColor(255, 255, 255, 200)))
+        label_background.setPen(Qt.NoPen)
 
         # Create a group to hold the label and its background
-        labelGroup = self._scene.createItemGroup([labelBackground, label])
-        labelGroup.setZValue(1)  # Ensure labels are above the line
+        label_group = self._scene.createItemGroup([label_background, label])
+        label_group.setZValue(1)  # Ensure labels are above the line
 
-        return labelGroup
+        return label_group
 
-    def updatePath(self):
+    def update_path(self):
         """
-        Draws a straight line from the start to end items and updates label positions.
+        Draws a straight line from the start to end
+        items and updates label positions.
         """
-        self.startPos = self.start_item.sceneBoundingRect().center()
-        self.endPos = self.end_item.sceneBoundingRect().center()
-        self.setLine(QLineF(self.startPos, self.endPos))
+        start_pos = self.start_item.sceneBoundingRect().center()
+        end_pos = self.end_item.sceneBoundingRect().center()
+        self.setLine(QLineF(start_pos, end_pos))
 
-        labelAssocLeftFieldPos = self.line().pointAt(0.2)
-        self.labelAssocLeftField.setPos(labelAssocLeftFieldPos - QPointF(self.labelAssocLeftField.boundingRect().width() / 2, self.labelAssocLeftField.boundingRect().height() / 2))
+        label_assoc_left_field_pos = self.line().pointAt(0.2)
+        self.label_assoc_left_field.setPos(
+            label_assoc_left_field_pos - QPointF(
+                self.label_assoc_left_field.boundingRect().width() / 2,
+                self.label_assoc_left_field.boundingRect().height() / 2
+            )
+        )
 
-        labelAssocMiddleNamePos = self.line().pointAt(0.5)
-        self.labelAssocMiddleName.setPos(labelAssocMiddleNamePos - QPointF(self.labelAssocMiddleName.boundingRect().width() / 2, self.labelAssocMiddleName.boundingRect().height() / 2))
+        label_assoc_middle_name_pos = self.line().pointAt(0.5)
+        self.label_assoc_middle_name.setPos(
+            label_assoc_middle_name_pos - QPointF(
+                self.label_assoc_middle_name.boundingRect().width() / 2,
+                self.label_assoc_middle_name.boundingRect().height() / 2
+            )
+        )
 
-        labelAssocRightFieldPos = self.line().pointAt(0.8)
-        self.labelAssocRightField.setPos(labelAssocRightFieldPos - QPointF(self.labelAssocRightField.boundingRect().width() / 2, self.labelAssocRightField.boundingRect().height() / 2))
+        labelassoc_right_field_pos = self.line().pointAt(0.8)
+        self.label_assoc_right_field.setPos(
+            labelassoc_right_field_pos - QPointF(
+                self.label_assoc_right_field.boundingRect().width() / 2,
+                self.label_assoc_right_field.boundingRect().height() / 2
+            )
+        )
 
-        # print("isAssociationVisibilityChecked = "+ str(self.isAssociationVisibilityChecked))
+        self.label_assoc_left_field.setVisible(
+            self._scene.get_show_assoc_checkbox_status())
+        self.label_assoc_right_field.setVisible(
+            self._scene.get_show_assoc_checkbox_status())
 
-        self.labelAssocLeftField.setVisible(self._scene.get_show_assoc_checkbox_status())
-        self.labelAssocRightField.setVisible(self._scene.get_show_assoc_checkbox_status())
+    def calculate_offset(self, rect, label_pos, angle):
+        """Calculate the offset to position the label
+        outside the bounding rectangle."""
 
-    def calculateOffset(self, rect, label_pos, angle):
-        """
-        Calculate the offset to position the label outside the bounding rectangle.
-        """
-        offset_distance = 10  # Distance to move the label outside the rectangle
+        # Distance to move the label outside the rectangle
+        offset_distance = 10
         offset = QPointF()
 
         if angle < 90 or angle > 270:
@@ -138,27 +167,30 @@ class AssociationConnectionItem(IConnectionItem):
 
         return offset
 
-    def removeLabels(self):
-        self._scene.removeItem(self.labelAssocLeftField)
-        self._scene.removeItem(self.labelAssocMiddleName)
-        self._scene.removeItem(self.labelAssocRightField)
+    def remove_labels(self):
+        """Remove the labels from a connection item"""
+        self._scene.removeItem(self.label_assoc_left_field)
+        self._scene.removeItem(self.label_assoc_middle_name)
+        self._scene.removeItem(self.label_assoc_right_field)
 
-    def restoreLabels(self):
-        self._scene.addItem(self.labelAssocLeftField)
-        self._scene.addItem(self.labelAssocMiddleName)
-        self._scene.addItem(self.labelAssocRightField)
+    def restore_labels(self):
+        """Undo delete of connection item"""
+        self._scene.addItem(self.label_assoc_left_field)
+        self._scene.addItem(self.label_assoc_middle_name)
+        self._scene.addItem(self.label_assoc_right_field)
 
     def delete(self):
-        self.removeLabels()
+        """Delete connection item"""
+        self.remove_labels()
         self._scene.removeItem(self)
 
 
 class EntrypointConnectionItem(IConnectionItem):
     def __init__(
         self,
-        attackStepName,
-        attackerItem,
-        assetItem,
+        attack_step_name,
+        attacker_item: AssetBase,
+        asset_item: AssetBase,
         scene: ModelScene,
         parent = None
     ):
@@ -166,52 +198,51 @@ class EntrypointConnectionItem(IConnectionItem):
 
         pen = QPen(QColor(255, 0, 0), 2)  # Red color with 2-pixel thickness
         self.setPen(pen)
-
         self.setZValue(0)  # Ensure connection items are behind rect items
 
-        self.attackerItem = attackerItem
-        self.assetItem = assetItem
+        self.attacker_item = attacker_item
+        self.asset_item = asset_item
         self._scene = scene
 
-        self.attackerItem.addConnection(self)
-        self.assetItem.addConnection(self)
-        self.labelEntrypoint = self.createLabel(attackStepName)
+        self.attacker_item.add_connection(self)
+        self.asset_item.add_connection(self)
+        self.label_entrypoint = self.create_label(attack_step_name)
 
-    def createLabel(self, text):
+    def create_label(self, text):
         # Create the label
         label = QGraphicsTextItem(text)
         label.setDefaultTextColor(Qt.black)
 
         # Create a white background for the label
         rect = label.boundingRect()
-        labelBackground = QGraphicsRectItem(rect)
-        labelBackground.setBrush(QBrush(QColor(255, 255, 255, 200)))  # Semi-transparent white background
-        labelBackground.setPen(Qt.NoPen)
+        label_background = QGraphicsRectItem(rect)
+        label_background.setBrush(QBrush(QColor(255, 255, 255, 200)))
+        label_background.setPen(Qt.NoPen)
 
         # Create a group to hold the label and its background
-        labelGroup = self._scene.createItemGroup([labelBackground, label])
-        labelGroup.setZValue(1)  # Ensure labels are above the line
+        label_group = self._scene.createItemGroup([label_background, label])
+        label_group.setZValue(1)  # Ensure labels are above the line
 
-        return labelGroup
+        return label_group
 
-    def updatePath(self):
-        """
-        Draws a straight line from the start to end items and updates label positions.
-        """
-        self.startPos = self.attackerItem.sceneBoundingRect().center()
-        self.endPos = self.assetItem.sceneBoundingRect().center()
-        self.setLine(QLineF(self.startPos, self.endPos))
+    def update_path(self):
+        """Draw straight line from start to end items
+        and updates label positions."""
 
-        labelEntrypointPos = self.line().pointAt(0.5)
-        self.labelEntrypoint.setPos(
-            labelEntrypointPos - QPointF(
-                self.labelEntrypoint.boundingRect().width() / 2,
-                self.labelEntrypoint.boundingRect().height() / 2
+        start_pos = self.attacker_item.sceneBoundingRect().center()
+        end_pos = self.asset_item.sceneBoundingRect().center()
+        self.setLine(QLineF(start_pos, end_pos))
+
+        label_entrypoints_pos = self.line().pointAt(0.5)
+        self.label_entrypoint.setPos(
+            label_entrypoints_pos - QPointF(
+                self.label_entrypoint.boundingRect().width() / 2,
+                self.label_entrypoint.boundingRect().height() / 2
             )
         )
 
-    def removeLabels(self):
-        self._scene.removeItem(self.labelEntrypoint)
+    def remove_labels(self):
+        self._scene.removeItem(self.label_entrypoint)
 
-    def restoreLabels(self):
-        self._scene.addItem(self.labelEntrypoint)
+    def restore_labels(self):
+        self._scene.addItem(self.label_entrypoint)

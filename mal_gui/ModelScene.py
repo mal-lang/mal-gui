@@ -36,8 +36,9 @@ from .UndoRedoCommands.ContainerizeAssetsCommand import ContainerizeAssetsComman
 from maltoolbox.model import Model, AttackerAttachment
 
 if TYPE_CHECKING:
-    from MainWindow import MainWindow
+    from .MainWindow import MainWindow
     from maltoolbox.language import LanguageGraph
+    from .ConnectionItem import IConnectionItem
 
 class ModelScene(QGraphicsScene):
     def __init__(
@@ -221,10 +222,10 @@ class ModelScene(QGraphicsScene):
 
                 # Create and show the connection dialog
                 if self.end_item:
-                    if self.start_item.assetType != 'Attacker' and self.end_item.assetType != 'Attacker':
+                    if self.start_item.asset_type != 'Attacker' and self.end_item.asset_type != 'Attacker':
                         dialog = AssociationConnectionDialog(self.start_item, self.end_item,self.lang_graph, self.lcs,self.model)
                         if dialog.exec() == QDialog.Accepted:
-                            selected_item = dialog.associationListWidget.currentItem()
+                            selected_item = dialog.association_list_widget.currentItem()
                             if selected_item:
                                 print("Selected Association Text is: "+ selected_item.text())
                                 # connection = AssociationConnectionItem(selected_item.text(),self.start_item, self.end_item,self)
@@ -242,16 +243,16 @@ class ModelScene(QGraphicsScene):
                                 self.removeItem(self.line_item)
                     else:
 
-                        if self.start_item.assetType == self.end_item.assetType:
+                        if self.start_item.asset_type == self.end_item.asset_type:
                             raise TypeError("Start and end item can not both be type 'Attacker'")
 
-                        attacker_item = self.start_item if self.start_item.assetType == 'Attacker' else self.end_item
-                        asset_item = self.end_item if self.start_item.assetType == 'Attacker' else self.start_item
+                        attacker_item = self.start_item if self.start_item.asset_type == 'Attacker' else self.end_item
+                        asset_item = self.end_item if self.start_item.asset_type == 'Attacker' else self.start_item
 
                         dialog = EntrypointConnectionDialog(
                             attacker_item, asset_item, self.lang_graph, self.lcs,self.model)
                         if dialog.exec() == QDialog.Accepted:
-                            selected_item = dialog.attackStepListWidget.currentItem()
+                            selected_item = dialog.attack_step_list_widget.currentItem()
                             if selected_item:
                                 print("Selected Entrypoint Text is: "+ selected_item.text())
                                 command = CreateEntrypointConnectionCommand(
@@ -313,6 +314,7 @@ class ModelScene(QGraphicsScene):
             self.show_scene_context_menu(event.screenPos(),event.scenePos())
 
     def add_asset(self, itemType, position, name = None):
+        """Add asset item to the model and the scene"""
         new_asset = getattr(self.lcs.ns, itemType)(name = name)
         self.model.add_asset(new_asset)
         # new_asset.extras = {
@@ -334,12 +336,11 @@ class ModelScene(QGraphicsScene):
     def assign_position_to_assets_without_positions(
             self, assets_without_position,x_max,y_max
         ):
-        """
-        Assign position to assets that don't have any
-        """
+        """Assign position to assets that don't have any"""
+
         distance_between_two_assets_vertically = 200
-        
-        for i, asset in enumerate(assets_without_position):  
+
+        for i, asset in enumerate(assets_without_position):
             x_pos = x_max
             y_pos = y_max + (i* distance_between_two_assets_vertically)
             print("In x_pos= "+ str(x_pos))
@@ -347,6 +348,7 @@ class ModelScene(QGraphicsScene):
             asset.setPos(QPointF(x_pos,y_pos))
 
     def draw_model(self):
+        """Draw all assets in the model"""
 
         assets_without_position = []
         x_max = 0
@@ -381,7 +383,9 @@ class ModelScene(QGraphicsScene):
             if 'position' not in asset.extras:
                 assets_without_position.append(new_item)
 
-        self.assign_position_to_assets_without_positions(assets_without_position,x_max, y_max)
+        self.assign_position_to_assets_without_positions(
+            assets_without_position,x_max, y_max
+        )
 
         for assoc in self.model.associations:
             lest_field_name, right_field_name = \
@@ -414,6 +418,7 @@ class ModelScene(QGraphicsScene):
         start_item,
         end_item
     ):
+        """Add associations to the scene"""
 
         connection = AssociationConnectionItem(
             assoc_text,
@@ -423,8 +428,8 @@ class ModelScene(QGraphicsScene):
         )
 
         self.addItem(connection)
-        connection.restoreLabels()
-        connection.updatePath()
+        connection.restore_labels()
+        connection.update_path()
         return connection
 
     def add_entrypoint_connection(
@@ -433,6 +438,7 @@ class ModelScene(QGraphicsScene):
         attacker_item,
         asset_item
     ):
+        """Add attacker entrypoints to the scene"""
 
         connection = EntrypointConnectionItem(
             attack_step_name,
@@ -442,38 +448,40 @@ class ModelScene(QGraphicsScene):
         )
 
         self.addItem(connection)
-        connection.restoreLabels()
-        connection.updatePath()
+        connection.restore_labels()
+        connection.update_path()
         return connection
 
     def add_attacker(self, position, name = None):
-        newAttackerAttachment = AttackerAttachment()
-        self.model.add_attacker(newAttackerAttachment)
+        """Add attacker to the model and scene"""
+        new_attacker_attachment = AttackerAttachment()
+        self.model.add_attacker(new_attacker_attachment)
         new_item = self.create_item(
             "Attacker",
             position,
-            newAttackerAttachment.name
+            new_attacker_attachment.name
         )
-        new_item.attackerAttachment = newAttackerAttachment
-        self._attacker_id_to_item[newAttackerAttachment.id] = new_item
+        new_item.attackerAttachment = new_attacker_attachment
+        self._attacker_id_to_item[new_attacker_attachment.id] = new_item
 
     def create_item(self, itemType, position, name):
-        new_item = self.asset_factory.getAsset(itemType)
-        new_item.assetName = name
-        new_item.typeTextItem.setPlainText(str(name))
+        """Create item"""
+        new_item = self.asset_factory.get_asset(itemType)
+        new_item.asset_name = name
+        new_item.type_text_item.setPlainText(str(name))
         new_item.setPos(position)
         # self.addItem(new_item)
         self.undo_stack.push(DragDropCommand(self, new_item))  # Add the drop as a command
         return new_item
 
-    def cut_assets(self, selectedAssets):
+    def cut_assets(self, selected_assets: list[AssetBase]):
         print("Cut Asset is called..")
-        command = CutCommand(self, selectedAssets,self.clipboard)
+        command = CutCommand(self, selected_assets, self.clipboard)
         self.undo_stack.push(command)
 
-    def copy_assets(self, selectedAssets):
+    def copy_assets(self, selected_assets: list[AssetBase]):
         print("Copy Asset is called..")
-        command = CopyCommand(self, selectedAssets,self.clipboard)
+        command = CopyCommand(self, selected_assets, self.clipboard)
         self.undo_stack.push(command)
 
     def paste_assets(self, position):
@@ -481,23 +489,23 @@ class ModelScene(QGraphicsScene):
         command = PasteCommand(self, position, self.clipboard)
         self.undo_stack.push(command)
 
-    def delete_assets(self, selectedAssets):
+    def delete_assets(self, selected_assets: list[AssetBase]):
         print("Delete asset is called..")
-        command = DeleteCommand(self, selectedAssets)
+        command = DeleteCommand(self, selected_assets)
         self.undo_stack.push(command)
 
-    def containerize_assets(self,selectedAssets):
+    def containerize_assets(self, selected_assets: list[AssetBase]):
         print("Containerization of assets requested..")
-        command = ContainerizeAssetsCommand(self,selectedAssets)
+        command = ContainerizeAssetsCommand(self,selected_assets)
         self.undo_stack.push(command)
 
-    def decontainerize_assets(self,currently_selected_container):
+    def decontainerize_assets(self, currently_selected_container: AssetsContainer):
         # Add items back to the scene
         current_position_of_container = currently_selected_container.scenePos()
-        available_connections_in_item = []
+        available_connections_in_item: list[IConnectionItem] = []
 
-        for item_entry in currently_selected_container.containerizedAssetsList:
-            item = item_entry['item']
+        for item_entry in currently_selected_container.containerized_assets_list:
+            item: AssetBase = item_entry['item']
             original_position_of_item = current_position_of_container  + item_entry['offset']
             self.addItem(item)
             item.setPos(original_position_of_item)
@@ -508,12 +516,13 @@ class ModelScene(QGraphicsScene):
         # Restore connections
         for connection in available_connections_in_item:
             self.addItem(connection)
-            connection.restoreLabels()
-            connection.updatePath()
-            
+            connection.restore_labels()
+            connection.update_path()
+
         self.removeItem(currently_selected_container)
 
-    def expand_container(self,currently_selected_container):
+    def expand_container(self, currently_selected_container):
+        """Expand container, move the assets out of it"""
         contained_item_for_bounding_rect_calc = []
 
         #copied below logic from containerize_assetsCommandUndo
@@ -521,7 +530,7 @@ class ModelScene(QGraphicsScene):
         current_centroid_position_of_container = \
             currently_selected_container.scenePos()
 
-        for item_entry in currently_selected_container.containerizedAssetsList:
+        for item_entry in currently_selected_container.containerized_assets_list:
             item = item_entry['item']
             offset_position_of_item = \
                 current_centroid_position_of_container + item_entry['offset']
@@ -538,8 +547,8 @@ class ModelScene(QGraphicsScene):
         #  may be connected and may get duplicated - So its Future Work
         # for connection in self.connections:
         #     self.scene.addItem(connection)
-        #     connection.restoreLabels()
-        #     connection.updatePath()
+        #     connection.restore_labels()
+        #     connection.update_path()
 
         rectangle_bounding_all_containerized_assets = self\
             .calc_surrounding_rect_for_grouped_assets_in_container(
@@ -551,7 +560,8 @@ class ModelScene(QGraphicsScene):
         )
 
         self.addItem(self.container_box)
-        self.container_box.associatedCompressedContainer = currently_selected_container   
+        self.container_box.associatied_compressed_container = \
+            currently_selected_container
         # self.removeItem(currently_selected_container)
         currently_selected_container.setVisible(False)
 
@@ -567,9 +577,10 @@ class ModelScene(QGraphicsScene):
         #MAKE COMPRESSED CONTAINER BOX HEADER FOR EXPANDED CONTAINER BOX - END
 
     def compress_container(self,currently_selected_container_box):
-        compressed_container = currently_selected_container_box.associatedCompressedContainer
+        compressed_container = \
+            currently_selected_container_box.associatied_compressed_container
         current_centroid_position_of_container = compressed_container.scenePos()
-        for item_entry in compressed_container.containerizedAssetsList:
+        for item_entry in compressed_container.containerized_assets_list:
             item = item_entry['item']
             item.setPos(current_centroid_position_of_container)
             self.update_connections(item)
@@ -577,129 +588,140 @@ class ModelScene(QGraphicsScene):
 
         self.removeItem(currently_selected_container_box)
 
-    def serialize_graphics_items(self, items, cutIntended):
+    def serialize_graphics_items(self, items: list[AssetBase], cut_intended):
         objdetails = []
-        selectedSequenceIds = {item.assetSequenceId for item in items}  # Set of selected item IDs
+
+        # Set of selected item IDs
+        selected_sequence_ids = {item.asset_sequence_id for item in items}
         for item in items:
 
-            # Convert assetName to a string - This is causing issue with Serialization
-            assetNameStr = str(item.assetName)
+            # Convert asset_name to a string
+            # - This is causing issue with Serialization
+            asset_name = str(item.asset_name)
+            prop_keys_to_ignore = ['id','type']
 
-            propertyKeysToIgnore = ['id','type']
-
-            itemDetails = {
-                'assetType': item.assetType,
-                'assetName': assetNameStr,
-                'assetSequenceId': item.assetSequenceId,
+            item_details = {
+                'asset_type': item.asset_type,
+                'asset_name': asset_name,
+                'asset_sequence_id': item.asset_sequence_id,
                 'position': (item.pos().x(), item.pos().y()),
                 'connections': [
-                        (conn.start_item.assetSequenceId, conn.end_item.assetSequenceId, '-->'.join(conn.associationDetails))
+                        (conn.start_item.asset_sequence_id,
+                         conn.end_item.asset_sequence_id,
+                         '-->'.join(conn.association_details))
                         for conn in item.connections
-                        if conn.start_item.assetSequenceId in selectedSequenceIds and conn.end_item.assetSequenceId in selectedSequenceIds                    
+                        if conn.start_item.asset_sequence_id in selected_sequence_ids
+                        and conn.end_item.asset_sequence_id in selected_sequence_ids
                     ],
-                'assetProperties': [
+                'asset_properties': [
                     (str(key),str(value))
                     for key,value in item.asset._properties.items()
-                    if key not in propertyKeysToIgnore 
+                    if key not in prop_keys_to_ignore 
                 ]
             }
-            objdetails.append(itemDetails)
+            objdetails.append(item_details)
 
-        serializedData = pickle.dumps(objdetails)
-        base64SerializedData = base64.b64encode(serializedData).decode('utf-8')
-        return base64SerializedData
+        serialized_data = pickle.dumps(objdetails)
+        base64_serialized_data = \
+            base64.b64encode(serialized_data).decode('utf-8')
+        return base64_serialized_data
 
-    def deserialize_graphics_items(self, assetText):
-        # Fix padding if necessary- I was getting padding error 
-        paddingNeeded = len(assetText) % 4
-        if paddingNeeded:
-            assetText += '=' * (4 - paddingNeeded)
+    def deserialize_graphics_items(self, asset_text):
+        # Fix padding if necessary - I was getting padding error
+        padding_needed = len(asset_text) % 4
+        if padding_needed:
+            asset_text += '=' * (4 - padding_needed)
 
-        serializedData = base64.b64decode(assetText)
-        deserializedData = pickle.loads(serializedData)
+        serialized_data = base64.b64decode(asset_text)
+        deserialized_data = pickle.loads(serialized_data)
 
-        return deserializedData
+        return deserialized_data
 
-    def deleteConnection(self, conectionItemToBeDeleted):
-        print("Delete Connection is called..") 
-        command = DeleteConnectionCommand(self, conectionItemToBeDeleted)
+    def delete_connection(self, connection_item_to_be_deleted):
+        print("Delete Connection is called..")
+        command = DeleteConnectionCommand(self, connection_item_to_be_deleted)
         self.undo_stack.push(command)
 
     def show_asset_context_menu(self, position):
         print("Asset Context menu activated")
         menu = QMenu()
-        assetCutAction = QAction("Cut Asset", self)
-        assetCopyAction = QAction("Copy Asset", self)
-        assetDeleteAction = QAction("Delete Asset", self)
-        assetContainerizationAction = QAction("Group Asset(s)", self)
+        asset_cut_action = QAction("Cut Asset", self)
+        asset_copy_action = QAction("Copy Asset", self)
+        asset_delete_action = QAction("Delete Asset", self)
+        asset_containerization_action = QAction("Group Asset(s)", self)
 
-        menu.addAction(assetCutAction)
-        menu.addAction(assetCopyAction)
-        menu.addAction(assetDeleteAction)
-        menu.addAction(assetContainerizationAction)
+        menu.addAction(asset_cut_action)
+        menu.addAction(asset_copy_action)
+        menu.addAction(asset_delete_action)
+        menu.addAction(asset_containerization_action)
         action = menu.exec(position)
 
         selected_items = self.selectedItems()  # Get all selected items
 
-        if action == assetCutAction:
+        if action == asset_cut_action:
             self.cut_assets(selected_items)
-        if action == assetCopyAction:
-           self.copy_assets(selected_items)
-        if action == assetDeleteAction:
-           self.delete_assets(selected_items)
-        if action == assetContainerizationAction:
-           self.containerize_assets(selected_items)
+        if action == asset_copy_action:
+            self.copy_assets(selected_items)
+        if action == asset_delete_action:
+            self.delete_assets(selected_items)
+        if action == asset_containerization_action:
+            self.containerize_assets(selected_items)
 
-    def show_connection_item_context_menu(self,position, connectionItem):
+    def show_connection_item_context_menu(self, position, connection_item):
         print("AssociationConnectionItem Context menu activated")
         menu = QMenu()
-        connectionItemDeleteAction = QAction("Delete Connection", self)
+        connection_item_delete_action = QAction("Delete Connection", self)
 
-        menu.addAction(connectionItemDeleteAction)
+        menu.addAction(connection_item_delete_action)
         action = menu.exec(position)
 
         #In future we may want more option. So "if" condition.
-        if action == connectionItemDeleteAction:
-            self.deleteConnection(connectionItem)
+        if action == connection_item_delete_action:
+            self.delete_connection(connection_item)
 
-    def show_assets_container_context_menu(self,position,currently_selected_container):
+    def show_assets_container_context_menu(
+            self, position, currently_selected_container
+        ):
         print("Assets Container Context menu activated")
         menu = QMenu()
-        assetsUngroupAction = QAction("Ungroup Asset(s)", self)
-        assetsExpandContainerAction = QAction("Expand Container", self)
+        assets_ungroup_action = QAction("Ungroup Asset(s)", self)
+        assets_expand_container_action = QAction("Expand Container", self)
 
-        menu.addAction(assetsUngroupAction)
-        menu.addAction(assetsExpandContainerAction)
+        menu.addAction(assets_ungroup_action)
+        menu.addAction(assets_expand_container_action)
         action = menu.exec(position)
 
-        if action == assetsUngroupAction:
+        if action == assets_ungroup_action:
             self.decontainerize_assets(currently_selected_container)
-        elif action == assetsExpandContainerAction:
+        elif action == assets_expand_container_action:
             self.expand_container(currently_selected_container)
 
-    def show_assets_container_box_context_menu(self,position,currently_selected_container_box):
+    def show_assets_container_box_context_menu(
+            self, position,currently_selected_container_box
+        ):
         print("Assets Container Box Context menu activated")
         menu = QMenu()
-        assetsCompressContainerBoxAction = QAction("Compress Container Box", self)
-        menu.addAction(assetsCompressContainerBoxAction)
+        assets_compress_container_box_action = \
+            QAction("Compress Container Box", self)
+        menu.addAction(assets_compress_container_box_action)
 
         action = menu.exec(position)
 
-        if action == assetsCompressContainerBoxAction:
+        if action == assets_compress_container_box_action:
             self.compress_container(currently_selected_container_box)
 
-    def show_scene_context_menu(self, screenPos,scenePos):
+    def show_scene_context_menu(self, screenPos, scene_pos):
         print("Scene Context menu activated")
         menu = QMenu()
-        assetPasteAction = menu.addAction("Paste Asset")
+        asset_paste_action = menu.addAction("Paste Asset")
         action = menu.exec(screenPos)
 
-        if action == assetPasteAction:
-            # self.requestpasteAsset.emit(scenePos)
-            self.paste_assets(scenePos)
+        if action == asset_paste_action:
+            # self.requestpasteAsset.emit(scene_pos)
+            self.paste_assets(scene_pos)
 
-    def set_show_assoc_checkbox_status(self,isEnabled):
-        self.show_association_checkbox_status = isEnabled
+    def set_show_assoc_checkbox_status(self, is_enabled):
+        self.show_association_checkbox_status = is_enabled
 
     def get_show_assoc_checkbox_status(self):
         return self.show_association_checkbox_status
@@ -710,21 +732,23 @@ class ModelScene(QGraphicsScene):
             item = selected_items[0]
             if isinstance(item, AssetBase):
                 # self.main_window is a reference to main window
-                self.main_window.item_details_window.updateItemDetailsWindow(item)
-                if item.assetType == 'Attacker':
+                self.main_window.item_details_window\
+                    .update_item_details_window(item)
+                if item.asset_type == 'Attacker':
                     print("Attacker Selected")
-                    self.main_window.updateAttackStepsWindow(item)
-                    self.main_window.updatePropertiesWindow(None)
-                    self.main_window.updateAssetRelationsWindow(None)
+                    self.main_window.update_attack_steps_window(item)
+                    self.main_window.update_properties_window(None)
+                    self.main_window.update_asset_relations_window(None)
                 else:
-                    self.main_window.updatePropertiesWindow(item)  
-                    self.main_window.updateAttackStepsWindow(None) 
-                    self.main_window.updateAssetRelationsWindow(item)     
+                    self.main_window.update_properties_window(item)
+                    self.main_window.update_attack_steps_window(None)
+                    self.main_window.update_asset_relations_window(item)
         else:
-            self.main_window.item_details_window.updateItemDetailsWindow(None)
-            self.main_window.updatePropertiesWindow(None)
-            self.main_window.updateAttackStepsWindow(None)
-            self.main_window.updateAssetRelationsWindow(None)
+            self.main_window.item_details_window\
+                .update_item_details_window(None)
+            self.main_window.update_properties_window(None)
+            self.main_window.update_attack_steps_window(None)
+            self.main_window.update_asset_relations_window(None)
 
     def calc_surrounding_rect_for_grouped_assets_in_container(
             self,
@@ -758,7 +782,7 @@ class ModelScene(QGraphicsScene):
 
         return QRectF(QPointF(min_x, min_y), QPointF(max_x, max_y))
 
-    def update_connections(self, item):
+    def update_connections(self, item: AssetBase):
         if hasattr(item, 'connections'):
             for connection in item.connections:
-                connection.updatePath()
+                connection.update_path()

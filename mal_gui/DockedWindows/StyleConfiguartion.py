@@ -17,101 +17,106 @@ from ..ObjectExplorer.AssetBase import AssetBase
 class Visibility(Enum):
     HIDE = 1
     UNHIDE = 2
-    
-class CustomDialog(QDialog):
-    colorChanged1 = Signal(QColor)
-    colorChanged2 = Signal(QColor)
 
-    def __init__(self, item,updateColorCallback, parent=None):
+class CustomDialog(QDialog):
+    color_changed_1 = Signal(QColor)
+    color_changed_2 = Signal(QColor)
+
+    def __init__(self, item, update_color_callback, parent=None):
         super().__init__(parent)
-        
-        self.updateColorCallback = updateColorCallback
-        self.selectedItem = item
+
+        self.update_color_callback = update_color_callback
+        self.selected_item = item
 
         self.setWindowTitle("Style Configuration")
 
         layout = QFormLayout(self)
 
-        self.nameEdit = QLineEdit(item.text(0))
-        layout.addRow("Name:", self.nameEdit)
+        self.name_edit = QLineEdit(item.text(0))
+        layout.addRow("Name:", self.name_edit)
 
-        self.colorButton1 = QPushButton("Select AssetType background color")
-        print("type(self.selectedItem.childItemObj) = "+ str(type(self.selectedItem.assetItemReference)))
-        self.colorButton1.setStyleSheet(f"background-color: {self.selectedItem.assetItemReference.assetTypeBackgroundColor.name()}")
-        self.colorButton1.clicked.connect(lambda: self.openColorDialog(1,self.selectedItem.assetItemReference))
-        layout.addRow("Color 1:", self.colorButton1)
-        
-        self.rgbLabel1 = QLabel("RGB: ")
-        layout.addRow("RGB Values for Color 1:", self.rgbLabel1)
+        self.color_button_1 = QPushButton("Select AssetType background color")
+        print("type(self.selected_item.childItemObj) = " +
+              str(type(self.selected_item.asset_item_reference)))
+        self.color_button_1.setStyleSheet(
+            f"background-color: {self.selected_item.asset_item_reference.asset_type_background_color.name()}")
+        self.color_button_1.clicked.connect(
+            lambda: self.open_color_dialog(1,self.selected_item.asset_item_reference))
+        layout.addRow("Color 1:", self.color_button_1)
 
+        self.rgb_label_1 = QLabel("RGB: ")
+        layout.addRow("RGB Values for Color 1:", self.rgb_label_1)
 
-        self.colorButton2 = QPushButton("Select AssetName background color")
-        self.colorButton2.setStyleSheet(f"background-color: {self.selectedItem.assetItemReference.assetNameBackgroundColor.name()}")
-        self.colorButton2.clicked.connect(lambda: self.openColorDialog(2,self.selectedItem.assetItemReference))
-        layout.addRow("Color 2:", self.colorButton2)
+        self.color_button_2 = QPushButton("Select AssetName background color")
+        self.color_button_2.setStyleSheet(
+            f"background-color: {self.selected_item.asset_item_reference.asset_name_background_color.name()}")
+        self.color_button_2.clicked.connect(
+            lambda: self.open_color_dialog(2,self.selected_item.asset_item_reference))
+        layout.addRow("Color 2:", self.color_button_2)
 
+        self.rgb_label_2 = QLabel("RGB: ")
+        layout.addRow("RGB Values for Color 2:", self.rgb_label_2)
 
-        self.rgbLabel2 = QLabel("RGB: ")
-        layout.addRow("RGB Values for Color 2:", self.rgbLabel2)
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+        layout.addRow(self.button_box)
 
-        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-        layout.addRow(self.buttonBox)
+        self.selected_color_1 = QColor(255, 255, 255, 255)
+        self.selected_color_2 = QColor(255, 255, 255, 255)
+        self.current_color_button = None
 
-        self.selectedColor1 = QColor(255, 255, 255, 255)
-        self.selectedColor2 = QColor(255, 255, 255, 255)
-        self.currentColorButton = None
+        self.color_changed_1.connect(self.update_color_label_1)
+        self.color_changed_2.connect(self.update_color_label_2)
 
-        self.colorChanged1.connect(self.updateColorLabel1)
-        self.colorChanged2.connect(self.updateColorLabel2)
-
-    def openColorDialog(self, itemNumber,assetItemReference):
+    def open_color_dialog(self, item_number, asset_item_reference):
         color = QColorDialog.getColor()
 
         if color.isValid():
-            if itemNumber == 1:
-                self.selectedColor1 = color
-                self.currentColorButton = self.colorButton1
-                self.colorChanged1.emit(self.selectedColor1)
-                self.colorButton1.setStyleSheet(f"background-color: {color.name()}")
+            if item_number == 1:
+                self.selected_color_1 = color
+                self.current_color_button = self.color_button_1
+                self.color_changed_1.emit(self.selected_color_1)
+                self.color_button_1.setStyleSheet(f"background-color: {color.name()}")
                 # QMessageBox.information(self, "Color Selected", f"Selected color for Item 1: {color.name()}")
-                assetItemReference.assetTypeBackgroundColor = color
-                assetItemReference.update()
-            elif itemNumber == 2:
-                self.selectedColor2 = color
-                self.currentColorButton = self.colorButton2
-                self.colorChanged2.emit(self.selectedColor2)
-                self.colorButton2.setStyleSheet(f"background-color: {color.name()}")
+                asset_item_reference.asset_type_background_color = color
+                asset_item_reference.update()
+            elif item_number == 2:
+                self.selected_color_2 = color
+                self.current_color_button = self.color_button_2
+                self.color_changed_2.emit(self.selected_color_2)
+                self.color_button_2.setStyleSheet(f"background-color: {color.name()}")
                 # QMessageBox.information(self, "Color Selected", f"Selected color for Item 2: {color.name()}")
-                assetItemReference.assetNameBackgroundColor = color
-                assetItemReference.update()
+                asset_item_reference.asset_name_background_color = color
+                asset_item_reference.update()
         
-    def updateColorLabel1(self, color):
-        self.rgbLabel1.setText(f"RGB: {color.red()}, {color.green()}, {color.blue()}, {color.alpha()}")
+    def update_color_label_1(self, color):
+        self.rgb_label_1.setText(
+            f"RGB: {color.red()}, {color.green()}, {color.blue()}, {color.alpha()}")
     
-    def updateColorLabel2(self, color):
-        self.rgbLabel2.setText(f"RGB: {color.red()}, {color.green()}, {color.blue()}, {color.alpha()}")
+    def update_color_label_2(self, color):
+        self.rgb_label_2.setText(
+            f"RGB: {color.red()}, {color.green()}, {color.blue()}, {color.alpha()}")
 
-    def getName(self):
-        return self.nameEdit.text()
+    def get_name(self):
+        return self.name_edit.text()
 
-    def getColor1(self):
-        return self.selectedColor1
+    def get_color_1(self):
+        return self.selected_color_1
 
-    def getColor2(self):
-        return self.selectedColor2
+    def get_color_2(self):
+        return self.selected_color_2
 
     def accept(self):
         super().accept()
-        self.updateColorCallback(self.getColor1(), self.getColor2())
+        self.update_color_callback(self.get_color_1(), self.get_color_2())
 
 
 
 
 class CustomDialogGlobal(QDialog):
-    colorChanged1 = Signal(QColor)
-    colorChanged2 = Signal(QColor)
+    color_changed_1 = Signal(QColor)
+    color_changed_2 = Signal(QColor)
 
     def __init__(self,scene, item, parent=None):
         super().__init__(parent)
@@ -123,79 +128,79 @@ class CustomDialogGlobal(QDialog):
 
         layout = QFormLayout(self)
 
-        self.nameEdit = QLabel(str(item.text(0)))
-        layout.addRow("Name:", self.nameEdit)
+        self.name_edit = QLabel(str(item.text(0)))
+        layout.addRow("Name:", self.name_edit)
 
-        self.colorButton1 = QPushButton("Select AssetType background color")
-        # print("type(self.selectedItem.childItemObj) = "+ str(type(self.selectedItem.assetItemReference)))
-        # self.colorButton1.setStyleSheet(f"background-color: {self.selectedItem.assetItemReference.assetTypeBackgroundColor.name()}")
-        self.colorButton1.clicked.connect(lambda: self.openColorDialog(1))
-        layout.addRow("Color 1:", self.colorButton1)
+        self.color_button_1 = QPushButton("Select AssetType background color")
+        # print("type(self.selected_item.childItemObj) = "+ str(type(self.selected_item.asset_item_reference)))
+        # self.color_button_1.setStyleSheet(f"background-color: {self.selected_item.asset_item_reference.asset_type_background_color.name()}")
+        self.color_button_1.clicked.connect(lambda: self.open_color_dialog(1))
+        layout.addRow("Color 1:", self.color_button_1)
         
-        self.rgbLabel1 = QLabel("RGB: ")
-        layout.addRow("RGB Values for Color 1:", self.rgbLabel1)
+        self.rgb_label_1 = QLabel("RGB: ")
+        layout.addRow("RGB Values for Color 1:", self.rgb_label_1)
 
 
-        self.colorButton2 = QPushButton("Select AssetName background color")
-        # self.colorButton2.setStyleSheet(f"background-color: {self.selectedItem.assetItemReference.assetNameBackgroundColor.name()}")
-        self.colorButton2.clicked.connect(lambda: self.openColorDialog(2))
-        layout.addRow("Color 2:", self.colorButton2)
+        self.color_button_2 = QPushButton("Select AssetName background color")
+        # self.color_button_2.setStyleSheet(f"background-color: {self.selected_item.asset_item_reference.asset_name_background_color.name()}")
+        self.color_button_2.clicked.connect(lambda: self.open_color_dialog(2))
+        layout.addRow("Color 2:", self.color_button_2)
 
 
-        self.rgbLabel2 = QLabel("RGB: ")
-        layout.addRow("RGB Values for Color 2:", self.rgbLabel2)
+        self.rgb_label_2 = QLabel("RGB: ")
+        layout.addRow("RGB Values for Color 2:", self.rgb_label_2)
 
-        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-        layout.addRow(self.buttonBox)
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+        layout.addRow(self.button_box)
 
-        self.selectedColor1 = QColor(255, 255, 255, 255)
-        self.selectedColor2 = QColor(255, 255, 255, 255)
-        self.currentColorButton = None
+        self.selected_color_1 = QColor(255, 255, 255, 255)
+        self.selected_color_2 = QColor(255, 255, 255, 255)
+        self.current_color_button = None
 
-        self.colorChanged1.connect(self.updateColorLabel1)
-        self.colorChanged2.connect(self.updateColorLabel2)
+        self.color_changed_1.connect(self.update_color_label_1)
+        self.color_changed_2.connect(self.update_color_label_2)
 
-    def openColorDialog(self, itemNumber):
+    def open_color_dialog(self, item_number):
         color = QColorDialog.getColor()
 
         if color.isValid():
-            if itemNumber == 1:
-                self.selectedColor1 = color
-                self.currentColorButton = self.colorButton1
-                self.colorChanged1.emit(self.selectedColor1)
-                self.colorButton1.setStyleSheet(f"background-color: {color.name()}")
+            if item_number == 1:
+                self.selected_color_1 = color
+                self.current_color_button = self.color_button_1
+                self.color_changed_1.emit(self.selected_color_1)
+                self.color_button_1.setStyleSheet(f"background-color: {color.name()}")
                 # QMessageBox.information(self, "Color Selected", f"Selected color for Item 1: {color.name()}")
 
-            elif itemNumber == 2:
-                self.selectedColor2 = color
-                self.currentColorButton = self.colorButton2
-                self.colorChanged2.emit(self.selectedColor2)
-                self.colorButton2.setStyleSheet(f"background-color: {color.name()}")
+            elif item_number == 2:
+                self.selected_color_2 = color
+                self.current_color_button = self.color_button_2
+                self.color_changed_2.emit(self.selected_color_2)
+                self.color_button_2.setStyleSheet(f"background-color: {color.name()}")
                 # QMessageBox.information(self, "Color Selected", f"Selected color for Item 2: {color.name()}")
         
-    def updateColorLabel1(self, color):
-        self.rgbLabel1.setText(f"RGB: {color.red()}, {color.green()}, {color.blue()}, {color.alpha()}")
+    def update_color_label_1(self, color):
+        self.rgb_label_1.setText(f"RGB: {color.red()}, {color.green()}, {color.blue()}, {color.alpha()}")
     
-    def updateColorLabel2(self, color):
-        self.rgbLabel2.setText(f"RGB: {color.red()}, {color.green()}, {color.blue()}, {color.alpha()}")
+    def update_color_label_2(self, color):
+        self.rgb_label_2.setText(f"RGB: {color.red()}, {color.green()}, {color.blue()}, {color.alpha()}")
 
-    def getName(self):
-        return self.nameEdit.text()
+    def get_name(self):
+        return self.name_edit.text()
 
-    def getColor1(self):
-        return self.selectedColor1
+    def get_color_1(self):
+        return self.selected_color_1
 
-    def getColor2(self):
-        return self.selectedColor2
+    def get_color_2(self):
+        return self.selected_color_2
 
     def accept(self):
         super().accept()
-        # self.updateColorCallback(self.getColor1(), self.getColor2())
+        # self.update_color_callback(self.get_color_1(), self.get_color_2())
         for item in self.scene.items():
             if isinstance(item, (AssetBase)):
-                if item.assetType == self.selectedAssetType.text(0):
-                    item.assetTypeBackgroundColor = self.getColor1()
-                    item.assetNameBackgroundColor = self.getColor2()
+                if item.asset_type == self.selectedAssetType.text(0):
+                    item.asset_type_background_color = self.get_color_1()
+                    item.asset_name_background_color = self.get_color_2()
                     item.update()

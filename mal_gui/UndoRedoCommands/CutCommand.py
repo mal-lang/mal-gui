@@ -5,6 +5,7 @@ from PySide6.QtGui import QUndoCommand
 
 if TYPE_CHECKING:
     from ..ModelScene import ModelScene
+    from ..ConnectionItem import IConnectionItem
 
 class CutCommand(QUndoCommand):
     def __init__(
@@ -18,7 +19,7 @@ class CutCommand(QUndoCommand):
         self.scene = scene
         self.items = items
         self.clipboard = clipboard
-        self.connections = []
+        self.connections: list[IConnectionItem] = []
 
         # Save connections of all items
         for item in self.items:
@@ -26,14 +27,16 @@ class CutCommand(QUndoCommand):
                 self.connections.extend(item.connections.copy())
 
     def redo(self):
-        self.cutItemFlag = True
-        serializedData = self.scene.serialize_graphics_items(self.items, self.cutItemFlag)
+        """Perform cut command"""
+        self.cut_item_flag = True
+        serialized_data = self.scene.serialize_graphics_items(
+            self.items, self.cut_item_flag)
         self.clipboard.clear()
-        self.clipboard.setText(serializedData)
+        self.clipboard.setText(serialized_data)
 
         # Remove connections before removing the items
         for connection in self.connections:
-            connection.removeLabels()
+            connection.remove_labels()
             self.scene.removeItem(connection)
 
         for item in self.items:
@@ -43,6 +46,7 @@ class CutCommand(QUndoCommand):
         self.scene.main_window.update_childs_in_object_explorer_signal.emit()
 
     def undo(self):
+        """Undo cut command"""
         # Add items back to the scene
         for item in self.items:
             self.scene.addItem(item)
@@ -50,8 +54,8 @@ class CutCommand(QUndoCommand):
         # Restore connections
         for connection in self.connections:
             self.scene.addItem(connection)
-            connection.restoreLabels()
-            connection.updatePath()
+            connection.restore_labels()
+            connection.update_path()
 
         self.clipboard.clear()
 

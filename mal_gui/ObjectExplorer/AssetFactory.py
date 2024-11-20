@@ -3,34 +3,37 @@ from .AssetBase import AssetBase
 
 class AssetFactory():
     def __init__(self, parent=None):
-        self.assetRegistry = {}
-        self.assetInfo = namedtuple('AssetInfo', ['assetType', 'assetName', 'assetImage'])
+        self.asset_info = namedtuple(
+            'AssetInfo', ['asset_type', 'asset_name', 'asset_image'])
+        self.asset_registry: dict[self.asset_info] = {}
 
-    def addKeyValueToAssetRegistry(self,key,value):
-        if key not in self.assetRegistry:
-            self.assetRegistry[key] = set()
+    def add_key_value_to_asset_registry(self, key, value):
+        if key not in self.asset_registry:
+            self.asset_registry[key] = set()
 
-        if value not in self.assetRegistry[key]:
-            self.assetRegistry[key].add(value)
+        if value not in self.asset_registry[key]:
+            self.asset_registry[key].add(value)
             return True
 
         return False
 
-    def registerAsset(self,assetName,imagePath):
-        self.addKeyValueToAssetRegistry(assetName, self.assetInfo(assetName,assetName,imagePath))
+    def register_asset(self, asset_name, image_path):
+        self.add_key_value_to_asset_registry(
+            asset_name,
+            self.asset_info(asset_name,asset_name,image_path)
+        )
 
+    def get_asset(self, asset_name_requested):
+        asset_type = None
+        asset_name = None
+        asset_image = None
 
-    def getAsset(self,assetNameRequested):
-        assetType = None
-        assetName = None
-        assetImage = None
-
-        if assetNameRequested in self.assetRegistry:
-            for value in self.assetRegistry[assetNameRequested]:
-                assetType = value.assetType
-                assetName = value.assetName
-                assetImage = value.assetImage
-            # return AssetBase(assetType,assetName,assetImage)
-            requestedAsset = AssetBase(assetType, assetName, assetImage)
-            requestedAsset.build()
-            return requestedAsset
+        if asset_name_requested in self.asset_registry:
+            for value in self.asset_registry[asset_name_requested]:
+                asset_type = value.asset_type
+                asset_name = value.asset_name
+                asset_image = value.asset_image
+            # return AssetBase(asset_type,asset_name,asset_image)
+            requested_asset = AssetBase(asset_type, asset_name, asset_image)
+            requested_asset.build()
+            return requested_asset

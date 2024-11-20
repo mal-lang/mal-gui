@@ -8,29 +8,31 @@ class CreateAssociationConnectionCommand(QUndoCommand):
     def __init__(
         self,
         scene: ModelScene,
-        startItem,
-        endItem,
-        associationText,
-        selectedItemAssociation,
+        start_item,
+        end_item,
+        association_text,
+        selected_item_association,
         parent=None
     ):
         super().__init__(parent)
         self.scene  = scene
-        self.startItem = startItem
-        self.endItem = endItem
-        self.associationText = associationText
+        self.start_item = start_item
+        self.end_item = end_item
+        self.association_text = association_text
         self.connection = None
-        self.association = selectedItemAssociation
+        self.association = selected_item_association
 
     def redo(self):
+        """Perform create association connection"""
         self.connection = self.scene.add_association_connection(
-            self.associationText,
-            self.startItem,
-            self.endItem
+            self.association_text,
+            self.start_item,
+            self.end_item
         )
         self.scene.model.add_association(self.association)
 
     def undo(self):
-        self.connection.removeLabels()
+        """Undo create association connection"""
+        self.connection.remove_labels()
         self.scene.removeItem(self.connection)
         self.scene.model.remove_association(self.association)

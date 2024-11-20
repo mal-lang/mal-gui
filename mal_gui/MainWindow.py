@@ -51,7 +51,8 @@ class DraggableListWidget(QListWidget):
             if item:
                 drag = QDrag(self)
                 mime_data = QMimeData()
-                mime_data.setData("application/x-qabstractitemmodeldatalist", QByteArray())
+                mime_data.setData(
+                    "application/x-qabstractitemmodeldatalist", QByteArray())
                 mime_data.setData("text/plain", item.text().encode())
                 drag.setMimeData(mime_data)
                 drag.exec()
@@ -90,7 +91,7 @@ class MainWindow(QMainWindow):
         # name as key and class as value
         self.asset_factory = AssetFactory()
         attacker_icon = image_path("attacker.png")
-        self.asset_factory.registerAsset("Attacker", attacker_icon)
+        self.asset_factory.register_asset("Attacker", attacker_icon)
 
         # Create the MAL language graph, language classes factory,
         # and instance model
@@ -100,7 +101,7 @@ class MainWindow(QMainWindow):
 
         for asset in self.lang_graph.assets:
             if not asset.is_abstract:
-                self.asset_factory.registerAsset(
+                self.asset_factory.register_asset(
                     asset.name,
                     asset_images.get(asset.name, image_path('unknown.png'))
                 )
@@ -120,7 +121,7 @@ class MainWindow(QMainWindow):
         self.create_menus()
         self.create_toolbar()
 
-        self.view.zoomChanged.connect(self.update_zoom_label)
+        self.view.zoom_changed.connect(self.update_zoom_label)
 
         self.splitter = QSplitter()
         self.splitter.addWidget(self.view)
@@ -145,10 +146,10 @@ class MainWindow(QMainWindow):
             rgb_color_icon_image
         )
 
-        for _, values in self.asset_factory.assetRegistry.items():
+        for _, values in self.asset_factory.asset_registry.items():
             for value in values:
-                self.object_explorer_tree.setParentItemText(
-                    value.assetType, value.assetImage
+                self.object_explorer_tree.set_parent_item_text(
+                    value.asset_type, value.asset_image
                 )
 
         dock_object_explorer.setWidget(self.object_explorer_tree)
@@ -166,7 +167,7 @@ class MainWindow(QMainWindow):
 
         #Properties Tab with tableview
         self.properties_docked_window = PropertiesWindow()
-        self.properties_table = self.properties_docked_window.propertiesTable
+        self.properties_table = self.properties_docked_window.properties_table
         dock_properties = QDockWidget("Properties",self)
         dock_properties.setWidget(self.properties_table)
         self.addDockWidget(Qt.LeftDockWidgetArea, dock_properties)
@@ -195,14 +196,14 @@ class MainWindow(QMainWindow):
         self.scene.set_show_assoc_checkbox_status(checked)
         for connection in self.scene.items():
             if isinstance(connection, AssociationConnectionItem):
-                connection.updatePath()
+                connection.update_path()
 
     def show_image_icon_checkbox_changed(self, checked):
         """Called on button click"""
         print("self.show_image_icon_checkbox_changed clicked")
         for item in self.scene.items():
             if isinstance(item, (AssetBase,AssetsContainer)):
-                item.toggleIconVisibility()
+                item.toggle_icon_visibility()
 
     def fit_to_view_button_clicked(self):
         """Called on button click"""
@@ -211,11 +212,11 @@ class MainWindow(QMainWindow):
         bounding_rect = self.scene.itemsBoundingRect()
         self.view.fitInView(bounding_rect, Qt.KeepAspectRatio)
 
-    def updatePropertiesWindow(self, asset_item):
+    def update_properties_window(self, asset_item):
         #Clear the table
         self.properties_table.setRowCount(0)
 
-        if asset_item is not None and asset_item.assetType != "Attacker":
+        if asset_item is not None and asset_item.asset_type != "Attacker":
             asset = asset_item.asset
             defenses = self.model.get_asset_defenses(
                 asset, include_defaults = True
@@ -249,7 +250,7 @@ class MainWindow(QMainWindow):
         else:
             self.properties_table.currentItem = None
 
-    def updateAttackStepsWindow(self, attacker_asset_item):
+    def update_attack_steps_window(self, attacker_asset_item):
         if attacker_asset_item is not None:
             self.attack_steps_docked_window.clear()
             for asset, attack_step_names in \
@@ -261,7 +262,7 @@ class MainWindow(QMainWindow):
         else:
             self.attack_steps_docked_window.clear()
 
-    def updateAssetRelationsWindow(self, asset_item):
+    def update_asset_relations_window(self, asset_item):
         self.asset_relations_docker_window.clear()
         if asset_item is not None:
             asset = asset_item.asset
@@ -454,12 +455,12 @@ class MainWindow(QMainWindow):
     def set_zoom_level_from_line_edit(self):
         """Set zoom label to match current zoom factor"""
         zoomValue = int(self.zoom_line_edit.text())
-        self.view.setZoom(zoomValue)
+        self.view.set_zoom(zoomValue)
 
     def update_zoom_label(self):
         """Set zoom label to match current zoom factor"""
-        self.zoom_label.setText(f"{int(self.view.zoomFactor * 100)}%")
-        self.zoom_line_edit.setText(f"{int(self.view.zoomFactor * 100)}")
+        self.zoom_label.setText(f"{int(self.view.zoom_factor * 100)}%")
+        self.zoom_line_edit.setText(f"{int(self.view.zoom_factor * 100)}")
 
     def load_model(self):
         """Load a MAL model from a file"""
@@ -491,7 +492,7 @@ class MainWindow(QMainWindow):
             self.show_information_popup(
                 "Successfully opened model: " + file_path)
             self.model_file_name = file_path
-            self.scene.drawModel()
+            self.scene.draw_model()
         else:
             # User canceled, do nothing
             pass
@@ -506,13 +507,12 @@ class MainWindow(QMainWindow):
             item = self.scene._asset_id_to_item[int(asset.id)]
             position = item.pos()
 
-            if not asset.extras:
-                asset.extras = {}
-
-            asset.extras["position"] = {
+            extras_dict = asset.extras.as_dict() if asset.extras else {}
+            extras_dict["position"] = {
                 "x": position.x(),
                 "y": position.y()
             }
+            asset.extras = extras_dict
 
         self.scene.model.save_to_file(self.model_file_name)
 
@@ -559,21 +559,21 @@ class MainWindow(QMainWindow):
         Clean the existing child and fill each items from scratch
         TODO performance BAD - To be discussed/improved
         """
-        self.object_explorer_tree.clearAllObjectExplorerChildItems()
+        self.object_explorer_tree.clear_all_object_explorer_child_items()
 
         #Fill all the items from Scene one by one
         for child_asset_item in self.scene.items():
             if isinstance(child_asset_item,AssetBase):
                 # Check if parent exists before adding child
                 parent_item, parent_asset_type = self.object_explorer_tree\
-                    .checkAndGetIfParentAssetTypeExists(
-                        child_asset_item.assetType
+                    .check_and_get_if_parent_asset_type_exists(
+                        child_asset_item.asset_type
                     )
 
                 if parent_asset_type:
-                    self.object_explorer_tree.addChildItem(
+                    self.object_explorer_tree.add_child_item(
                         parent_item,child_asset_item,
-                        str(child_asset_item.assetName)
+                        str(child_asset_item.asset_name)
                     )
 
     def on_theme_selection_change(self):
