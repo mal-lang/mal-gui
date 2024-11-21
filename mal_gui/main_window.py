@@ -26,20 +26,20 @@ from qt_material import apply_stylesheet,list_themes
 from maltoolbox.language import LanguageGraph, LanguageClassesFactory
 from maltoolbox.model import Model
 
+from .file_utils import image_path
 from .model_scene import ModelScene
 from .model_view import ModelView
-from .object_explorer.asset_base import AssetBase
-from .object_explorer.asset_factory import AssetFactory
+from .object_explorer import AssetBase, AssetFactory
 from .assets_container.assets_container import AssetsContainer
 from .connection_item import AssociationConnectionItem
-
-from .docked_windows.draggable_tree_view import DraggableTreeView
-from .docked_windows.item_details_window import ItemDetailsWindow
-from .docked_windows.properties_window import PropertiesWindow,EditableDelegate
-from .docked_windows.attack_steps_window import AttackStepsWindow
-from .docked_windows.asset_relations_window import AssetRelationsWindow
-
-from .file_utils import image_path
+from .docked_windows import (
+    DraggableTreeView,
+    ItemDetailsWindow,
+    PropertiesWindow,
+    EditableDelegate,
+    AttackStepsWindow,
+    AssetRelationsWindow
+)
 
 # Used to create absolute paths of assets
 PACKAGE_DIR = Path(__file__).resolve().parent

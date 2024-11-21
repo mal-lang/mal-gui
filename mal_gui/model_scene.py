@@ -19,21 +19,21 @@ from maltoolbox.model import Model, AttackerAttachment
 
 from .connection_item import AssociationConnectionItem,EntrypointConnectionItem
 from .connection_dialog import AssociationConnectionDialog,EntrypointConnectionDialog
-from .object_explorer.asset_base import AssetBase
-from .object_explorer.editable_text_item import EditableTextItem
-from .assets_container.assets_container import AssetsContainer
-from .assets_container.assets_container_rectangle_box import AssetsContainerRectangleBox
+from .object_explorer import AssetBase, EditableTextItem
+from .assets_container import AssetsContainer, AssetsContainerRectangleBox
 
-from .undo_redo_commands.cut_command import CutCommand
-from .undo_redo_commands.copy_command import CopyCommand
-from .undo_redo_commands.paste_command import PasteCommand
-from .undo_redo_commands.delete_command import DeleteCommand
-from .undo_redo_commands.move_command import MoveCommand
-from .undo_redo_commands.drag_drop_command import DragDropCommand
-from .undo_redo_commands.create_association_connection_command import CreateAssociationConnectionCommand
-from .undo_redo_commands.create_entrypoint_connection_command import CreateEntrypointConnectionCommand
-from .undo_redo_commands.delete_connection_command import DeleteConnectionCommand
-from .undo_redo_commands.containerize_assets_command import ContainerizeAssetsCommand
+from .undo_redo_commands import (
+    CutCommand,
+    CopyCommand,
+    PasteCommand,
+    DeleteCommand,
+    MoveCommand,
+    DragDropCommand,
+    CreateAssociationConnectionCommand,
+    CreateEntrypointConnectionCommand,
+    DeleteConnectionCommand,
+    ContainerizeAssetsCommand
+)
 
 if TYPE_CHECKING:
     from .main_window import MainWindow
