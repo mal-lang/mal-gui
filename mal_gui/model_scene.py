@@ -463,6 +463,7 @@ class ModelScene(QGraphicsScene):
         )
         new_item.attackerAttachment = new_attacker_attachment
         self._attacker_id_to_item[new_attacker_attachment.id] = new_item
+        return new_item
 
     def create_item(self, itemType, position, name):
         """Create item"""
@@ -599,7 +600,7 @@ class ModelScene(QGraphicsScene):
             # - This is causing issue with Serialization
             asset_name = str(item.asset_name)
             prop_keys_to_ignore = ['id','type']
-
+            print(asset_name, item.asset_type)
             item_details = {
                 'asset_type': item.asset_type,
                 'asset_name': asset_name,
@@ -613,12 +614,16 @@ class ModelScene(QGraphicsScene):
                         if conn.start_item.asset_sequence_id in selected_sequence_ids
                         and conn.end_item.asset_sequence_id in selected_sequence_ids
                     ],
-                'asset_properties': [
-                    (str(key),str(value))
-                    for key,value in item.asset._properties.items()
-                    if key not in prop_keys_to_ignore 
-                ]
+                'asset_properties': []
             }
+
+            if item.asset_type != "Attacker":
+                item_details['asset_properties'] = [
+                    (str(key),str(value))
+                    for key, value in item.asset._properties.items()
+                    if key not in prop_keys_to_ignore
+                ]
+
             objdetails.append(item_details)
 
         serialized_data = pickle.dumps(objdetails)

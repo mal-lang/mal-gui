@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
 from PySide6.QtCore import QPointF
 
+from maltoolbox.model import AttackerAttachment
+
 from ..connection_item import AssociationConnectionItem
 
 if TYPE_CHECKING:
@@ -49,14 +51,7 @@ class PasteCommand(QUndoCommand):
 
                 # AddAsset Equivalent - Start - To Be Discussed
                 if asset_type == "Attacker":
-                    # newAttackerAttachment = AttackerAttachment()
-                    # self.scene.model.add_attacker(newAttackerAttachment)
-
-                    new_item = self.scene.asset_factory.get_asset(asset_type)
-                    # new_item.asset_name = "Attacker"
-                    # new_item.type_text_item.setPlainText(str("Attacker"))
-                    new_item.setPos(position)
-                    # self.scene._attacker_id_to_item[newAttackerAttachment.id] = new_item
+                    new_item = self.scene.add_attacker(position)
                 else:
                     new_item = self.scene.add_asset(asset_type, position)
                     # we can assign the properties to new asset
