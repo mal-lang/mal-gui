@@ -34,6 +34,8 @@ class DeleteCommand(QUndoCommand):
             self.scene.removeItem(item)
             if hasattr(item, 'asset'):
                 self.scene.model.remove_asset(item.asset)
+            if hasattr(item, 'attackerAttachment'):
+                self.scene.model.remove_attacker(item.attackerAttachment)
 
         #Update the Object Explorer when number of items change
         self.scene.main_window.update_childs_in_object_explorer_signal.emit()
