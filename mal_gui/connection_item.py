@@ -59,17 +59,24 @@ class AssociationConnectionItem(IConnectionItem):
             and self.end_item.asset_type != 'Attacker':
 
             self.association_details = selected_assoc_text.split("-->")
+            # Get left field name
             assoc_left_field = self.association_details[0]
-            assoc_middle_name = self.association_details[1]
+            self.left_fieldname = assoc_left_field.split(".")[1]
+            # Get assoc name
+            self.assoc_name = self.association_details[1]
             assoc_right_field = self.association_details[2]
+            # Get right field name
+            self.right_fieldname = assoc_right_field.split(".")[1]
 
             # Create labels with background color
             self.label_assoc_left_field = \
-                self.create_label(assoc_left_field.split(".")[1])
+                self.create_label(self.left_fieldname)
+
             self.label_assoc_middle_name = \
-                self.create_label(assoc_middle_name)
+                self.create_label(self.assoc_name)
+
             self.label_assoc_right_field = \
-                self.create_label(assoc_right_field.split(".")[1])
+                self.create_label(self.right_fieldname)
 
         else:
             # Need to check who is attacker and get
@@ -206,6 +213,7 @@ class EntrypointConnectionItem(IConnectionItem):
 
         self.attacker_item.add_connection(self)
         self.asset_item.add_connection(self)
+        self.attack_step_name = attack_step_name
         self.label_entrypoint = self.create_label(attack_step_name)
 
     def create_label(self, text):

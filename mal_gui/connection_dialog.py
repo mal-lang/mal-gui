@@ -146,7 +146,8 @@ class AssociationConnectionDialog(ConnectionDialog):
             selected_association_text = selected_item.text()
             # QMessageBox.information(self, "Selected Item", f"You selected: {selected_association_text}")
 
-            (assoc, left_asset, right_asset) = self._str_to_assoc[selected_association_text]
+            (assoc, left_asset, right_asset) = \
+                self._str_to_assoc[selected_association_text]
             # TODO: Create association based on its full name instead in order
             # to avoid conflicts when multiple associations with the same name
             # exist.

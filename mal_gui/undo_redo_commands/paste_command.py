@@ -7,7 +7,7 @@ from PySide6.QtCore import QPointF
 
 from maltoolbox.model import AttackerAttachment
 
-from ..connection_item import AssociationConnectionItem
+from ..connection_item import AssociationConnectionItem, EntrypointConnectionItem
 
 if TYPE_CHECKING:
     from ..model_scene import ModelScene
@@ -26,14 +26,13 @@ class PasteCommand(QUndoCommand):
         self.position = position
         self.pasted_items = []
         self.pasted_connections: list[AssociationConnectionItem] = []
+        self.pasted_entrypoints: list[EntrypointConnectionItem] = []
         self.clipboard = clipboard
 
     def redo(self):
         """Perform paste command"""
         print("\nPaste Redo is Called")
         serialized_data = self.clipboard.text()
-        print("\nSerializedData = " + str(len(serialized_data)))
-        print("\nSerializedData = " + str(serialized_data))
         if serialized_data:
             deserialized_data = \
                 self.scene.deserialize_graphics_items(serialized_data)
@@ -86,41 +85,49 @@ class PasteCommand(QUndoCommand):
 
             # Second pass: re-establish connections with new assetSequenceIds
             for data in deserialized_data:
-                for conn in data['connections']:
-                    print(f'CONN: {conn}')
+                for entrypoint in data['entrypoints']:
+                    print(f'ENTRYPOINT: {entrypoint}')
+                    old_start_id, old_end_id, label = entrypoint
+                    new_attacker_item = new_item_map[old_start_id]
+                    new_asset_item = new_item_map[old_end_id]
+                    new_connection = self.scene\
+                        .add_entrypoint_connection(
+                            label, new_attacker_item, new_asset_item
+                        )
+                    self.pasted_entrypoints.append(new_connection)
+                    new_attacker_item.attackerAttachment.add_entry_point(
+                        new_asset_item.asset,
+                        label
+                    )
+
+                added_assoc_labels = set()
+                for assoc in data['associations']:
+                    print(data)
+                    print(f'CONN: {assoc}')
                     old_start_id = data['asset_sequence_id']
-                    old_end_id, old_label = conn[1], conn[2]
+                    (_, old_end_id, assoc_type,
+                     left_field_name, right_field_name, label) = assoc
+
                     new_start_item = new_item_map[old_start_id]
                     new_end_item = new_item_map[old_end_id]
 
-                    #Avoid Self reference
+                    if label in added_assoc_labels:
+                        continue
+
+                    added_assoc_labels.add(label)
+
+                    # Avoid Self reference
                     if new_start_item != new_end_item:
-                        new_connection = AssociationConnectionItem(old_label,
-                            new_start_item,
-                            new_end_item,
-                            self.scene
-                        )
-                        self.scene.addItem(new_connection)
+                        new_connection = self.scene\
+                            .add_association_connection(
+                                label, new_start_item, new_end_item
+                            )
+
                         self.pasted_connections.append(new_connection)
-                        assoc_type = old_label.split('-->')[1]
                         print(f'ASSOC TYPE {assoc_type}')
                         association = getattr(self.scene.lcs.ns, assoc_type)()
                         left_asset = new_start_item.asset
                         right_asset = new_end_item.asset
-                        print(
-                            f'LEFT ASSET NAME:{left_asset.name}'
-                            f'ID:{left_asset.id}'
-                            f'TYPE:{left_asset.type}'
-                        )
-                        print(
-                            f'RIGHT ASSET NAME:{right_asset.name}'
-                            f'ID:{right_asset.id}'
-                            f'TYPE:{right_asset.type}'
-                        )
-                        left_field_name, right_field_name = \
-                            self.scene.model.get_association_field_names(
-                                association
-                            )
                         setattr(association, left_field_name, [left_asset])
                         setattr(association, right_field_name, [right_asset])
                         self.scene.model.add_association(association)

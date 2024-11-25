@@ -589,8 +589,77 @@ class ModelScene(QGraphicsScene):
 
         self.removeItem(currently_selected_container_box)
 
+    def serialize_associations(
+            self,
+            connections: list[IConnectionItem],
+            selected_sequence_ids: list[int]
+    ):
+        """Serialize selected connections"""
+
+        serialized_associations = []
+        for conn in connections:
+            # Copy associations where both item are selected
+            if not isinstance(conn, AssociationConnectionItem):
+                continue
+
+            both_items_selected = (
+                conn.start_item.asset_sequence_id\
+                    in selected_sequence_ids and
+                conn.end_item.asset_sequence_id \
+                    in selected_sequence_ids
+            )
+            if not both_items_selected:
+                continue
+            # If association and selected, serialize it
+            serialized_associations.append(
+                (
+                    conn.start_item.asset_sequence_id,
+                    conn.end_item.asset_sequence_id,
+                    conn.assoc_name,
+                    conn.left_fieldname,
+                    conn.right_fieldname,
+                    "-->".join(conn.association_details)
+                )
+            )
+
+        return serialized_associations
+
+    def serialize_entrypoints(
+            self,
+            entrypoints: list[IConnectionItem],
+            selected_sequence_ids: list[int]
+    ):
+        """Serialize selected attacker entrypoints"""
+
+        serialized_entrypoints = []
+        for conn in entrypoints:
+            # Copy entrypoints where both item are selected
+            if not isinstance(conn, EntrypointConnectionItem):
+                continue
+
+            # If entry points
+            both_items_selected = (
+                conn.asset_item.asset_sequence_id\
+                    in selected_sequence_ids and
+                conn.attacker_item.asset_sequence_id \
+                    in selected_sequence_ids
+            )
+            if not both_items_selected:
+                continue
+
+            serialized_entrypoints.append(
+                (
+                    conn.attacker_item.asset_sequence_id,
+                    conn.asset_item.asset_sequence_id,
+                    conn.attack_step_name
+                )
+            )
+
+        return serialized_entrypoints
+
     def serialize_graphics_items(self, items: list[AssetBase], cut_intended):
-        objdetails = []
+        """Serialize all selected items"""
+        serialized_items = []
 
         # Set of selected item IDs
         selected_sequence_ids = {item.asset_sequence_id for item in items}
@@ -606,16 +675,13 @@ class ModelScene(QGraphicsScene):
                 'asset_name': asset_name,
                 'asset_sequence_id': item.asset_sequence_id,
                 'position': (item.pos().x(), item.pos().y()),
-                'connections': [
-                        (conn.start_item.asset_sequence_id,
-                         conn.end_item.asset_sequence_id,
-                         '-->'.join(conn.association_details))
-                        for conn in item.connections
-                        if conn.start_item.asset_sequence_id in selected_sequence_ids
-                        and conn.end_item.asset_sequence_id in selected_sequence_ids
-                    ],
                 'asset_properties': []
             }
+
+            item_details['associations'] = self.serialize_associations(
+                item.connections, selected_sequence_ids)
+            item_details['entrypoints'] = self.serialize_entrypoints(
+                item.connections, selected_sequence_ids)
 
             if item.asset_type != "Attacker":
                 item_details['asset_properties'] = [
@@ -623,10 +689,9 @@ class ModelScene(QGraphicsScene):
                     for key, value in item.asset._properties.items()
                     if key not in prop_keys_to_ignore
                 ]
+            serialized_items.append(item_details)
 
-            objdetails.append(item_details)
-
-        serialized_data = pickle.dumps(objdetails)
+        serialized_data = pickle.dumps(serialized_items)
         base64_serialized_data = \
             base64.b64encode(serialized_data).decode('utf-8')
         return base64_serialized_data
