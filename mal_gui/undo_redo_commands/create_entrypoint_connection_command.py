@@ -37,6 +37,6 @@ class CreateEntrypointConnectionCommand(QUndoCommand):
         self.connection.remove_labels()
         self.scene.removeItem(self.connection)
 
-        self.attacker.attackerAttachment.remove_entry_point(
+        self.attacker_item.attackerAttachment.remove_entry_point(
             self.asset_item.asset, self.attack_step_name
         )
