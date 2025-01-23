@@ -102,6 +102,11 @@ class FileSelectionDialog(QDialog):
             self.selected_lang_file = selected_lang_file
 
             # Remember language choice in user settings
+            try:
+                self.config.add_section('Settings')
+            except configparser.DuplicateSectionError:
+                pass
+
             self.config.set('Settings', 'langFilePath', self.selected_lang_file)
 
             with open(self.config_file_path, 'w', encoding='utf-8') as conf_file:
