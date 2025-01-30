@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
 
 if TYPE_CHECKING:
     from .object_explorer.asset_base import AssetBase
-
+    from maltoolbox.language import LanguageClassesFactory
 class ConnectionDialog(QDialog):
     def filter_items(self, text):
         pass
@@ -29,7 +29,8 @@ class AssociationConnectionDialog(ConnectionDialog):
             start_item: AssetBase,
             end_item: AssetBase,
             lang_graph,
-            lcs,model,
+            lcs: LanguageClassesFactory,
+            model,
             parent=None
         ):
         super().__init__(parent)
@@ -60,42 +61,39 @@ class AssociationConnectionDialog(ConnectionDialog):
         self.filter_edit.setPlaceholderText("Type to filter...")
         self.filter_edit.textChanged.connect(self.filter_items)
         self.layout.addWidget(self.filter_edit)
-        lang_graph_start_asset = next(
-                (asset for asset in self.lang_graph.assets
-                 if asset.name == start_asset.type), None
-            )
-        if lang_graph_start_asset is None:
+
+        # Get asset type from lang graph
+        start_asset_type = self.lang_graph.assets.get(start_asset.type)
+        if start_asset_type is None:
             raise LookupError(f'Failed to find asset "{start_asset.type}" '
                 'in language graph.')
-        lang_graph_end_asset = next(
-                (asset for asset in self.lang_graph.assets
-                 if asset.name == end_asset.type), None
-            )
-        if lang_graph_end_asset is None:
+
+        end_asset_type = self.lang_graph.assets.get(end_asset.type)
+        if end_asset_type is None:
             raise LookupError(f'Failed to find asset "{end_asset.type}" '
                 'in language graph.')
 
         self._str_to_assoc = {}
-        for assoc in lang_graph_start_asset.associations:
+        for assoc in start_asset_type.associations.values():
             asset_pairs = []
-            opposite_asset = assoc.get_opposite_asset(lang_graph_start_asset)
+            opposite_asset = assoc.get_opposite_asset(start_asset_type)
             # Check if the other side of the association matches the other end
             # and if the exact association does not already exist in the
             # model.
-            if lang_graph_end_asset.is_subasset_of(opposite_asset):
+            if end_asset_type.is_subasset_of(opposite_asset):
                 print("IDENTIFIED MATCH  ++++++++++++")
-                if lang_graph_start_asset.is_subasset_of(assoc.left_field.asset):
+                if start_asset_type.is_subasset_of(assoc.left_field.asset):
                     asset_pairs.append((start_asset, end_asset))
                 else:
                     asset_pairs.append((end_asset, start_asset))
-            if lang_graph_start_asset.is_subasset_of(opposite_asset):
+            if start_asset_type.is_subasset_of(opposite_asset):
                 # The association could be applied either way, add the
                 # reverse association as well.
                 other_asset = assoc.get_opposite_asset(opposite_asset)
                 # Check if the other side of the association matches the other end
                 # and if the exact association does not already exist in the
                 # model.
-                if lang_graph_end_asset.is_subasset_of(other_asset):
+                if end_asset_type.is_subasset_of(other_asset):
                     print("REVERSE ASSOC  ++++++++++++")
                     # We need to create the reverse association as well
                     asset_pairs.append((end_asset, start_asset))
@@ -142,16 +140,20 @@ class AssociationConnectionDialog(ConnectionDialog):
 
     def ok_button_clicked(self):
         selected_item = self.association_list_widget.currentItem()
+
         if selected_item:
             selected_association_text = selected_item.text()
-            # QMessageBox.information(self, "Selected Item", f"You selected: {selected_association_text}")
 
             (assoc, left_asset, right_asset) = \
                 self._str_to_assoc[selected_association_text]
+
             # TODO: Create association based on its full name instead in order
             # to avoid conflicts when multiple associations with the same name
             # exist.
-            association = getattr(self.lcs.ns, assoc.name)()
+
+            assoc_type_class = self.lcs.get_association_class(assoc.full_name)
+            association = assoc_type_class()
+
             print(
                 f'N:{assoc.name} LF:{assoc.left_field.fieldname} '
                 f'LA:{left_asset.name} RF:{assoc.right_field.fieldname} '

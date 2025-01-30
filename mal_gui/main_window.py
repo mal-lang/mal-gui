@@ -99,7 +99,7 @@ class MainWindow(QMainWindow):
         self.lcs = LanguageClassesFactory(self.lang_graph)
         self.model = Model("Untitled Model", self.lcs)
 
-        for asset in self.lang_graph.assets:
+        for asset in self.lang_graph.assets.values():
             if not asset.is_abstract:
                 self.asset_factory.register_asset(
                     asset.name,

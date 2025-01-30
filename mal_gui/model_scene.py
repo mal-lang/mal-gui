@@ -37,7 +37,7 @@ from .undo_redo_commands import (
 
 if TYPE_CHECKING:
     from .main_window import MainWindow
-    from maltoolbox.language import LanguageGraph
+    from maltoolbox.language import LanguageGraph, LanguageClassesFactory
     from .connection_item import IConnectionItem
 
 class ModelScene(QGraphicsScene):
@@ -45,7 +45,7 @@ class ModelScene(QGraphicsScene):
             self,
             asset_factory,
             lang_graph: LanguageGraph,
-            lcs,
+            lcs: LanguageClassesFactory,
             model: Model,
             main_window: MainWindow
         ):
@@ -315,7 +315,10 @@ class ModelScene(QGraphicsScene):
 
     def add_asset(self, itemType, position, name = None):
         """Add asset item to the model and the scene"""
-        new_asset = getattr(self.lcs.ns, itemType)(name = name)
+        asset_type_class = self.lcs.get_asset_class(
+                itemType
+        )
+        new_asset = asset_type_class(name = name)
         self.model.add_asset(new_asset)
         # new_asset.extras = {
         #     "position" :
