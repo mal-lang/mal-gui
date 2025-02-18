@@ -4,17 +4,19 @@ from PySide6.QtGui import QUndoCommand
 
 if TYPE_CHECKING:
     from ..model_scene import ModelScene
+    from ..model_scene import AssetItem
 
 class CreateAssociationConnectionCommand(QUndoCommand):
 
     def __init__(
         self,
         scene: ModelScene,
-        start_item,
-        end_item,
+        start_item: AssetItem,
+        end_item: AssetItem,
         field_name,
         parent=None
     ):
+
         super().__init__(parent)
         self.scene  = scene
         self.start_item = start_item
@@ -33,4 +35,4 @@ class CreateAssociationConnectionCommand(QUndoCommand):
         """Undo create association connection"""
         self.connection.remove_labels()
         self.scene.removeItem(self.connection)
-        self.start_item.asset.add_associated_assets(self.fieldname, {self.end_item.asset})
+        self.start_item.asset.remove_associated_assets(self.fieldname, {self.end_item.asset})

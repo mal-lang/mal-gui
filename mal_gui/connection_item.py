@@ -12,12 +12,12 @@ from PySide6.QtWidgets import (
 if TYPE_CHECKING:
     from maltoolbox.language import LanguageGraphAssociation
     from .model_scene import ModelScene
-    from .object_explorer.asset_base import AssetBase
+    from .object_explorer.asset_item import AssetItem
 
 class IConnectionItem(QGraphicsLineItem):
     """'interface' for Connection Item"""
-    start_item: AssetBase
-    end_item: AssetBase
+    start_item: AssetItem
+    end_item: AssetItem
     association_details: list[str]
 
     def create_label(self, text):
@@ -37,8 +37,8 @@ class AssociationConnectionItem(IConnectionItem):
     def __init__(
         self,
         fieldname: str,
-        start_item: AssetBase,
-        end_item: AssetBase,
+        start_item: AssetItem,
+        end_item: AssetItem,
         scene: ModelScene,
         parent = None
     ):
@@ -201,8 +201,8 @@ class EntrypointConnectionItem(IConnectionItem):
     def __init__(
         self,
         attack_step_name,
-        attacker_item: AssetBase,
-        asset_item: AssetBase,
+        attacker_item: AssetItem,
+        asset_item: AssetItem,
         scene: ModelScene,
         parent = None
     ):

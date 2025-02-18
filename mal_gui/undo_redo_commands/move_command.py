@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
 
 if TYPE_CHECKING:
-    from ..object_explorer.asset_base import AssetBase
+    from ..object_explorer.asset_item import AssetItem
     from ..model_scene import ModelScene
 
 class MoveCommand(QUndoCommand):
@@ -35,7 +35,7 @@ class MoveCommand(QUndoCommand):
             item.setPos(self.start_positions[item])
             self.update_connections(item)
 
-    def update_connections(self, item: AssetBase):
+    def update_connections(self, item: AssetItem):
         """Redraw connecting lines"""
         if hasattr(item, 'connections'):
             for connection in item.connections:

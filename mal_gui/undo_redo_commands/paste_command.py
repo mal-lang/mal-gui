@@ -41,29 +41,27 @@ class PasteCommand(QUndoCommand):
 
             # First pass: create items with new assetIds
             for data in deserialized_data:
-                asset_type = data['asset_type']
-                old_asset_sequence_id = data['asset_sequence_id']
-                asset_properties = data['asset_properties']
+
+                item_type = data['type']
+                old_sequence_id = data['sequence_id']
+                # asset_properties = data['asset_properties']
 
                 position_tuple = data['position']
                 position = QPointF(position_tuple[0], position_tuple[1])
 
                 # AddAsset Equivalent - Start - To Be Discussed
-                if asset_type == "Attacker":
+                if item_type == "attacker":
                     new_item = self.scene.add_attacker(position)
-                else:
+                elif item_type == "asset":
+                    asset_type = data['properties']['type']
                     new_item = self.scene.add_asset(asset_type, position)
-                    # we can assign the properties to new asset
-                    for property_key, property_value in asset_properties:
-                        setattr(
-                            new_item.asset,
-                            property_key,
-                            float(property_value)
-                        )
+                else:
+                    raise TypeError(f"Unknown item type {item_type}")
 
                 self.pasted_items.append(new_item)
+
                 # Map old assetId to new item
-                new_item_map[old_asset_sequence_id] = new_item
+                new_item_map[old_sequence_id] = new_item
 
                 #AddAsset Equivalent - End
 
@@ -85,6 +83,11 @@ class PasteCommand(QUndoCommand):
 
             # Second pass: re-establish connections with new assetSequenceIds
             for data in deserialized_data:
+                item_type = data['type']
+
+                if item_type != 'attacker':
+                    continue
+
                 for entrypoint in data['entrypoints']:
                     print(f'ENTRYPOINT: {entrypoint}')
                     old_start_id, old_end_id, label = entrypoint
@@ -95,43 +98,10 @@ class PasteCommand(QUndoCommand):
                             label, new_attacker_item, new_asset_item
                         )
                     self.pasted_entrypoints.append(new_connection)
-                    new_attacker_item.attackerAttachment.add_entry_point(
+                    new_attacker_item.attacker.add_entry_point(
                         new_asset_item.asset,
                         label
                     )
-
-                added_assoc_labels = set()
-                for assoc in data['associations']:
-                    print(data)
-                    print(f'CONN: {assoc}')
-                    old_start_id = data['asset_sequence_id']
-                    (_, old_end_id, assoc_type,
-                     left_field_name, right_field_name, label) = assoc
-
-                    new_start_item = new_item_map[old_start_id]
-                    new_end_item = new_item_map[old_end_id]
-
-                    if label in added_assoc_labels:
-                        continue
-
-                    added_assoc_labels.add(label)
-
-                    # Avoid Self reference
-                    if new_start_item != new_end_item:
-                        new_connection = self.scene\
-                            .add_association_connection(
-                                label, new_start_item, new_end_item
-                            )
-
-                        self.pasted_connections.append(new_connection)
-                        print(f'ASSOC TYPE {assoc_type}')
-                        association = getattr(self.scene.lcs.ns, assoc_type)()
-                        left_asset = new_start_item.asset
-                        right_asset = new_end_item.asset
-                        setattr(association, left_field_name, [left_asset])
-                        setattr(association, right_field_name, [right_asset])
-                        self.scene.model.add_association(association)
-                        new_connection.association = association
 
         # Update the Object Explorer when number of items change
         self.scene.main_window.update_childs_in_object_explorer_signal.emit()

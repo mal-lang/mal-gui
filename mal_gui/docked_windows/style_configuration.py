@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QColor
 
-from ..object_explorer.asset_base import AssetBase
+from ..object_explorer.asset_item import AssetItem
 
 class Visibility(Enum):
     HIDE = 1
@@ -199,7 +199,7 @@ class CustomDialogGlobal(QDialog):
         super().accept()
         # self.update_color_callback(self.get_color_1(), self.get_color_2())
         for item in self.scene.items():
-            if isinstance(item, (AssetBase)):
+            if isinstance(item, (AssetItem)):
                 if item.asset_type == self.selectedAssetType.text(0):
                     item.asset_type_background_color = self.get_color_1()
                     item.asset_name_background_color = self.get_color_2()

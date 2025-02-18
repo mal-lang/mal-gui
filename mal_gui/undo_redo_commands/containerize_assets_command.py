@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
 from PySide6.QtCore import QPointF, QTimer
 
-from ..object_explorer.asset_base import AssetBase
+from ..object_explorer.asset_item import AssetItem
 from ..assets_container.assets_container import AssetsContainer
 from ..file_utils import image_path
 
@@ -15,7 +15,7 @@ class ContainerizeAssetsCommand(QUndoCommand):
     def __init__(self, scene, items, parent=None):
         super().__init__(parent)
         self.scene = scene
-        self.items: list[AssetBase] = \
+        self.items: list[AssetItem] = \
             [item for item in items if item.asset_type != 'Attacker']
         self.connections: list[IConnectionItem] = []
         self.centroid = QPointF(0,0)
@@ -54,7 +54,7 @@ class ContainerizeAssetsCommand(QUndoCommand):
         self.new_assets_container.setPos(self.centroid)
 
         for item in self.items:
-            if isinstance(item,AssetBase):
+            if isinstance(item,AssetItem):
                 self.move_item_from_current_position_to_centroid(
                     item, self.centroid
                 )
@@ -111,7 +111,7 @@ class ContainerizeAssetsCommand(QUndoCommand):
         )
         item.timer.start(self.animation_timer_interval)
 
-    def update_connections(self, item: AssetBase):
+    def update_connections(self, item: AssetItem):
         if hasattr(item, 'connections'):
             for connection in item.connections:
                 connection.update_path()

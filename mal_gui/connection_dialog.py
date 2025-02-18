@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 if TYPE_CHECKING:
-    from .object_explorer.asset_base import AssetBase
+    from .object_explorer import AssetItem, AttackerItem
     from maltoolbox.language import LanguageGraph, LanguageGraphAsset
     from maltoolbox.model import Model, ModelAsset
 
@@ -29,8 +29,8 @@ class ConnectionDialog(QDialog):
 class AssociationConnectionDialog(ConnectionDialog):
     def __init__(
             self,
-            start_item: AssetBase,
-            end_item: AssetBase,
+            start_item: AssetItem,
+            end_item: AssetItem,
             lang_graph: LanguageGraph,
             model: Model,
             parent=None
@@ -123,8 +123,8 @@ class AssociationConnectionDialog(ConnectionDialog):
 class EntrypointConnectionDialog(ConnectionDialog):
     def __init__(
             self,
-            attacker_item,
-            asset_item,
+            attacker_item: AttackerItem,
+            asset_item: AssetItem,
             lang_graph: LanguageGraph,
             model,
             parent=None
@@ -137,11 +137,8 @@ class EntrypointConnectionDialog(ConnectionDialog):
         self.setWindowTitle("Select Entry Point")
         self.setMinimumWidth(300)
 
-        print(f'Attacker ITEM TYPE {attacker_item.asset_type}')
-        print(f'Asset ITEM TYPE {asset_item.asset_type}')
-
         self.attack_step_list_widget = QListWidget()
-        attacker = attacker_item.attackerAttachment
+        attacker = attacker_item.attacker
 
         if asset_item.asset is not None:
             asset_type = self.lang_graph.assets[asset_item.asset.type]

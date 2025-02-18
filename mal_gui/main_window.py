@@ -29,7 +29,7 @@ from maltoolbox.model import Model, ModelAsset
 from .file_utils import image_path
 from .model_scene import ModelScene
 from .model_view import ModelView
-from .object_explorer import AssetBase, AssetFactory
+from .object_explorer import AssetItem, AssetFactory
 from .assets_container.assets_container import AssetsContainer
 from .connection_item import AssociationConnectionItem
 from .docked_windows import (
@@ -200,7 +200,7 @@ class MainWindow(QMainWindow):
         """Called on button click"""
         print("self.show_image_icon_checkbox_changed clicked")
         for item in self.scene.items():
-            if isinstance(item, (AssetBase,AssetsContainer)):
+            if isinstance(item, (AssetItem,AssetsContainer)):
                 item.toggle_icon_visibility()
 
     def fit_to_view_button_clicked(self):
@@ -553,7 +553,7 @@ class MainWindow(QMainWindow):
 
         #Fill all the items from Scene one by one
         for child_asset_item in self.scene.items():
-            if isinstance(child_asset_item,AssetBase):
+            if isinstance(child_asset_item,AssetItem):
                 # Check if parent exists before adding child
                 parent_item, parent_asset_type = self.object_explorer_tree\
                     .check_and_get_if_parent_asset_type_exists(

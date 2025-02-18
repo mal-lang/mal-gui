@@ -4,10 +4,10 @@ from PySide6.QtGui import QUndoCommand
 
 if TYPE_CHECKING:
     from ..model_scene import ModelScene
-    from ..object_explorer.asset_base import AssetBase
+    from ..object_explorer.asset_item import AssetItem
 
 class CopyCommand(QUndoCommand):
-    def __init__(self, scene: ModelScene, items: list[AssetBase], clipboard, parent=None):
+    def __init__(self, scene: ModelScene, items: list[AssetItem], clipboard, parent=None):
         super().__init__(parent)
         self.scene = scene
         self.items = items

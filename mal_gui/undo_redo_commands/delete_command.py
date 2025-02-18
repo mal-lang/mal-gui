@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
+from ..object_explorer import AssetItem, AttackerItem
 
 if TYPE_CHECKING:
     from ..model_scene import ModelScene
@@ -32,10 +33,11 @@ class DeleteCommand(QUndoCommand):
 
         for item in self.items:
             self.scene.removeItem(item)
-            if hasattr(item, 'asset'):
+
+            if isinstance(item, AssetItem):
                 self.scene.model.remove_asset(item.asset)
-            if hasattr(item, 'attackerAttachment'):
-                self.scene.model.remove_attacker(item.attackerAttachment)
+            if isinstance(item, AttackerItem):
+                self.scene.model.remove_attacker(item.attacker)
 
         #Update the Object Explorer when number of items change
         self.scene.main_window.update_childs_in_object_explorer_signal.emit()
