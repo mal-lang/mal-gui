@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
 )
 
 if TYPE_CHECKING:
+    from maltoolbox.language import LanguageGraphAssociation
     from .model_scene import ModelScene
     from .object_explorer.asset_base import AssetBase
 
@@ -35,7 +36,7 @@ class IConnectionItem(QGraphicsLineItem):
 class AssociationConnectionItem(IConnectionItem):
     def __init__(
         self,
-        selected_assoc_text: str,
+        fieldname: str,
         start_item: AssetBase,
         end_item: AssetBase,
         scene: ModelScene,
@@ -55,18 +56,22 @@ class AssociationConnectionItem(IConnectionItem):
         self.start_item.add_connection(self)
         self.end_item.add_connection(self)
 
-        if self.start_item.asset_type != 'Attacker'\
-            and self.end_item.asset_type != 'Attacker':
+        if (
+            self.start_item.asset_type != 'Attacker'
+            and self.end_item.asset_type != 'Attacker'
+        ):
+            # Fetch the association and the fieldnames
+            lg_assoc: LanguageGraphAssociation = (
+                start_item.asset.lg_asset.associations[fieldname]
+            )
+            opposite_fieldname = lg_assoc.get_opposite_fieldname(fieldname)
 
-            self.association_details = selected_assoc_text.split("-->")
             # Get left field name
-            assoc_left_field = self.association_details[0]
-            self.left_fieldname = assoc_left_field.split(".")[1]
+            self.left_fieldname = opposite_fieldname
             # Get assoc name
-            self.assoc_name = self.association_details[1]
-            assoc_right_field = self.association_details[2]
+            self.assoc_name = lg_assoc.name
             # Get right field name
-            self.right_fieldname = assoc_right_field.split(".")[1]
+            self.right_fieldname = fieldname
 
             # Create labels with background color
             self.label_assoc_left_field = \

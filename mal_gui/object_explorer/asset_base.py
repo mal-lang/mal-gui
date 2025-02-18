@@ -26,8 +26,8 @@ class AssetBase(QGraphicsItem):
     def __init__(self, asset_type, asset_name, image_path, parent=None):
         super().__init__(parent)
         self.setZValue(1)  # rect items are on top
-        self.asset_type = asset_type
-        self.asset_name = asset_name
+        self.asset_type: str = asset_type
+        self.asset_name: str = asset_name
         self.asset_sequence_id = AssetBase.generate_next_sequence_id()
         self.image_path = image_path
         print("image path = ", self.image_path)

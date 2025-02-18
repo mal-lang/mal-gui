@@ -45,7 +45,6 @@ class ModelScene(QGraphicsScene):
             self,
             asset_factory,
             lang_graph: LanguageGraph,
-            lcs,
             model: Model,
             main_window: MainWindow
         ):
@@ -65,7 +64,6 @@ class ModelScene(QGraphicsScene):
         # # Assign the MAL language graph, language classes factory, and
         # # instance model
         self.lang_graph = lang_graph
-        self.lcs = lcs
         self.model = model
 
         self._asset_id_to_item = {}
@@ -199,7 +197,13 @@ class ModelScene(QGraphicsScene):
 
     def mouseReleaseEvent(self, event):
         """Overrides base method"""
-        if event.button() == Qt.LeftButton and self.line_item and QApplication.keyboardModifiers() == Qt.ShiftModifier:
+
+        if (
+            event.button() == Qt.LeftButton
+            and self.line_item
+            and QApplication.keyboardModifiers() == Qt.ShiftModifier
+        ):
+
             print("Entered Release with Shift")
             print("Scene Mouse Release event")
 
@@ -208,8 +212,13 @@ class ModelScene(QGraphicsScene):
 
             item = self.itemAt(event.scenePos(), QTransform())
             print(f"item is: {item}")
-            if isinstance(item, (AssetBase,EditableTextItem)) and item != self.start_item:
+
+            if (
+                isinstance(item, (AssetBase, EditableTextItem))
+                and item != self.start_item
+            ):
                 print(f"End item found: {item}")
+
                 if isinstance(item, EditableTextItem):
                     # If clicked on EditableTextItem, get its parent which is AssetBase
                     asset_item = item.parentItem()
@@ -222,8 +231,17 @@ class ModelScene(QGraphicsScene):
 
                 # Create and show the connection dialog
                 if self.end_item:
-                    if self.start_item.asset_type != 'Attacker' and self.end_item.asset_type != 'Attacker':
-                        dialog = AssociationConnectionDialog(self.start_item, self.end_item,self.lang_graph, self.lcs,self.model)
+
+                    if (
+                        self.start_item.asset_type != 'Attacker'
+                        and self.end_item.asset_type != 'Attacker'
+                    ):
+
+                        dialog = AssociationConnectionDialog(
+                            self.start_item,
+                            self.end_item,self.lang_graph,self.model
+                        )
+
                         if dialog.exec() == QDialog.Accepted:
                             selected_item = dialog.association_list_widget.currentItem()
                             if selected_item:
@@ -231,11 +249,7 @@ class ModelScene(QGraphicsScene):
                                 # connection = AssociationConnectionItem(selected_item.text(),self.start_item, self.end_item,self)
                                 # self.addItem(connection)
                                 command = CreateAssociationConnectionCommand(
-                                    self,
-                                    self.start_item,
-                                    self.end_item,
-                                    selected_item.text(),
-                                    selected_item.association
+                                    self, self.start_item, self.end_item, dialog.field_name
                                 )
                                 self.undo_stack.push(command)
                             else:
@@ -250,7 +264,8 @@ class ModelScene(QGraphicsScene):
                         asset_item = self.end_item if self.start_item.asset_type == 'Attacker' else self.start_item
 
                         dialog = EntrypointConnectionDialog(
-                            attacker_item, asset_item, self.lang_graph, self.lcs,self.model)
+                            attacker_item, asset_item, self.lang_graph, self.model
+                        )
                         if dialog.exec() == QDialog.Accepted:
                             selected_item = dialog.attack_step_list_widget.currentItem()
                             if selected_item:
@@ -313,19 +328,11 @@ class ModelScene(QGraphicsScene):
         else:
             self.show_scene_context_menu(event.screenPos(),event.scenePos())
 
-    def add_asset(self, itemType, position, name = None):
+    def add_asset(self, asset_type: str, position, name = None):
         """Add asset item to the model and the scene"""
-        new_asset = getattr(self.lcs.ns, itemType)(name = name)
-        self.model.add_asset(new_asset)
-        # new_asset.extras = {
-        #     "position" :
-        #     {
-        #         "x": position.x(),
-        #         "y": position.y()
-        #     }
-        # }
+        new_asset = self.model.add_asset(asset_type, name=name)
         new_item = self.create_item(
-            itemType,
+            asset_type,
             position,
             new_asset.name
         )
@@ -354,7 +361,7 @@ class ModelScene(QGraphicsScene):
         x_max = 0
         y_max = 0
 
-        for asset in self.model.assets:
+        for asset in self.model.assets.values():
 
             if 'position' in asset.extras:
                 pos = QPointF(asset.extras['position']['x'],
@@ -387,41 +394,52 @@ class ModelScene(QGraphicsScene):
             assets_without_position,x_max, y_max
         )
 
-        for assoc in self.model.associations:
-            lest_field_name, right_field_name = \
-                self.model.get_association_field_names(
-                    assoc
-                )
-            left_field = getattr(assoc, lest_field_name)
-            right_field = getattr(assoc, right_field_name)
-
-            for left_asset in left_field:
-                for right_asset in right_field:
-                    assoc_text = str(left_asset.name) + "." + \
-                        lest_field_name + "-->" + \
-                        assoc.__class__.__name__ + "-->" + \
-                        right_asset.name  + "." + \
-                        right_field_name
+        for asset in self.model.assets.values():
+            for fieldname, assets in asset.associated_assets.items():
+                for associated_asset in assets:
 
                     self.add_association_connection(
-                        assoc_text,
-                        self._asset_id_to_item[left_asset.id],
-                        self._asset_id_to_item[right_asset.id]
+                        self._asset_id_to_item[asset.id],
+                        self._asset_id_to_item[associated_asset.id],
+                        fieldname
                     )
+
+        # for assoc in self.model.associations:
+
+        #     lest_field_name, right_field_name = \
+        #         self.model.get_association_field_names(
+        #             assoc
+        #         )
+        #     left_field = getattr(assoc, lest_field_name)
+        #     right_field = getattr(assoc, right_field_name)
+
+        #     for left_asset in left_field:
+        #         for right_asset in right_field:
+        #             assoc_text = str(left_asset.name) + "." + \
+        #                 lest_field_name + "-->" + \
+        #                 assoc.__class__.__name__ + "-->" + \
+        #                 right_asset.name  + "." + \
+        #                 right_field_name
+
+        #             self.add_association_connection(
+        #                 assoc_text,
+        #                 self._asset_id_to_item[left_asset.id],
+        #                 self._asset_id_to_item[right_asset.id]
+        #             )
 
 # based on connectionType use attacker or
 # add_association_connection
 
     def add_association_connection(
         self,
-        assoc_text,
         start_item,
-        end_item
+        end_item,
+        fieldname: str
     ):
         """Add associations to the scene"""
 
         connection = AssociationConnectionItem(
-            assoc_text,
+            fieldname,
             start_item,
             end_item,
             self
