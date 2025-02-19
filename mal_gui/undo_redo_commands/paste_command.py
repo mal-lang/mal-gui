@@ -51,10 +51,10 @@ class PasteCommand(QUndoCommand):
 
                 # AddAsset Equivalent - Start - To Be Discussed
                 if item_type == "attacker":
-                    new_item = self.scene.add_attacker(position)
+                    new_item = self.scene.create_attacker(position)
                 elif item_type == "asset":
                     asset_type = data['properties']['type']
-                    new_item = self.scene.add_asset(asset_type, position)
+                    new_item = self.scene.create_asset(asset_type, position)
                 else:
                     raise TypeError(f"Unknown item type {item_type}")
 

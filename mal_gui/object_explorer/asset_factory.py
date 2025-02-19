@@ -1,7 +1,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-
 from collections import namedtuple
+
+from PySide6.QtCore import QPointF
+
 from .asset_item import AssetItem
 from .attacker_item import AttackerItem
 
@@ -33,15 +35,30 @@ class AssetFactory():
             AssetInfo(asset_name, asset_name, image_path)
         )
 
-    def get_asset_item(self, asset: ModelAsset):
+    def create_asset_item(
+        self, asset: ModelAsset, pos: QPointF
+    ):
         asset_type = asset.lg_asset.name
         asset_info: AssetInfo = self.asset_registry[asset_type][0]
         requested_item = AssetItem(asset, asset_info.asset_image)
+
+        requested_item.setPos(pos)
+        requested_item.type_text_item.setPlainText(asset.name)
+
         requested_item.build()
         return requested_item
 
-    def get_attacker_item(self, attacker: AttackerAttachment):
-        asset_info: AssetInfo = self.asset_registry['Attacker'][0]
+    def create_attacker_item(
+        self, attacker: AttackerAttachment, pos: QPointF
+    ):
+        asset_type = 'Attacker'
+        asset_info: AssetInfo = self.asset_registry[asset_type][0]
         requested_item = AttackerItem(attacker, asset_info.asset_image)
+
+        requested_item.setPos(pos)
+        requested_item.type_text_item.setPlainText(
+            attacker.name or "Unnamed Attacker"
+        )
+
         requested_item.build()
         return requested_item

@@ -28,7 +28,8 @@ from .undo_redo_commands import (
     PasteCommand,
     DeleteCommand,
     MoveCommand,
-    DragDropCommand,
+    DragDropAttackerCommand,
+    DragDropAssetCommand,
     CreateAssociationConnectionCommand,
     CreateEntrypointConnectionCommand,
     DeleteConnectionCommand,
@@ -102,14 +103,20 @@ class ModelScene(QGraphicsScene):
         print("dropEvent")
         if event.mimeData().hasFormat('text/plain'):
             print("format is text/plain")
-            itemType = event.mimeData().text()
-            print("dropped item type = "+ itemType)
+            item_type = event.mimeData().text()
+            print("dropped item type = " + item_type)
             pos = event.scenePos()
 
-            if itemType == "Attacker":
-                self.add_attacker(pos)
+            if item_type == "Attacker":
+                # Perform drag and drop of Asset
+                self.undo_stack.push(
+                    DragDropAttackerCommand(self, pos)
+                )
             else:
-                self.add_asset(itemType, pos)
+                # Perform drag and drop of Asset
+                self.undo_stack.push(
+                    DragDropAssetCommand(self, item_type, pos)
+                )
             event.acceptProposedAction()
 
     def mousePressEvent(self, event):
@@ -338,13 +345,6 @@ class ModelScene(QGraphicsScene):
         else:
             self.show_scene_context_menu(event.screenPos(),event.scenePos())
 
-    def add_asset(self, asset_type: str, position, name = None):
-        """Add asset item to the model and the scene"""
-        new_asset = self.model.add_asset(asset_type, name=name)
-        new_item = self.create_asset_item(new_asset, position)
-        self._asset_id_to_item[new_asset.id] = new_item
-        return new_item
-
     def assign_position_to_assets_without_positions(
             self, assets_without_position,x_max,y_max
         ):
@@ -383,7 +383,7 @@ class ModelScene(QGraphicsScene):
             else:
                 pos = QPointF(0,0)
 
-            new_item = self.create_asset_item(asset, pos)
+            new_item = self.asset_factory.create_asset_item(asset, pos)
             self._asset_id_to_item[asset.id] = new_item
 
             # extract assets without position
@@ -458,37 +458,60 @@ class ModelScene(QGraphicsScene):
         connection.update_path()
         return connection
 
-    def add_attacker(self, position, name = None):
-        """Add attacker to the model and scene"""
-        new_attacker_attachment = AttackerAttachment()
+    def recreate_asset(
+            self, asset: ModelAsset, position: QPointF
+        ) -> AssetItem:
+        """Rebuild existing asset and add to model and scene"""
+        # Create new asset from the old asset object
+        # and add it to the model
+        new_asset = self.model.add_asset(
+            asset_type=asset.type,
+            name=asset.name,
+            asset_id=asset.id,
+            defenses=asset.defenses,
+            extras=asset.extras
+        )
+        new_asset_item = self.asset_factory.create_asset_item(
+            new_asset, position
+        )
+        self.addItem(new_asset_item)
+        self._asset_id_to_item[new_asset.id] = new_asset_item
+        return new_asset_item
+
+    def create_asset(
+            self, asset_type: str, position: QPointF, name=None
+        ) -> AssetItem:
+        """Add new asset to model and to scene"""
+        new_asset = self.model.add_asset(asset_type=asset_type, name=name)
+        new_asset_item = self.asset_factory.create_asset_item(
+            new_asset, position
+        )
+        self.addItem(new_asset_item)
+        self._asset_id_to_item[new_asset.id] = new_asset_item
+        return new_asset_item
+
+    def remove_asset(self, asset_item: AssetItem):
+        self.model.remove_asset(asset_item.asset)
+        self.removeItem(asset_item)
+        del self._asset_id_to_item[asset_item.asset.id]
+
+    def create_attacker(self, position, name = None, attacker_id = None):
+        """Add new attacker to the model and scene"""
+        new_attacker_attachment = (
+            AttackerAttachment(id=attacker_id, name=name)
+        )
         self.model.add_attacker(new_attacker_attachment)
-        new_item = self.create_attacker_item(
+        new_item = self.asset_factory.create_attacker_item(
             new_attacker_attachment, position
         )
+        self.addItem(new_item)
         self._attacker_id_to_item[new_attacker_attachment.id] = new_item
         return new_item
 
-    def create_attacker_item(
-            self, attacker: AttackerAttachment, position: QPointF
-    ):
-        new_item = self.asset_factory.get_attacker_item(attacker)
-        new_item.type_text_item.setPlainText(str(attacker.name))
-        new_item.setPos(position)
-
-        # self.addItem(new_item)
-        self.undo_stack.push(DragDropCommand(self, new_item))
-        return new_item
-
-    def create_asset_item(self, asset: ModelAsset, position: QPointF):
-        """Create item"""
-
-        new_item = self.asset_factory.get_asset_item(asset)
-        new_item.type_text_item.setPlainText(asset.name)
-        new_item.setPos(position)
-
-        # self.addItem(new_item)
-        self.undo_stack.push(DragDropCommand(self, new_item))
-        return new_item
+    def remove_attacker(self, attacker_item: AttackerItem):
+        self.model.remove_attacker(attacker_item.attacker)
+        self.removeItem(attacker_item)
+        del self._attacker_id_to_item[attacker_item.attacker.id]
 
     def cut_assets(self, selected_assets: list[AssetItem]):
         print("Cut Asset is called..")
