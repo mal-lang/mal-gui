@@ -3,9 +3,6 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtGui import QUndoCommand
 from PySide6.QtCore import QPointF
-from maltoolbox.model import AttackerAttachment
-
-from ..object_explorer import AssetItem, AttackerItem
 
 if TYPE_CHECKING:
     from mal_gui.model_scene import ModelScene
@@ -39,7 +36,7 @@ class DragDropAssetCommand(QUndoCommand):
         if self.item:
             # Create asset from previous deleted asset
             self.item = self.scene.recreate_asset(
-                self.item.asset, self.item.pos()
+                self.item, self.position
             )
         else:
             # Create/add asset from scratch

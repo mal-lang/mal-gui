@@ -30,7 +30,7 @@ class AssetItem(ItemBase):
 
     def get_item_attribute_values(self):
         return {
-            "Sequence ID": self.sequence_id,
+            "Asset ID": self.asset.id,
             "Asset Name": self.asset.name,
             "Asset Type": self.asset_type
         }

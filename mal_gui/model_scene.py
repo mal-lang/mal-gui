@@ -160,7 +160,7 @@ class ModelScene(QGraphicsScene):
                     print("Item is already selected")
                     self.moving_item = clicked_item
                     self.start_pos = clicked_item.pos()
-                    self.dragged_items = [i for i in self.selectedItems() if isinstance(i, AssetItem)]
+                    self.dragged_items = [i for i in self.selectedItems() if isinstance(i, (AssetItem, AttackerItem))]
                     self.initial_positions = {i: i.pos() for i in self.dragged_items}
                 else:
                     print("Item is not selected")
@@ -223,7 +223,7 @@ class ModelScene(QGraphicsScene):
             if isinstance(released_item, EditableTextItem):
                 # If clicked on EditableTextItem, get its parent which is AssetItem
                 released_item = released_item.parentItem()
-                if isinstance(released_item, AssetItem):
+                if isinstance(released_item, (AssetItem, AttackerItem)):
                     self.end_item = released_item
                 else:
                     self.end_item = None
@@ -306,7 +306,7 @@ class ModelScene(QGraphicsScene):
             if self.selection_rect:
                 items = self.items(self.selection_rect.rect(), Qt.IntersectsItemShape)
                 for item in items:
-                    if isinstance(item, AssetItem):
+                    if isinstance(item, (AssetItem, AttackerItem)):
                         item.setSelected(True)
                 self.removeItem(self.selection_rect)
                 self.selection_rect = None
@@ -325,7 +325,7 @@ class ModelScene(QGraphicsScene):
         """Overrides base method"""
         item = self.itemAt(event.scenePos(), QTransform())
         if item:
-            if isinstance(item, (AssetItem,EditableTextItem)):
+            if isinstance(item, (AssetItem, EditableTextItem)):
                 if isinstance(item, EditableTextItem):
                     # If right-clicked on EditableTextItem, get its parent which is AssetItem
                     item = item.parentItem()
@@ -333,13 +333,16 @@ class ModelScene(QGraphicsScene):
                 print("Found Asset", item)
                 # self.show_asset_context_menu(event.screenPos(), item)
                 self.show_asset_context_menu(event.screenPos())
-            elif isinstance(item, (AssociationConnectionItem,EntrypointConnectionItem)):
+
+            elif isinstance(item, (AssociationConnectionItem, EntrypointConnectionItem)):
                 print("Found Connection Item", item)
                 self.show_connection_item_context_menu(event.screenPos(), item)
-            elif isinstance(item,AssetsContainer):
+
+            elif isinstance(item, AssetsContainer):
                 print("Found Assets Container item",item)
                 self.show_assets_container_context_menu(event.screenPos(), item)
-            elif isinstance(item,AssetsContainerRectangleBox):
+
+            elif isinstance(item, AssetsContainerRectangleBox):
                 print("Found Assets Container Box",item)
                 self.show_assets_container_box_context_menu(event.screenPos(), item)
         else:
@@ -459,30 +462,32 @@ class ModelScene(QGraphicsScene):
         return connection
 
     def recreate_asset(
-            self, asset: ModelAsset, position: QPointF
+            self,
+            asset_item: AssetItem,
+            position: QPointF
         ) -> AssetItem:
         """Rebuild existing asset and add to model and scene"""
         # Create new asset from the old asset object
         # and add it to the model
-        new_asset = self.model.add_asset(
-            asset_type=asset.type,
-            name=asset.name,
-            asset_id=asset.id,
-            defenses=asset.defenses,
-            extras=asset.extras
+        asset_item.asset = self.model.add_asset(
+            asset_type=asset_item.asset.type,
+            name=asset_item.asset.name,
+            asset_id=asset_item.asset.id,
+            defenses=asset_item.asset.defenses,
+            extras=asset_item.asset.extras
         )
-        new_asset_item = self.asset_factory.create_asset_item(
-            new_asset, position
-        )
-        self.addItem(new_asset_item)
-        self._asset_id_to_item[new_asset.id] = new_asset_item
-        return new_asset_item
+        asset_item.setPos(position)
+        self.addItem(asset_item)
+        self._asset_id_to_item[asset_item.asset.id] = asset_item
+        return asset_item
 
     def create_asset(
-            self, asset_type: str, position: QPointF, name=None
+            self, asset_type: str, position: QPointF, name=None, asset_id=None
         ) -> AssetItem:
         """Add new asset to model and to scene"""
-        new_asset = self.model.add_asset(asset_type=asset_type, name=name)
+        new_asset = self.model.add_asset(
+            asset_type=asset_type, name=name, asset_id=asset_id
+        )
         new_asset_item = self.asset_factory.create_asset_item(
             new_asset, position
         )
@@ -627,45 +632,10 @@ class ModelScene(QGraphicsScene):
 
         self.removeItem(currently_selected_container_box)
 
-    def serialize_associations(
-            self,
-            connections: list[IConnectionItem],
-            selected_sequence_ids: set[int]
-    ):
-        """Serialize selected connections"""
-
-        serialized_associations = []
-        for conn in connections:
-            # Copy associations where both item are selected
-            if not isinstance(conn, AssociationConnectionItem):
-                continue
-
-            both_items_selected = (
-                conn.start_item.sequence_id\
-                    in selected_sequence_ids and
-                conn.end_item.sequence_id \
-                    in selected_sequence_ids
-            )
-
-            if both_items_selected:
-                # If association and selected, serialize it
-                serialized_associations.append(
-                    (
-                        conn.start_item.sequence_id,
-                        conn.end_item.sequence_id,
-                        conn.assoc_name,
-                        conn.left_fieldname,
-                        conn.right_fieldname,
-                        "-->".join(conn.association_details)
-                    )
-                )
-
-        return serialized_associations
-
     def serialize_entrypoints(
             self,
             entrypoints: list[IConnectionItem],
-            selected_sequence_ids: set[int]
+            selected_ids: set[int]
     ):
         """Serialize selected attacker entrypoints"""
 
@@ -677,18 +647,18 @@ class ModelScene(QGraphicsScene):
 
             # If entry points
             both_items_selected = (
-                conn.asset_item.sequence_id\
-                    in selected_sequence_ids and
-                conn.attacker_item.sequence_id \
-                    in selected_sequence_ids
+                conn.asset_item.asset.id\
+                    in selected_ids and
+                conn.attacker_item.attacker.id \
+                    in selected_ids
             )
             if not both_items_selected:
                 continue
 
             serialized_entrypoints.append(
                 (
-                    conn.attacker_item.sequence_id,
-                    conn.asset_item.sequence_id,
+                    conn.attacker_item.attacker.id,
+                    conn.asset_item.asset.id,
                     conn.attack_step_name
                 )
             )
@@ -700,24 +670,42 @@ class ModelScene(QGraphicsScene):
         serialized_items = []
 
         # Set of selected item IDs
-        selected_sequence_ids = {item.sequence_id for item in items}
+        selected_attacker_ids = {
+            item.attacker.id for item
+            in items if isinstance(item, AttackerItem)
+            and item.attacker.id is not None
+        }
+
+        selected_asset_ids = {
+            item.asset.id for item
+            in items if isinstance(item, AssetItem)
+            and item.asset.id is not None
+        }
+
+        selected_ids = selected_attacker_ids | selected_asset_ids
+
         for item in items:
+            item_id = None
+            if isinstance(item, AssetItem):
+                item_id = item.asset.id
+            if isinstance(item, AttackerItem):
+                item_id = item.attacker.id
+
             item_details = {
                 'title': item.title,
-                'sequence_id': item.sequence_id,
+                'id': item_id,
                 'position': (item.pos().x(), item.pos().y()),
             }
 
             if isinstance(item, AttackerItem):
                 item_details['type'] = "attacker"
                 item_details['entrypoints'] = self.serialize_entrypoints(
-                    item.connections, selected_sequence_ids
+                    item.connections, selected_ids
                 )
             elif isinstance(item, AssetItem):
                 item_details['type'] = "asset"
-                item_details['properties'] = next(iter(item.asset._to_dict().values()))
-                item_details['associations'] = self.serialize_associations(
-                    item.connections, selected_sequence_ids
+                item_details['properties'] = next(
+                    iter(item.asset._to_dict().values())
                 )
 
             serialized_items.append(item_details)

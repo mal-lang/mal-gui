@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 if TYPE_CHECKING:
     from maltoolbox.language import LanguageGraphAssociation
     from .model_scene import ModelScene
-    from .object_explorer.asset_item import AssetItem
+    from .object_explorer import AssetItem, AttackerItem
 
 class IConnectionItem(QGraphicsLineItem):
     """'interface' for Connection Item"""
@@ -201,7 +201,7 @@ class EntrypointConnectionItem(IConnectionItem):
     def __init__(
         self,
         attack_step_name,
-        attacker_item: AssetItem,
+        attacker_item: AttackerItem,
         asset_item: AssetItem,
         scene: ModelScene,
         parent = None

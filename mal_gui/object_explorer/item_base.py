@@ -24,8 +24,6 @@ if TYPE_CHECKING:
 
 class ItemBase(QGraphicsItem):
 
-    sequence_id = -1
-
     def __init__(
             self,
             title: str,
@@ -34,7 +32,6 @@ class ItemBase(QGraphicsItem):
         ):
         super().__init__(parent)
 
-        self.sequence_id = self.generate_next_sequence_id()
         self.setZValue(1)  # rect items are on top
 
         self.title = title
@@ -84,11 +81,6 @@ class ItemBase(QGraphicsItem):
         self.timer.start(500)
 
         self.build()
-
-    @classmethod
-    def generate_next_sequence_id(cls):
-        cls.sequence_id += 1
-        return cls.sequence_id
 
     def boundingRect(self):
         """Overrides base method"""
