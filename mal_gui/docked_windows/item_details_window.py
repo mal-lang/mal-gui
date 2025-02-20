@@ -1,5 +1,7 @@
 from PySide6.QtWidgets import QTreeWidget,QTreeWidgetItem
 
+from ..object_explorer import ItemBase
+
 class ItemDetailsWindow(QTreeWidget):
     def __init__(self, parent=None):
         super(ItemDetailsWindow, self).__init__(parent)
@@ -7,11 +9,11 @@ class ItemDetailsWindow(QTreeWidget):
         self.setColumnCount(2)
         self.setHeaderLabels(["Attribute","Value"])
 
-    def update_item_details_window(self, asset_item):
+    def update_item_details_window(self, item_object: ItemBase):
         self.clear()
-        if asset_item is not None:
+        if item_object is not None:
             # item has a method that returns a dict
-            asset_details = asset_item.get_item_attribute_vakues()
+            asset_details = item_object.get_item_attribute_values()
             for (key, value) in asset_details.items():
                 print(f"Attribute:{key} Value:{str(value)}")
                 item = QTreeWidgetItem([key, str(value)])

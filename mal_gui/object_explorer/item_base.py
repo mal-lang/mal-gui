@@ -1,4 +1,6 @@
+from __future__ import annotations
 from typing import TYPE_CHECKING
+from abc import abstractmethod
 
 from PySide6.QtCore import QRectF, Qt, QPointF, QSize, QSizeF, QTimer
 from PySide6.QtGui import (
@@ -17,30 +19,37 @@ from PySide6.QtWidgets import  QGraphicsItem
 from .editable_text_item import EditableTextItem
 
 if TYPE_CHECKING:
+    from maltoolbox.model import ModelAsset
     from ..connection_item import IConnectionItem
 
-class AssetBase(QGraphicsItem):
-    # Starting Sequence Id with normal start at 100 (randomly taken)
-    asset_sequence_id = 100
+class ItemBase(QGraphicsItem):
 
-    def __init__(self, asset_type, asset_name, image_path, parent=None):
+    def __init__(
+            self,
+            title: str,
+            image_path: str,
+            parent=None,
+        ):
         super().__init__(parent)
+
         self.setZValue(1)  # rect items are on top
-        self.asset_type = asset_type
-        self.asset_name = asset_name
-        self.asset_sequence_id = AssetBase.generate_next_sequence_id()
+
+        self.title = title
         self.image_path = image_path
-        print("image path = ", self.image_path)
 
-        # self.image = QPixmap(self.image_path).scaled(30, 30, Qt.KeepAspectRatio)  # Scale the image here
-        # self.image = QPixmap(self.image_path)
-        self.image = self.load_image_with_quality(self.image_path, QSize(512, 512))
+        self.image = self.load_image_with_quality(
+            self.image_path, QSize(512, 512)
+        )
 
-        self.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemSendsGeometryChanges)
+        self.setFlags(
+            QGraphicsItem.ItemIsSelectable
+            | QGraphicsItem.ItemIsMovable
+            | QGraphicsItem.ItemSendsGeometryChanges
+        )
 
         # Create the editable text item for block type
-        self.type_text_item = EditableTextItem(self.asset_name, self)
-        self.type_text_item.lostFocus.connect(self.update_asset_name)
+        self.type_text_item = EditableTextItem(self.title, self)
+        self.type_text_item.lostFocus.connect(self.update_name)
 
         self.connections: list[IConnectionItem] = []
         self.initial_position = QPointF()
@@ -146,9 +155,12 @@ class AssetBase(QGraphicsItem):
 
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self.type_text_item.setTextInteractionFlags(Qt.TextEditorInteraction)
+            self.type_text_item.setTextInteractionFlags(
+                Qt.TextEditorInteraction
+            )
             self.type_text_item.setFocus()
-            self.type_text_item.select_all_text()  # Select all text when activated
+            # Select all text when activated
+            self.type_text_item.select_all_text()
             event.accept()
         else:
             event.ignore()
@@ -162,20 +174,18 @@ class AssetBase(QGraphicsItem):
         """Overrides base method"""
         self.initial_position = self.pos()
 
-        if self.type_text_item.hasFocus() and not self.type_text_item.contains(event.pos()):
+        if (
+            self.type_text_item.hasFocus()
+            and not self.type_text_item.contains(event.pos())
+        ):
             self.type_text_item.clearFocus()
         elif not self.type_text_item.contains(event.pos()):
             self.type_text_item.deselect_text()
         else:
             super().mousePressEvent(event)
 
-    @classmethod
-    def generate_next_sequence_id(cls):
-        cls.asset_sequence_id += 1
-        return cls.asset_sequence_id
-
     def build(self):
-        self.title_text = self.asset_type
+        self.title_text = self.title
         self.title_path = QPainterPath()
         self.type_path = QPainterPath()
         self.status_path = QPainterPath()
@@ -245,6 +255,15 @@ class AssetBase(QGraphicsItem):
         # self.widget.move(-self.widget.size().width() / 2,
         # fixed_height / 2 - self.widget.size().height() + 5)
 
+
+    def add_connection(self, connection):
+        self.connections.append(connection)
+
+    def remove_connection(self, connection):
+        if connection in self.connections:
+            self.connections.remove(connection)
+
+
     def update_type_text_item_position(self):
         # to update the position of the type_text_item so that it
         # remains centered within the lower half of the node
@@ -263,40 +282,17 @@ class AssetBase(QGraphicsItem):
         # Update position
         self.type_text_item.setPos(type_text_item_pos_x, type_text_item_pos_y)
 
-        # For Attacker make the background of type As Red
-        if self.asset_type == 'Attacker':
-            self.asset_type_background_color = QColor(255, 0, 0) #Red
-
-    def add_connection(self, connection):
-        self.connections.append(connection)
-
-    def remove_connection(self, connection):
-        if connection in self.connections:
-            self.connections.remove(connection)
-
-    def update_asset_name(self):
-        self.asset_name = self.type_text_item.toPlainText()
+    def update_name(self):
+        self.title = self.type_text_item.toPlainText()
         self.type_text_item.setTextInteractionFlags(Qt.NoTextInteraction)
         self.type_text_item.deselect_text()
-
         self.update_type_text_item_position()
 
-        if self.asset_type == "Attacker":
-            self.attackerAttachment.name = self.asset_name
-        else:
-            self.asset.name = self.asset_name
         associated_scene = self.type_text_item.scene()
         if associated_scene:
             print("Asset Name Changed by user")
             associated_scene.main_window\
                 .update_childs_in_object_explorer_signal.emit()
-
-    def get_item_attribute_vakues(self):
-        return {
-            "Asset Sequence ID": self.asset_sequence_id,
-            "Asset Name": self.asset_name,
-            "Asset Type": self.asset_type
-        }
 
     def setIcon(self, icon_path=None):
         """Overrides base method"""
@@ -334,3 +330,11 @@ class AssetBase(QGraphicsItem):
                 )
             )
         return QPixmap()
+
+    @abstractmethod
+    def get_item_attribute_values(self) -> dict:
+        raise NotImplementedError("get_item_attribute_values")
+
+    @abstractmethod
+    def serialize(self) -> dict:
+        raise NotImplementedError("get_item_attribute_values")

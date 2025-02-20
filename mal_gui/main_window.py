@@ -23,13 +23,13 @@ from PySide6.QtCore import Qt, QMimeData, QByteArray, QSize, Signal, QPointF
 
 from qt_material import apply_stylesheet,list_themes
 
-from maltoolbox.language import LanguageGraph, LanguageClassesFactory
-from maltoolbox.model import Model
+from maltoolbox.language import LanguageGraph
+from maltoolbox.model import Model, ModelAsset
 
 from .file_utils import image_path
 from .model_scene import ModelScene
 from .model_view import ModelView
-from .object_explorer import AssetBase, AssetFactory
+from .object_explorer import AssetItem, AssetFactory
 from .assets_container.assets_container import AssetsContainer
 from .connection_item import AssociationConnectionItem
 from .docked_windows import (
@@ -96,10 +96,9 @@ class MainWindow(QMainWindow):
         # Create the MAL language graph, language classes factory,
         # and instance model
         self.lang_graph = LanguageGraph.from_mar_archive(lang_file_path)
-        self.lcs = LanguageClassesFactory(self.lang_graph)
-        self.model = Model("Untitled Model", self.lcs)
+        self.model = Model("Untitled Model", self.lang_graph)
 
-        for asset in self.lang_graph.assets:
+        for asset in self.lang_graph.assets.values():
             if not asset.is_abstract:
                 self.asset_factory.register_asset(
                     asset.name,
@@ -111,7 +110,6 @@ class MainWindow(QMainWindow):
         self.scene = ModelScene(
             self.asset_factory,
             self.lang_graph,
-            self.lcs,
             self.model,
             self
         )
@@ -202,7 +200,7 @@ class MainWindow(QMainWindow):
         """Called on button click"""
         print("self.show_image_icon_checkbox_changed clicked")
         for item in self.scene.items():
-            if isinstance(item, (AssetBase,AssetsContainer)):
+            if isinstance(item, (AssetItem,AssetsContainer)):
                 item.toggle_icon_visibility()
 
     def fit_to_view_button_clicked(self):
@@ -218,11 +216,7 @@ class MainWindow(QMainWindow):
 
         if asset_item is not None and asset_item.asset_type != "Attacker":
             asset = asset_item.asset
-            defenses = self.model.get_asset_defenses(
-                asset, include_defaults = True
-            )
-
-            properties = list(defenses.items())
+            properties = list(asset.defenses.items())
             # Insert new rows based on the data dictionary
             num_rows = len(properties)
             self.properties_table.setRowCount(num_rows)
@@ -264,20 +258,16 @@ class MainWindow(QMainWindow):
 
     def update_asset_relations_window(self, asset_item):
         self.asset_relations_docker_window.clear()
-        if asset_item is not None:
-            asset = asset_item.asset
-            for association in asset.associations:
-                left_field_name, right_field_name = \
-                    self.scene.model.get_association_field_names(association)
-                if asset in getattr(association, left_field_name):
-                    opposite_field_name = right_field_name
-                else:
-                    opposite_field_name = left_field_name
 
-                for associated_asset in getattr(association,
-                        opposite_field_name):
-                    self.asset_relations_docker_window.addItem(
-                        opposite_field_name + "-->" + associated_asset.name)
+        if asset_item is None:
+            return
+
+        asset: ModelAsset = asset_item.asset
+        for fieldname, assets in asset.associated_assets.items():
+            for associated_asset in assets:
+                self.asset_relations_docker_window.addItem(
+                    fieldname + "-->" + associated_asset.name
+                )
 
     def create_actions(self):
         """Create the actions and add to the GUI"""
@@ -486,8 +476,7 @@ class MainWindow(QMainWindow):
             #clear scene so that canvas becomes blank
             self.scene.clear()
             self.scene.model = Model.load_from_file(
-                file_path,
-                self.scene.lcs
+                file_path, self.scene.lang_graph
             )
             self.show_information_popup(
                 "Successfully opened model: " + file_path)
@@ -502,12 +491,13 @@ class MainWindow(QMainWindow):
            and save model to self.model_file_name"""
 
         print(f'ASSET ID TO ITEMS KEYS:{self.scene._asset_id_to_item.keys()}')
-        for asset in self.scene.model.assets:
+
+        for asset in self.scene.model.assets.values():
             print(f'ASSET NAME:{asset.name} ID:{asset.id} TYPE:{asset.type}')
             item = self.scene._asset_id_to_item[int(asset.id)]
             position = item.pos()
 
-            extras_dict = asset.extras.as_dict() if asset.extras else {}
+            extras_dict = asset.extras if asset.extras else {}
             extras_dict["position"] = {
                 "x": position.x(),
                 "y": position.y()
@@ -563,7 +553,7 @@ class MainWindow(QMainWindow):
 
         #Fill all the items from Scene one by one
         for child_asset_item in self.scene.items():
-            if isinstance(child_asset_item,AssetBase):
+            if isinstance(child_asset_item,AssetItem):
                 # Check if parent exists before adding child
                 parent_item, parent_asset_type = self.object_explorer_tree\
                     .check_and_get_if_parent_asset_type_exists(

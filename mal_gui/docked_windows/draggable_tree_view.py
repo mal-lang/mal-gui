@@ -12,7 +12,7 @@ from .style_configuration import (
 )
 
 if TYPE_CHECKING:
-    from ..object_explorer.asset_base import AssetBase
+    from ..object_explorer.asset_item import AssetItem
 
 class DraggableTreeView(QTreeWidget):
     def __init__(
@@ -134,7 +134,7 @@ class DraggableTreeView(QTreeWidget):
             self.eye_visibility = Visibility.HIDE
 
             #First Hide the connections associtaed with the asset item
-            asset_item: AssetBase = item.assetItemReference
+            asset_item: AssetItem = item.assetItemReference
 
             if hasattr(asset_item, 'connections'):
                 connections = asset_item.connections
