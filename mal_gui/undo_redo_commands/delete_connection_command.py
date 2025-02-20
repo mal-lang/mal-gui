@@ -14,7 +14,7 @@ class DeleteConnectionCommand(QUndoCommand):
 
     def redo(self):
         """Perform delete connection"""
-        # self.connection.delete()
+        self.connection.delete()
         self.connection.remove_labels()
         self.scene.removeItem(self.connection)
 

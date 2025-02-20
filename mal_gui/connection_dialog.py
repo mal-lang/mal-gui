@@ -69,7 +69,7 @@ class AssociationConnectionDialog(ConnectionDialog):
             # If assoc ends with end_assets type, give that assoc
             # as option in list widget
             if field.asset == self.end_asset.lg_asset:
-                assoc_list_item = QListWidgetItem(fieldname)
+                assoc_list_item = QListWidgetItem(self.start_asset.name + "." + fieldname + " = " + self.end_asset.name)
                 assoc_list_item.setData(
                     Qt.UserRole,
                     {

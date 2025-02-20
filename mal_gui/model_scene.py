@@ -474,7 +474,7 @@ class ModelScene(QGraphicsScene):
             name=asset_item.asset.name,
             asset_id=asset_item.asset.id,
             defenses=asset_item.asset.defenses,
-            extras=asset_item.asset.extras
+            extras=asset_item.asset.extras,
         )
         asset_item.setPos(position)
         self.addItem(asset_item)
@@ -759,6 +759,7 @@ class ModelScene(QGraphicsScene):
     def show_connection_item_context_menu(self, position, connection_item):
         print("AssociationConnectionItem Context menu activated")
         menu = QMenu()
+        print("Deleting connection")
         connection_item_delete_action = QAction("Delete Connection", self)
 
         menu.addAction(connection_item_delete_action)

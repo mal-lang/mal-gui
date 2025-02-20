@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
 from ..object_explorer import AssetItem, AttackerItem
+from ..connection_item import AssociationConnectionItem, EntrypointConnectionItem
 
 if TYPE_CHECKING:
     from ..model_scene import ModelScene
@@ -46,13 +47,35 @@ class DeleteCommand(QUndoCommand):
         """Undo delete"""
         # Add items back to the scene
         for item in self.items:
-            self.scene.addItem(item)
+            if isinstance(item, AssetItem):
+                self.scene.recreate_asset(item, item.pos())
+            if isinstance(item, AttackerItem):
+                self.scene.model.add_attacker(item.attacker)
 
         # Restore connections
         for connection in self.connections:
-            self.scene.addItem(connection)
-            connection.restore_labels()
-            connection.update_path()
+
+            if isinstance(connection, EntrypointConnectionItem):
+                self.scene.add_entrypoint_connection(
+                    connection.attack_step_name,
+                    connection.attacker_item,
+                    connection.asset_item
+                )
+                connection.attacker_item.attacker.add_entry_point(
+                    connection.asset_item.asset, connection.attack_step_name
+                )
+
+
+            elif isinstance(connection, AssociationConnectionItem):
+                self.scene.add_association_connection(
+                    connection.start_item,
+                    connection.end_item,
+                    connection.right_fieldname
+                )
+                connection.start_item.asset.add_associated_assets(
+                    connection.right_fieldname, {connection.end_item.asset}
+                )
+
 
         #Update the Object Explorer when number of items change
         self.scene.main_window.update_childs_in_object_explorer_signal.emit()

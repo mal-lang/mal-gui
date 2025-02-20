@@ -29,10 +29,14 @@ class CreateAssociationConnectionCommand(QUndoCommand):
         self.connection = self.scene.add_association_connection(
             self.start_item, self.end_item, self.fieldname
         )
-        self.start_item.asset.add_associated_assets(self.fieldname, {self.end_item.asset})
+        self.start_item.asset.add_associated_assets(
+            self.fieldname, {self.end_item.asset}
+        )
 
     def undo(self):
         """Undo create association connection"""
         self.connection.remove_labels()
         self.scene.removeItem(self.connection)
-        self.start_item.asset.remove_associated_assets(self.fieldname, {self.end_item.asset})
+        self.start_item.asset.remove_associated_assets(
+            self.fieldname, {self.end_item.asset}
+        )
