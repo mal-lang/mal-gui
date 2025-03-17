@@ -372,10 +372,13 @@ class ModelScene(QGraphicsScene):
         for asset in self.model.assets.values():
 
             if 'position' in asset.extras:
-                pos = QPointF(asset.extras['position']['x'],
-                    asset.extras['position']['y'])
+                pos = QPointF(
+                    asset.extras['position']['x'],
+                    asset.extras['position']['y']
+                )
 
-                #Storing x_max and y_max to be used at the end for moving the assets without position
+                # Storing x_max and y_max to be used at the end
+                # for moving the assets without position
                 if x_max< asset.extras['position']['x']:
                     x_max = asset.extras['position']['x']
                     print("x_max = "+ str(x_max))
@@ -388,6 +391,7 @@ class ModelScene(QGraphicsScene):
 
             new_item = self.asset_factory.create_asset_item(asset, pos)
             self._asset_id_to_item[asset.id] = new_item
+            self.addItem(new_item)
 
             # extract assets without position
             if 'position' not in asset.extras:
@@ -408,7 +412,12 @@ class ModelScene(QGraphicsScene):
                     )
 
         for attacker in self.model.attackers:
-            new_item = self.create_attacker_item(attacker, QPointF(0,0))
+            new_item = self.asset_factory.create_attacker_item(
+                attacker, QPointF(0,0)
+            )
+            self._attacker_id_to_item[attacker.id] = new_item
+            self.addItem(new_item)
+
             for (entry_point_asset, entry_point_attack_steps) in attacker.entry_points:
                 for attack_step in entry_point_attack_steps:
                     self.add_entrypoint_connection(
