@@ -16,6 +16,18 @@ If you for any reason don't want to install the package, you can run it as a mod
 
 ## How to use the graphical interface
 
-TODO: Add images
+### Starting up
 
-TODO: Explain short cuts and how to use the GUI
+![Start popup](docs/select_lang.png "Select MAR archive.")
+
+When you start up `malgui` you need to select a MAL-language.
+
+Read the tutorial if you do not know how: https://github.com/mal-lang/mal-toolbox-tutorial.
+
+### Add an asset
+When you have started the application you can drag and drop new assets from the object explorer on the left.
+
+### Create associations
+To create associations you use SHIFT + Left click to drack and drop between two assets. This lets you select what association they should have.
+
+![Overview of the MAL gui](docs/overview.png "Info on how to do things in malgui.")
