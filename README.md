@@ -18,7 +18,7 @@ If you for any reason don't want to install the package, you can run it as a mod
 
 ### Starting up
 
-![Start popup](docs/select_lang.png "Select MAR archive.")
+![Start popup](docs/select_lang.png "Select MAL/MAR archive.")
 
 When you start up `malgui` you need to select a MAL-language.
 

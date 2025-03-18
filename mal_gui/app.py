@@ -38,7 +38,7 @@ class FileSelectionDialog(QDialog):
         vertical_layout = QVBoxLayout()
 
         # Label to instruct the user
-        self.label = QLabel("Select MAL Language .mar file to load:")
+        self.label = QLabel("Select MAL Language .mal/.mar file to load:")
         vertical_layout.addWidget(self.label)
 
         horizontal_layout = QHBoxLayout()
@@ -80,11 +80,11 @@ class FileSelectionDialog(QDialog):
         quit_button.clicked.connect(self.reject)
 
     def open_file_dialog(self):
-        """Ask user for MAR file in dialog"""
+        """Ask user for MAL or MAR file in dialog"""
         file_dialog = QFileDialog()
 
-        file_dialog.setNameFilter("MAR files (*.mar)")
-        file_dialog.setWindowTitle("Select a MAR File")
+        file_dialog.setNameFilter("MAL or MAR files (*.mal *.mar)")
+        file_dialog.setWindowTitle("Select a MAL or MAR File")
 
         if file_dialog.exec() == QFileDialog.Accepted:
             selected_lang_path = file_dialog.selectedFiles()[0]
@@ -92,13 +92,14 @@ class FileSelectionDialog(QDialog):
 
     def save_lang_file_path(self):
         """
-        Set current language MAR archive file and store
-        latest chosen language in user config file
+        Set current language MAL or MAR file and store latest chosen language
+        in user config file
         """
 
         selected_lang_file = self.lang_file_path_text.text()
 
-        if selected_lang_file.endswith('.mar'):
+        if selected_lang_file.endswith('.mar') or \
+                selected_lang_file.endswith('.mal'):
             self.selected_lang_file = selected_lang_file
 
             # Remember language choice in user settings
@@ -107,7 +108,8 @@ class FileSelectionDialog(QDialog):
             except configparser.DuplicateSectionError:
                 pass
 
-            self.config.set('Settings', 'langFilePath', self.selected_lang_file)
+            self.config.set('Settings', 'langFilePath',
+                self.selected_lang_file)
 
             with open(self.config_file_path, 'w', encoding='utf-8') as conf_file:
                 self.config.write(conf_file)
@@ -115,7 +117,8 @@ class FileSelectionDialog(QDialog):
             self.accept()  # Close the dialog and return accepted
         else:
             QMessageBox.warning(
-                self, "Invalid File", "Please select a valid .mar file.")
+                self, "Invalid File",
+                "Please select a valid .mal or .mar file.")
 
     def get_selected_file(self):
         return self.selected_lang_file
@@ -130,7 +133,7 @@ def main():
         selected_lang_path = dialog.get_selected_file()
         window = MainWindow(app, selected_lang_path)
         window.show()
-        print(f"Selected MAR file Path: {selected_lang_path}")
+        print(f"Selected MAL/MAR file Path: {selected_lang_path}")
         app.exec()
     else:
         app.quit()

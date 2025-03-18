@@ -95,7 +95,7 @@ class MainWindow(QMainWindow):
 
         # Create the MAL language graph, language classes factory,
         # and instance model
-        self.lang_graph = LanguageGraph.from_mar_archive(lang_file_path)
+        self.lang_graph = LanguageGraph.load_from_file(lang_file_path)
         self.model = Model("Untitled Model", self.lang_graph)
 
         for asset in self.lang_graph.assets.values():
