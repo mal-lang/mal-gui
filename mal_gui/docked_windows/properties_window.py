@@ -57,7 +57,7 @@ class EditableDelegate(QStyledItemDelegate):
             property_key = index.sibling(row, 0).data()
 
             # Set the attribute - Probably this is Andrei's expectation
-            setattr(self.asset_item.asset, property_key, float(value))
+            self.asset_item.asset.defenses[property_key] = float(value)
 
     def validate_editor(self):
         editor = self.sender()
