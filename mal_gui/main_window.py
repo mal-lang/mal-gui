@@ -526,9 +526,13 @@ class MainWindow(QMainWindow):
         else:
             self.scene.model.name = Path(file_path).stem
             self.model_file_name = file_path
-            self.update_positions_and_save_model()
-            self.show_information_popup(
-                "Successfully saved model to: " + file_path)
+            try:
+                self.update_positions_and_save_model()
+            except Exception as e:
+                print(f"Error saving model: {e}")
+                self.show_error_popup("Error saving model: " + str(e))
+                self.model_file_name = None
+                return
 
     def quitApp(self):
         self.app.quit()
@@ -540,6 +544,16 @@ class MainWindow(QMainWindow):
         message_box.setIcon(QMessageBox.Information)
         message_box.setWindowTitle("Information")
         message_box.setText("This is default informative Text")
+        message_box.setInformativeText(message_text)
+        message_box.setStandardButtons(QMessageBox.Ok)
+        message_box.exec()
+
+    def show_error_popup(self, message_text):
+        """Show error popup with given message"""
+        parent_widget = QWidget() #To maintain object lifetim
+        message_box = QMessageBox(parent_widget)
+        message_box.setIcon(QMessageBox.Critical)
+        message_box.setWindowTitle("Error")
         message_box.setInformativeText(message_text)
         message_box.setStandardButtons(QMessageBox.Ok)
         message_box.exec()
