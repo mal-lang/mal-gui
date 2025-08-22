@@ -138,34 +138,27 @@ class EntrypointConnectionDialog(ConnectionDialog):
         self.setMinimumWidth(300)
 
         self.attack_step_list_widget = QListWidget()
-        attacker = attacker_item.attacker
 
         if asset_item.asset is not None:
             asset_type = self.lang_graph.assets[asset_item.asset.type]
 
             # Find asset attack steps already part of attacker entry points
-            entry_point_tuple = attacker.get_entry_point_tuple(
-                asset_item.asset
-            )
-
-            if entry_point_tuple is not None:
-                entry_point_attack_steps = entry_point_tuple[1]
-            else:
-                entry_point_attack_steps = []
+            already_attached_entrypoints = set(attacker_item.entry_points)
 
             for attack_step in asset_type.attack_steps.values():
                 if attack_step.type not in ['or', 'and']:
                     continue
-
-                if attack_step.name not in entry_point_attack_steps:
-                    print(attack_step.name)
+                attack_step_full_name = attack_step.asset.name + ":" + attack_step.name
+                if attack_step_full_name not in already_attached_entrypoints:
+                    print(attack_step_full_name)
                     item = QListWidgetItem(attack_step.name)
                     self.attack_step_list_widget.addItem(item)
 
             self.layout = QVBoxLayout()
 
             self.label = QLabel(
-                f"{attacker.name}:{asset_item.asset.name}")
+                f"{attacker_item.name}:{asset_item.asset.name}"
+            )
             self.layout.addWidget(self.label)
 
             self.filter_edit = QLineEdit()

@@ -72,13 +72,7 @@ class ItemBase(QGraphicsItem):
 
         self.horizontal_margin = 15  # Horizontal margin
         self.vertical_margin = 15  # Vertical margin
-
-        self.timer = QTimer()
         self.status_color =  QColor(0, 255, 0)
-        self.attacker_toggle_state = False
-        self.timer.timeout.connect(self.update_status_color)
-        #timer to trigger every 500ms (0.5 seconds)
-        self.timer.start(500)
 
         self.build()
 
@@ -304,20 +298,6 @@ class ItemBase(QGraphicsItem):
 
     def toggle_icon_visibility(self):
         self.icon_visible = not self.icon_visible
-        self.update()
-
-    def update_status_color(self):
-        if self.asset_type =='Attacker':
-            self.attacker_toggle_state = not self.attacker_toggle_state
-            if self.attacker_toggle_state:
-                self.status_color =  QColor(0, 255, 0) #Green
-            else:
-                self.status_color =  QColor(255, 0, 0) #Red
-
-        #Otherwise return Green for all assets
-        else:
-            self.status_color =  QColor(0, 255, 0)
-
         self.update()
 
     def load_image_with_quality(self, path, size):

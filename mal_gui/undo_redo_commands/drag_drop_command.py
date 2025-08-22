@@ -81,7 +81,7 @@ class DragDropAttackerCommand(QUndoCommand):
             )
         else:
             # Create attacker from scratch
-            self.item = self.scene.create_attacker(self.position)
+            self.item = self.scene.create_attacker(self.position, 'Attacker')
 
         #Update the Object Explorer when number of items change
         self.scene.main_window.update_childs_in_object_explorer_signal.emit()

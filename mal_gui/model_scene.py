@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pickle
 import base64
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 from PySide6.QtWidgets import (
     QGraphicsScene,
@@ -12,10 +12,10 @@ from PySide6.QtWidgets import (
     QDialog,
     QGraphicsRectItem
 )
-from PySide6.QtGui import QTransform,QAction,QUndoStack,QPen
-from PySide6.QtCore import QLineF, Qt, QPointF,QRectF
+from PySide6.QtGui import QTransform, QAction, QUndoStack, QPen
+from PySide6.QtCore import QLineF, Qt, QPointF, QRectF
 
-from maltoolbox.model import Model, AttackerAttachment
+from maltoolbox.model import Model
 
 from .connection_item import AssociationConnectionItem,EntrypointConnectionItem
 from .connection_dialog import AssociationConnectionDialog,EntrypointConnectionDialog
@@ -49,7 +49,8 @@ class ModelScene(QGraphicsScene):
             asset_factory: AssetFactory,
             lang_graph: LanguageGraph,
             model: Model,
-            main_window: MainWindow
+            main_window: MainWindow,
+            scenario_dict: Optional[dict[str, Any]] = None
         ):
         super().__init__()
 
@@ -62,9 +63,10 @@ class ModelScene(QGraphicsScene):
         # # instance model
         self.lang_graph = lang_graph
         self.model = model
+        self.scenario_dict = scenario_dict or {}
 
         self._asset_id_to_item = {}
-        self._attacker_id_to_item = {}
+        self.attacker_items: list[AttackerItem] = []
 
         self.copied_item = None
         self.cut_item_flag = False
@@ -87,6 +89,7 @@ class ModelScene(QGraphicsScene):
 
         #Container
         self.container_box = None
+        self.draw_model()
 
     def dragEnterEvent(self, event):
         """Overrides base method"""
@@ -349,7 +352,7 @@ class ModelScene(QGraphicsScene):
             self.show_scene_context_menu(event.screenPos(),event.scenePos())
 
     def assign_position_to_assets_without_positions(
-            self, assets_without_position,x_max,y_max
+            self, assets_without_position, x_max, y_max
         ):
         """Assign position to assets that don't have any"""
 
@@ -401,30 +404,39 @@ class ModelScene(QGraphicsScene):
             assets_without_position,x_max, y_max
         )
 
+        # Draw associations between assets
         for asset in self.model.assets.values():
             for fieldname, assets in asset.associated_assets.items():
                 for associated_asset in assets:
-
                     self.add_association_connection(
                         self._asset_id_to_item[asset.id],
                         self._asset_id_to_item[associated_asset.id],
                         fieldname
                     )
 
-        for attacker in self.model.attackers:
-            new_item = self.asset_factory.create_attacker_item(
-                attacker, QPointF(0,0)
-            )
-            self._attacker_id_to_item[attacker.id] = new_item
-            self.addItem(new_item)
+        # Draw attackers if they exists in scenario
+        agents = self.scenario_dict.get('agents', {})
+        for name, agent_info in agents.items():
 
-            for (entry_point_asset, entry_point_attack_steps) in attacker.entry_points:
-                for attack_step in entry_point_attack_steps:
-                    self.add_entrypoint_connection(
-                        attack_step,
-                        new_item,
-                        self._asset_id_to_item[entry_point_asset.id]
-                    )
+            if agent_info['type'] != 'attacker':
+                continue
+
+            attacker_item = self.create_attacker(
+                QPointF(0, 0), name, agent_info['entry_points']
+            )
+
+            for entrypoint_full_name in agent_info['entry_points']:
+                attack_step = entrypoint_full_name.split(":")[-1]
+                asset_name = (
+                    entrypoint_full_name.removesuffix(":" + attack_step)
+                )
+                asset = self.model.get_asset_by_name(asset_name)
+                assert asset, "Asset does not exist"
+                self.add_entrypoint_connection(
+                    attack_step,
+                    attacker_item,
+                    self._asset_id_to_item[asset.id]
+                )
 
 
 # based on connectionType use attacker or
@@ -509,23 +521,18 @@ class ModelScene(QGraphicsScene):
         self.removeItem(asset_item)
         del self._asset_id_to_item[asset_item.asset.id]
 
-    def create_attacker(self, position, name = None, attacker_id = None):
+    def create_attacker(self, position, name, entry_points=None):
         """Add new attacker to the model and scene"""
-        new_attacker_attachment = (
-            AttackerAttachment(id=attacker_id, name=name)
-        )
-        self.model.add_attacker(new_attacker_attachment)
         new_item = self.asset_factory.create_attacker_item(
-            new_attacker_attachment, position
+            name, position, entry_points
         )
+        self.attacker_items.append(new_item)
         self.addItem(new_item)
-        self._attacker_id_to_item[new_attacker_attachment.id] = new_item
         return new_item
 
     def remove_attacker(self, attacker_item: AttackerItem):
-        self.model.remove_attacker(attacker_item.attacker)
+        self.attacker_items.remove(attacker_item)
         self.removeItem(attacker_item)
-        del self._attacker_id_to_item[attacker_item.attacker.id]
 
     def cut_assets(self, selected_assets: list[AssetItem]):
         print("Cut Asset is called..")
@@ -644,7 +651,8 @@ class ModelScene(QGraphicsScene):
     def serialize_entrypoints(
             self,
             entrypoints: list[IConnectionItem],
-            selected_ids: set[int]
+            selected_asset_ids: set[int],
+            selected_attacker_names: set[str]
     ):
         """Serialize selected attacker entrypoints"""
 
@@ -656,17 +664,15 @@ class ModelScene(QGraphicsScene):
 
             # If entry points
             both_items_selected = (
-                conn.asset_item.asset.id\
-                    in selected_ids and
-                conn.attacker_item.attacker.id \
-                    in selected_ids
+                conn.asset_item.asset.id in selected_asset_ids and
+                conn.attacker_item.name in selected_attacker_names
             )
             if not both_items_selected:
                 continue
 
             serialized_entrypoints.append(
                 (
-                    conn.attacker_item.attacker.id,
+                    conn.attacker_item.name,
                     conn.asset_item.asset.id,
                     conn.attack_step_name
                 )
@@ -679,10 +685,9 @@ class ModelScene(QGraphicsScene):
         serialized_items = []
 
         # Set of selected item IDs
-        selected_attacker_ids = {
-            item.attacker.id for item
+        selected_attacker_names = {
+            item.name for item
             in items if isinstance(item, AttackerItem)
-            and item.attacker.id is not None
         }
 
         selected_asset_ids = {
@@ -691,14 +696,12 @@ class ModelScene(QGraphicsScene):
             and item.asset.id is not None
         }
 
-        selected_ids = selected_attacker_ids | selected_asset_ids
-
         for item in items:
             item_id = None
             if isinstance(item, AssetItem):
                 item_id = item.asset.id
             if isinstance(item, AttackerItem):
-                item_id = item.attacker.id
+                item_id = item.name
 
             item_details = {
                 'title': item.title,
@@ -709,7 +712,7 @@ class ModelScene(QGraphicsScene):
             if isinstance(item, AttackerItem):
                 item_details['type'] = "attacker"
                 item_details['entrypoints'] = self.serialize_entrypoints(
-                    item.connections, selected_ids
+                    item.connections, selected_asset_ids, selected_attacker_names
                 )
             elif isinstance(item, AssetItem):
                 item_details['type'] = "asset"
@@ -839,6 +842,7 @@ class ModelScene(QGraphicsScene):
                     self.main_window.update_properties_window(None)
                     self.main_window.update_asset_relations_window(None)
                 else:
+                    print("Asset selected")
                     self.main_window.update_properties_window(item)
                     self.main_window.update_attack_steps_window(None)
                     self.main_window.update_asset_relations_window(item)

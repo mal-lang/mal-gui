@@ -27,6 +27,7 @@ class DeleteCommand(QUndoCommand):
 
     def redo(self):
         """Perform delete"""
+        print("REDO delete")
         # Store the connections before removing the items
         for connection in self.connections:
             connection.remove_labels()
@@ -36,21 +37,23 @@ class DeleteCommand(QUndoCommand):
             self.scene.removeItem(item)
 
             if isinstance(item, AssetItem):
+                print("Deleting from model")
                 self.scene.model.remove_asset(item.asset)
             if isinstance(item, AttackerItem):
-                self.scene.model.remove_attacker(item.attacker)
+                print("Can not remove attacker")
 
         #Update the Object Explorer when number of items change
         self.scene.main_window.update_childs_in_object_explorer_signal.emit()
 
     def undo(self):
         """Undo delete"""
+        print("UNDO delete")
         # Add items back to the scene
         for item in self.items:
             if isinstance(item, AssetItem):
                 self.scene.recreate_asset(item, item.pos())
             if isinstance(item, AttackerItem):
-                self.scene.model.add_attacker(item.attacker)
+                print("Can not undo delete attacker")
 
         # Restore connections
         for connection in self.connections:
@@ -61,9 +64,9 @@ class DeleteCommand(QUndoCommand):
                     connection.attacker_item,
                     connection.asset_item
                 )
-                connection.attacker_item.attacker.add_entry_point(
-                    connection.asset_item.asset, connection.attack_step_name
-                )
+                # connection.attacker_item.attacker.add_entry_point(
+                #     connection.asset_item.asset, connection.attack_step_name
+                # )
 
 
             elif isinstance(connection, AssociationConnectionItem):
