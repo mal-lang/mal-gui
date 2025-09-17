@@ -1,5 +1,5 @@
 # mal-toolbox-gui
-A graphical user interface tool used to create MAL instance models.
+A graphical user interface tool used to create MAL instance models and scenarios (with attacker agents specified).
 
 ## Installation
 
