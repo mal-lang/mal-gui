@@ -29,15 +29,16 @@ class CreateEntrypointConnectionCommand(QUndoCommand):
             self.attacker_item,
             self.asset_item
         )
-        self.attacker_item.attacker.add_entry_point(
-            self.asset_item.asset, self.attack_step_name
+        self.attacker_item.entry_points.append(
+            self.asset_item.asset.name + ":" + self.attack_step_name
         )
 
     def undo(self):
         """Undo entrypoint creation"""
-        self.connection.remove_labels()
-        self.scene.removeItem(self.connection)
+        if self.connection:
+            self.connection.remove_labels()
+            self.scene.removeItem(self.connection)
 
-        self.attacker_item.attacker.remove_entry_point(
-            self.asset_item.asset, self.attack_step_name
+        self.attacker_item.entry_points.remove(
+            self.asset_item.asset.name + ":" + self.attack_step_name
         )
