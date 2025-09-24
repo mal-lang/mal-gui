@@ -29,5 +29,15 @@ When you have started the application you can drag and drop new assets from the 
 
 ### Create associations
 To create associations you use SHIFT + Left click to drack and drop between two assets. This lets you select what association they should have.
+Same goes for attacker entry points.
 
 ![Overview of the MAL gui](docs/overview.png "Info on how to do things in malgui.")
+
+### Remove an asset
+To remove an asset, click it and press delete key on your keyboard or the Delete button in the top bar.
+Alternatively, you can also right click and click 'Delete Asset'.
+
+### Remove an association
+To remove an association, right click the association name/label and select 'Delete connection'. Same goes for attacker entry points.
+
+![Delete association](docs/remove_assoc.gif "Info on how to delete an assocation.")

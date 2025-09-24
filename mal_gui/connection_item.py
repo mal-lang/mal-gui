@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QGraphicsLineItem,
     QGraphicsTextItem,
     QGraphicsRectItem,
+    QGraphicsItemGroup
 )
 
 if TYPE_CHECKING:
@@ -30,6 +31,9 @@ class IConnectionItem(QGraphicsLineItem):
         pass
 
     def restore_labels(self):
+        pass
+
+    def delete(self):
         pass
 
 
@@ -56,54 +60,32 @@ class AssociationConnectionItem(IConnectionItem):
         self.start_item.add_connection(self)
         self.end_item.add_connection(self)
 
-        if (
-            self.start_item.asset_type != 'Attacker'
-            and self.end_item.asset_type != 'Attacker'
-        ):
-            # Fetch the association and the fieldnames
-            lg_assoc: LanguageGraphAssociation = (
-                start_item.asset.lg_asset.associations[fieldname]
-            )
-            opposite_fieldname = lg_assoc.get_opposite_fieldname(fieldname)
+        # Fetch the association and the fieldnames
+        lg_assoc: LanguageGraphAssociation = (
+            start_item.asset.lg_asset.associations[fieldname]
+        )
+        opposite_fieldname = lg_assoc.get_opposite_fieldname(fieldname)
 
-            # Get left field name
-            self.left_fieldname = opposite_fieldname
-            # Get assoc name
-            self.assoc_name = lg_assoc.name
-            # Get right field name
-            self.right_fieldname = fieldname
+        # Get left field name
+        self.left_fieldname = opposite_fieldname
+        # Get assoc name
+        self.assoc_name = lg_assoc.name
+        # Get right field name
+        self.right_fieldname = fieldname
 
-            # Create labels with background color
-            self.label_assoc_left_field = \
-                self.create_label(self.left_fieldname)
+        # Create labels with background color
+        self.label_assoc_left_field = \
+            self.create_label(self.left_fieldname)
 
-            self.label_assoc_middle_name = \
-                self.create_label(self.assoc_name)
+        self.label_assoc_middle_name = \
+            self.create_label(self.assoc_name)
 
-            self.label_assoc_right_field = \
-                self.create_label(self.right_fieldname)
-
-        else:
-            # Need to check who is attacker and get
-            # the name of target and attackStep Name.
-            # Assumption is Both are not 'Attacker'.
-            if self.start_item.asset_type == 'Attacker':
-                attacker = self.start_item.attackerAttachment
-                target = str(self.end_item.asset_name)
-            else:
-                attacker = self.end_item.attackerAttachment
-                target = str(self.start_item.asset_name)
-
-            #selected_assoc_text is representing 'AttackStep' name
-            entry_point_text = target + ' -> ' + selected_assoc_text
-            attacker.entry_points.append(entry_point_text)
-            self.label_assoc_left_field = self.create_label("")
-            self.label_assoc_middle_name = self.create_label(selected_assoc_text)
-            self.label_assoc_right_field = self.create_label("")
+        self.label_assoc_right_field = \
+            self.create_label(self.right_fieldname)
 
         self.update_path()
 
-    def create_label(self, text):
+    def create_label(self, text) -> QGraphicsItemGroup:
         """Create the connection label"""
         label = QGraphicsTextItem(text)
         label.setDefaultTextColor(Qt.black)
@@ -117,6 +99,7 @@ class AssociationConnectionItem(IConnectionItem):
 
         # Create a group to hold the label and its background
         label_group = self._scene.createItemGroup([label_background, label])
+        label_group.setParentItem(self)
         label_group.setZValue(1)  # Ensure labels are above the line
 
         return label_group
@@ -221,8 +204,8 @@ class EntrypointConnectionItem(IConnectionItem):
         self.attack_step_name = attack_step_name
         self.label_entrypoint = self.create_label(attack_step_name)
 
-    def create_label(self, text):
-        # Create the label
+    def create_label(self, text) -> QGraphicsItemGroup:
+        """Create the entrypoint label"""
         label = QGraphicsTextItem(text)
         label.setDefaultTextColor(Qt.black)
 
@@ -234,6 +217,7 @@ class EntrypointConnectionItem(IConnectionItem):
 
         # Create a group to hold the label and its background
         label_group = self._scene.createItemGroup([label_background, label])
+        label_group.setParentItem(self)
         label_group.setZValue(1)  # Ensure labels are above the line
 
         return label_group
@@ -259,3 +243,9 @@ class EntrypointConnectionItem(IConnectionItem):
 
     def restore_labels(self):
         self._scene.addItem(self.label_entrypoint)
+
+    def delete(self):
+        """Delete connection item"""
+        self.remove_labels()
+        self._scene.removeItem(self)
+

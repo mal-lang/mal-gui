@@ -10,7 +10,8 @@ from PySide6.QtWidgets import (
     QApplication,
     QGraphicsLineItem,
     QDialog,
-    QGraphicsRectItem
+    QGraphicsRectItem,
+    QGraphicsTextItem
 )
 from PySide6.QtGui import QTransform, QAction, QUndoStack, QPen
 from PySide6.QtCore import QLineF, Qt, QPointF, QRectF
@@ -338,8 +339,18 @@ class ModelScene(QGraphicsScene):
                 self.show_asset_context_menu(event.screenPos())
 
             elif isinstance(item, (AssociationConnectionItem, EntrypointConnectionItem)):
+                # Right clicking an association or entry point line
                 print("Found Connection Item", item)
                 self.show_connection_item_context_menu(event.screenPos(), item)
+
+            elif isinstance(item, (QGraphicsTextItem)):
+                # Let user right click text box belonging to assoc/entrypoint item
+                print("Found text box", item)
+                item = item.parentItem()
+                item = item.parentItem() if item else None
+                if isinstance(item, (AssociationConnectionItem, EntrypointConnectionItem)):
+                    print("Found parent of text box, a connection item")
+                    self.show_connection_item_context_menu(event.screenPos(), item)
 
             elif isinstance(item, AssetsContainer):
                 print("Found Assets Container item",item)
@@ -451,10 +462,7 @@ class ModelScene(QGraphicsScene):
         """Add associations to the scene"""
 
         connection = AssociationConnectionItem(
-            fieldname,
-            start_item,
-            end_item,
-            self
+            fieldname, start_item, end_item, self
         )
 
         self.addItem(connection)
@@ -513,13 +521,26 @@ class ModelScene(QGraphicsScene):
             new_asset, position
         )
         self.addItem(new_asset_item)
+        print("Added asset item", new_asset_item, "to scene", self)
         self._asset_id_to_item[new_asset.id] = new_asset_item
         return new_asset_item
 
     def remove_asset(self, asset_item: AssetItem):
+        print("Removing asset item", asset_item, "from scene", self)
         self.model.remove_asset(asset_item.asset)
         self.removeItem(asset_item)
         del self._asset_id_to_item[asset_item.asset.id]
+
+    def remove_association(self, association_item: AssociationConnectionItem):
+        """Remove all traces of an association"""
+        # Remove in model
+        association_item.start_item.asset.remove_associated_assets(
+            association_item.right_fieldname, {association_item.end_item.asset}
+        )
+        # Remove connection from asset item
+        association_item.start_item.remove_connection(association_item)
+        # Remove item from scene
+        association_item.delete()
 
     def create_attacker(self, position, name, entry_points=None):
         """Add new attacker to the model and scene"""
@@ -533,6 +554,18 @@ class ModelScene(QGraphicsScene):
     def remove_attacker(self, attacker_item: AttackerItem):
         self.attacker_items.remove(attacker_item)
         self.removeItem(attacker_item)
+
+    def remove_entrypoint(self, entrypoint_item: EntrypointConnectionItem):
+        """Remove attacker entrypoint and entrypoint item"""
+
+        full_name = (
+            entrypoint_item.asset_item.asset.name + ":"
+            + entrypoint_item.attack_step_name
+        )
+
+        print("Remove entrypoint", entrypoint_item.attack_step_name)
+        entrypoint_item.attacker_item.entry_points.remove(full_name)
+        entrypoint_item.delete()
 
     def cut_assets(self, selected_assets: list[AssetItem]):
         print("Cut Asset is called..")
@@ -771,13 +804,12 @@ class ModelScene(QGraphicsScene):
     def show_connection_item_context_menu(self, position, connection_item):
         print("AssociationConnectionItem Context menu activated")
         menu = QMenu()
-        print("Deleting connection")
         connection_item_delete_action = QAction("Delete Connection", self)
 
         menu.addAction(connection_item_delete_action)
         action = menu.exec(position)
 
-        #In future we may want more option. So "if" condition.
+        # In future we may want more option. So "if" condition.
         if action == connection_item_delete_action:
             self.delete_connection(connection_item)
 

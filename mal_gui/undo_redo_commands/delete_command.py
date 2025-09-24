@@ -34,13 +34,11 @@ class DeleteCommand(QUndoCommand):
             self.scene.removeItem(connection)
 
         for item in self.items:
-            self.scene.removeItem(item)
-
             if isinstance(item, AssetItem):
                 print("Deleting from model")
-                self.scene.model.remove_asset(item.asset)
+                self.scene.remove_asset(item)
             if isinstance(item, AttackerItem):
-                print("Can not remove attacker")
+                self.scene.remove_attacker(item)
 
         #Update the Object Explorer when number of items change
         self.scene.main_window.update_childs_in_object_explorer_signal.emit()

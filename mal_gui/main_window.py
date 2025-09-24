@@ -91,6 +91,7 @@ class MainWindow(QMainWindow):
 
     def clear_window(self):
         """Clear everything from the window"""
+        print("CLEAR WINDOW")
 
         # Clear the scene (where the model is shown)
         self.scene.clear()
@@ -110,7 +111,7 @@ class MainWindow(QMainWindow):
             scenario_dict: Optional[dict[str, Any]] = None
         ):
         """Load scene with given language and model"""
-
+        print("LOADING SCENE!")
         self.clear_window()
         self.lang_file_path = lang_file_path
         lang_graph = LanguageGraph.load_from_file(lang_file_path)
@@ -252,6 +253,8 @@ class MainWindow(QMainWindow):
         #AssetRelations Tab with ListView
         self.asset_relations_docker_window = AssetRelationsWindow()
         dock_asset_relations = QDockWidget("Asset Relations",self)
+        dock_asset_relations.setFeatures(QDockWidget.DockWidgetFloatable | 
+                                         QDockWidget.DockWidgetMovable)
         dock_asset_relations.setWidget(self.asset_relations_docker_window)
         self.addDockWidget(Qt.LeftDockWidgetArea, dock_asset_relations)
         dock_widgets.append(dock_asset_relations)
