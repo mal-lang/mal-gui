@@ -17,6 +17,7 @@ class AssetItem(ItemBase):
             image_path: str,
             parent=None,
         ):
+        print("Create Asset item with parent", parent)
 
         self.asset = asset
         self.asset_type = asset.lg_asset
