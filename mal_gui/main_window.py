@@ -28,7 +28,7 @@ from maltoolbox.language import LanguageGraph
 from maltoolbox.model import Model, ModelAsset
 from maltoolbox.exceptions import ModelException
 from malsim.scenario import (
-    create_scenario_dict, save_scenario_dict, load_scenario_dict
+    create_scenario_dict, save_scenario_dict, load_scenario_dict, Scenario
 )
 
 from .file_utils import image_path
@@ -663,10 +663,12 @@ class MainWindow(QMainWindow):
             return
         else:
             self.add_positions_to_model()
-            scenario_dict = create_scenario_dict(
-                self.lang_file_path, self.scene.model, agents, settings
+            scenario = Scenario(
+                lang_file=self.lang_file_path,
+                model=self.scene.model,
+                agents=agents
             )
-            save_scenario_dict(scenario_dict, file_path)
+            scenario.save_to_file(file_path)
 
     def quitApp(self):
         self.app.quit()
