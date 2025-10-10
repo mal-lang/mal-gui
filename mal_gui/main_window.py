@@ -24,6 +24,7 @@ from PySide6.QtCore import Qt, QMimeData, QByteArray, QSize, Signal, QPointF
 
 from qt_material import apply_stylesheet,list_themes
 
+from maltoolbox import __version__ as maltoolbox_version
 from maltoolbox.language import LanguageGraph
 from maltoolbox.model import Model, ModelAsset
 from maltoolbox.exceptions import ModelException
@@ -419,10 +420,12 @@ class MainWindow(QMainWindow):
         self.file_menu_open_action = self.file_menu.addAction("Load Model/Scenario")
         self.file_menu_save_as_action = self.file_menu.addAction("Export Model..")
         self.file_menu_export_scenario_action = self.file_menu.addAction("Export Scenario..")
+        self.file_menu_save_as_drawio = self.file_menu.addAction("Export draw.io file..")
         self.file_menu_quit_action = self.file_menu.addAction("Quit")
         self.file_menu_open_action.triggered.connect(self.load_model_or_scenario)
         self.file_menu_save_as_action.triggered.connect(self.save_as_model)
         self.file_menu_export_scenario_action.triggered.connect(self.save_as_scenario)
+        self.file_menu_save_as_drawio.triggered.connect(self.save_as_drawio)
         self.file_menu_quit_action.triggered.connect(self.quitApp)
 
         self.edit_menu = menu_bar.addMenu("Edit")
@@ -636,6 +639,47 @@ class MainWindow(QMainWindow):
             self.model_file_name = file_path
             try:
                 self.scene.model.save_to_file(file_path)
+            except Exception as e:
+                print(f"Error saving model: {e}")
+                self.show_error_popup("Error saving model: " + str(e))
+                self.model_file_name = None
+                return
+
+    def save_as_drawio(self):
+        """ `Save as`. Let user select target file and save .drawio file."""
+        def versiontuple(v):
+            return tuple(map(int, (v.split("."))))
+
+        if versiontuple(maltoolbox_version) <= versiontuple("1.0.6"):
+            self.show_error_popup(
+                "Your version of maltoolbox needs to be > 1.0.6 for this feature"
+            )
+            return
+
+        # For backwards compatibility we import here instead
+        from maltoolbox.visualization import create_drawio_file_with_images
+
+        file_dialog = QFileDialog()
+        file_dialog.setAcceptMode(QFileDialog.AcceptSave)
+        file_dialog.setDefaultSuffix("drawio")
+        default_name = self.scene.model.name + ".drawio"
+        file_path, _ = file_dialog.getSaveFileName(
+            None,
+            "Save As Draw.io file",
+            default_name,
+            "DrawIO Files (*.drawio);;All Files (*)"
+        )
+
+        if not file_path:
+            self.show_error_popup("No valid path detected for saving")
+            return
+        else:
+            self.scene.model.name = Path(file_path).stem
+            self.model_file_name = file_path
+            try:
+                create_drawio_file_with_images(
+                    self.scene.model, output_filename=file_path
+                )
             except Exception as e:
                 print(f"Error saving model: {e}")
                 self.show_error_popup("Error saving model: " + str(e))
