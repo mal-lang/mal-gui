@@ -6,9 +6,10 @@ authors = [
     {name="Akash Sinha", email="aksinha@kth.se"},
     {name="Andrei Buhaiu", email="buhaiu@kth.se"},
     {name="Joakim Loxdal", email="loxdal@kth.se"},
+    {name="Sandor Berglund", email="sandorb@kth.se"},
 ]
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.8,<=3.13"
 dependencies = [
     "networkx==3.2.1",
     "numpy==1.26.4",
