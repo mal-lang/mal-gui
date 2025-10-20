@@ -17,6 +17,7 @@ from PySide6.QtGui import QTransform, QAction, QUndoStack, QPen
 from PySide6.QtCore import QLineF, Qt, QPointF, QRectF
 
 from maltoolbox.model import Model
+from malsim.scenario import AgentType
 
 from .connection_item import AssociationConnectionItem,EntrypointConnectionItem
 from .connection_dialog import AssociationConnectionDialog,EntrypointConnectionDialog
@@ -41,8 +42,8 @@ if TYPE_CHECKING:
     from object_explorer.asset_factory import AssetFactory
     from .main_window import MainWindow
     from maltoolbox.language import LanguageGraph
-    from maltoolbox.model import ModelAsset
     from .connection_item import IConnectionItem
+    from malsim.scenario import Scenario
 
 class ModelScene(QGraphicsScene):
     def __init__(
@@ -51,7 +52,7 @@ class ModelScene(QGraphicsScene):
             lang_graph: LanguageGraph,
             model: Model,
             main_window: MainWindow,
-            scenario_dict: Optional[dict[str, Any]] = None
+            scenario: Optional[Scenario] = None
         ):
         super().__init__()
 
@@ -64,7 +65,7 @@ class ModelScene(QGraphicsScene):
         # # instance model
         self.lang_graph = lang_graph
         self.model = model
-        self.scenario_dict = scenario_dict or {}
+        self.scenario = scenario
 
         self._asset_id_to_item = {}
         self.attacker_items: list[AttackerItem] = []
@@ -426,28 +427,29 @@ class ModelScene(QGraphicsScene):
                     )
 
         # Draw attackers if they exists in scenario
-        agents = self.scenario_dict.get('agents', {})
-        for name, agent_info in agents.items():
+        if self.scenario:
+            agents = self.scenario._agents_dict
+            for name, agent_info in agents.items():
 
-            if agent_info['type'] != 'attacker':
-                continue
+                if agent_info['type'] != 'attacker':
+                    continue
 
-            attacker_item = self.create_attacker(
-                QPointF(0, 0), name, agent_info['entry_points']
-            )
-
-            for entrypoint_full_name in agent_info['entry_points']:
-                attack_step = entrypoint_full_name.split(":")[-1]
-                asset_name = (
-                    entrypoint_full_name.removesuffix(":" + attack_step)
+                attacker_item = self.create_attacker(
+                    QPointF(0, 0), name, agent_info['entry_points']
                 )
-                asset = self.model.get_asset_by_name(asset_name)
-                assert asset, "Asset does not exist"
-                self.add_entrypoint_connection(
-                    attack_step,
-                    attacker_item,
-                    self._asset_id_to_item[asset.id]
-                )
+
+                for entrypoint_full_name in agent_info['entry_points']:
+                    attack_step = entrypoint_full_name.split(":")[-1]
+                    asset_name = (
+                        entrypoint_full_name.removesuffix(":" + attack_step)
+                    )
+                    asset = self.model.get_asset_by_name(asset_name)
+                    assert asset, "Asset does not exist"
+                    self.add_entrypoint_connection(
+                        attack_step,
+                        attacker_item,
+                        self._asset_id_to_item[asset.id]
+                    )
 
 
 # based on connectionType use attacker or

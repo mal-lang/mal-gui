@@ -28,9 +28,7 @@ from maltoolbox import __version__ as maltoolbox_version
 from maltoolbox.language import LanguageGraph
 from maltoolbox.model import Model, ModelAsset
 from maltoolbox.exceptions import ModelException
-from malsim.scenario import (
-    create_scenario_dict, save_scenario_dict, load_scenario_dict, Scenario
-)
+from malsim.scenario import Scenario
 
 from .file_utils import image_path
 from .model_scene import ModelScene
@@ -109,7 +107,7 @@ class MainWindow(QMainWindow):
             self,
             lang_file_path: str,
             model: Model,
-            scenario_dict: Optional[dict[str, Any]] = None
+            scenario: Optional[Scenario] = None
         ):
         """Load scene with given language and model"""
         print("LOADING SCENE!")
@@ -118,7 +116,7 @@ class MainWindow(QMainWindow):
         lang_graph = LanguageGraph.load_from_file(lang_file_path)
         self.asset_factory = self.create_asset_factory(lang_graph)
         self.scene = self.create_scene(
-            lang_graph, self.asset_factory, model, scenario_dict
+            lang_graph, self.asset_factory, model, scenario
         )
 
         self.create_menu_bar()
@@ -171,12 +169,12 @@ class MainWindow(QMainWindow):
             lang_graph: LanguageGraph,
             asset_factory: AssetFactory,
             model: Model,
-            scenario_dict: Optional[dict[str, Any]] = None
+            scenario: Optional[Scenario] = None
         ):
         """Create and initialize scene from language"""
 
         model_scene = ModelScene(
-            asset_factory, lang_graph, model, self, scenario_dict
+            asset_factory, lang_graph, model, self, scenario
         )
 
         return model_scene
@@ -572,25 +570,9 @@ class MainWindow(QMainWindow):
 
     def load_scenario(self, file_path: str):
         """Load model and agents from a scenario"""
-        scenario_dict = load_scenario_dict(file_path)
-        lang_path = scenario_dict['lang_file']
-        lang_graph = (
-            LanguageGraph.load_from_file(lang_path)
-        )
-        if 'model_file' in scenario_dict:
-            model = Model.load_from_file(
-                scenario_dict['model_file'], lang_graph
-            )
-        elif 'model' in scenario_dict:
-            model = Model._from_dict(
-                scenario_dict['model'], lang_graph
-            )
-        else:
-            raise KeyError("Can not find model or model file in scenario")
-
+        scenario = Scenario.load_from_file(file_path)
         # Reload in case language was changed
-        self.load_scene(lang_path, model, scenario_dict)
-        self.scene.scenario_dict = scenario_dict
+        self.load_scene(scenario._lang_file, scenario.model, scenario)
         self.scenario_file_name = file_path
 
     def load_model(self, file_path: str):
@@ -692,25 +674,49 @@ class MainWindow(QMainWindow):
         file_dialog.setAcceptMode(QFileDialog.AcceptSave)
         file_dialog.setDefaultSuffix("yaml")
         file_path, _ = file_dialog.getSaveFileName()
-        agents: dict[str, dict[str, Any]] = {}
 
+        agents = self.scene.scenario._agents_dict if self.scene.scenario else {}
+        # Add attacker agents from scene
         for attacker_item in self.scene.attacker_items:
-            agents[attacker_item.name] = {
-                'type': 'attacker',
-                'entry_points': attacker_item.entry_points
-            }
-
-        settings = {}
+            # Only thing that can be changed by GUI for agents is entry points
+            if attacker_item.name in agents:
+                # If agent already exists in scenario, update entrypoints
+                agents[attacker_item.name]['entry_points'] = attacker_item.entry_points
+            else:
+                # Otherwise, add new agent to scenario agents dict
+                agents[attacker_item.name] = {
+                    'entry_points': attacker_item.entry_points,
+                    'type': 'attacker',
+                    'agent_class': 'RandomAgent'
+                }
 
         if not file_path:
             print("No valid path detected for saving")
             return
+
         else:
             self.add_positions_to_model()
+            # Create a new scenario based on settings in gui and save it to file
+            # TODO: this is a hacky solution, instead malsim scenario should be easier to work with
             scenario = Scenario(
                 lang_file=self.lang_file_path,
                 model=self.scene.model,
-                agents=agents
+                agents=agents,
+                rewards=(
+                    self.scene.scenario._rewards_dict if self.scene.scenario else None
+                ),
+                false_negative_rates=(
+                    self.scene.scenario._fnr_dict if self.scene.scenario else None
+                ),
+                false_positive_rates=(
+                    self.scene.scenario._fpr_dict if self.scene.scenario else None
+                ),
+                is_actionable=(
+                    self.scene.scenario._is_actionable_dict if self.scene.scenario else None
+                ),
+                is_observable=(
+                    self.scene.scenario._is_observable_dict if self.scene.scenario else None
+                )
             )
             scenario.save_to_file(file_path)
 
