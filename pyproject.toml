@@ -1,6 +1,6 @@
 [project]
 name = "mal-gui"
-version = "1.0.2"
+version = "1.0.3"
 description = "A graphical user interface tool used to create MAL instance models."
 authors = [
     {name="Akash Sinha", email="aksinha@kth.se"},
