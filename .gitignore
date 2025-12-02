@@ -168,3 +168,7 @@ vscode/
 
 #Mac Specific
 .DS_Store
+
+uv.lock
+
+logs/**
