@@ -298,7 +298,7 @@ class MainWindow(QMainWindow):
             for attack_step_name, value in asset.defenses.items():
                 # Add defenses that are set in model
                 attack_step = asset.lg_asset.attack_steps[attack_step_name]
-                if attack_step.ttc:
+                if attack_step.ttc and len(attack_step.ttc['arguments']) > 0:
                     default_value = attack_step.ttc['arguments'][0]
                 else:
                     default_value = 0.0
