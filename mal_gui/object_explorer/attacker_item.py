@@ -1,5 +1,6 @@
 from PySide6.QtGui import QColor
 from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QGraphicsItem
 
 from .item_base import ItemBase
 
@@ -43,12 +44,26 @@ class AttackerItem(ItemBase):
         }
 
     def update_status_color(self):
+        # Check if the item is still in a scene before updating
+        if self.scene() is None:
+            # Item has been removed from scene, stop the timer
+            self.timer.stop()
+            return
+        
         self.attacker_toggle_state = not self.attacker_toggle_state
         if self.attacker_toggle_state:
             self.status_color =  QColor(0, 255, 0) # Green
         else:
             self.status_color =  QColor(255, 0, 0) # Red
         self.update()
+
+    def itemChange(self, change, value):
+        """Override to stop timer when item is removed from scene"""
+        if change == QGraphicsItem.ItemSceneChange:
+            # If the item is being removed from the scene (value is None)
+            if value is None and self.timer.isActive():
+                self.timer.stop()
+        return super().itemChange(change, value)
 
     def serialize(self):
         return {
