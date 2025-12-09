@@ -33,6 +33,14 @@ class DeleteCommand(QUndoCommand):
             connection.remove_labels()
             self.scene.removeItem(connection)
 
+            if isinstance(connection, EntrypointConnectionItem):
+                step_full_name = connection.asset_item.asset.name + ":" + connection.attack_step_name
+                try:
+                    connection.attacker_item.entry_points.remove(step_full_name)
+                except ValueError:
+                    print(f"Entrypoint {step_full_name} not found in attacker {connection.attacker_item.name}")
+
+
         for item in self.items:
             if isinstance(item, AssetItem):
                 print("Deleting from model")
@@ -62,10 +70,10 @@ class DeleteCommand(QUndoCommand):
                     connection.attacker_item,
                     connection.asset_item
                 )
-                # connection.attacker_item.attacker.add_entry_point(
-                #     connection.asset_item.asset, connection.attack_step_name
-                # )
-
+                step_full_name = (
+                    connection.asset_item.asset.name + ":" + connection.attack_step_name
+                )
+                connection.attacker_item.entry_points.append(step_full_name)
 
             elif isinstance(connection, AssociationConnectionItem):
                 self.scene.add_association_connection(
