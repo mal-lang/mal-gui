@@ -31,6 +31,7 @@ from maltoolbox.exceptions import ModelException
 from malsim.config.agent_settings import AttackerSettings, AgentType
 from malsim.scenario import Scenario
 from malsim.policies import RandomAgent
+import yaml
 
 from .file_utils import image_path
 from .model_scene import ModelScene
@@ -573,10 +574,11 @@ class MainWindow(QMainWindow):
     def load_scenario(self, file_path: str):
         """Load model and agents from a scenario"""
         scenario = Scenario.load_from_file(file_path)
+        yaml.safe_load(file_path)
         # Reload in case language was changed
         self.load_scene(scenario._lang_file, scenario.model, scenario)
         self.scenario_file_name = file_path
-        self._lang_file = scenario._lang_file
+        self._lang_file = yaml.safe_load(open(file_path, "r"))["lang_file"]
 
     def load_model(self, file_path: str):
         """Load a MAL model from a file"""
