@@ -576,6 +576,7 @@ class MainWindow(QMainWindow):
         # Reload in case language was changed
         self.load_scene(scenario._lang_file, scenario.model, scenario)
         self.scenario_file_name = file_path
+        self._lang_file = scenario._lang_file
 
     def load_model(self, file_path: str):
         """Load a MAL model from a file"""
@@ -730,7 +731,7 @@ class MainWindow(QMainWindow):
                     )
 
             scenario = Scenario(
-                lang_file=self.lang_file_path,
+                lang_file=self._lang_file if hasattr(self, '_lang_file') else self.lang_file_path,
                 model=self.scene.model,
                 agent_settings=agents,
                 rewards=rewards,
