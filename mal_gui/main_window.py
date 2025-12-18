@@ -733,7 +733,7 @@ class MainWindow(QMainWindow):
                     )
 
             scenario = Scenario(
-                lang_file=self._lang_file if hasattr(self, '_lang_file') else self.lang_file_path,
+                lang_file=self.lang_file_path,
                 model=self.scene.model,
                 agent_settings=agents,
                 rewards=rewards,
@@ -743,6 +743,10 @@ class MainWindow(QMainWindow):
                 observable_steps=is_observable,
             )
             scenario.save_to_file(file_path)
+            if hasattr(self, '_lang_file'):
+                scenario_dict = yaml.safe_load(open(file_path, "r"))
+                scenario_dict["lang_file"] = self._lang_file
+                yaml.safe_dump(scenario_dict, open(file_path, "w"))
 
     def quitApp(self):
         self.app.quit()
