@@ -17,7 +17,7 @@ from PySide6.QtGui import QTransform, QAction, QUndoStack, QPen
 from PySide6.QtCore import QLineF, Qt, QPointF, QRectF
 
 from maltoolbox.model import Model
-from malsim.scenario import AgentType
+from malsim.config.agent_settings import AttackerSettings
 
 from .connection_item import AssociationConnectionItem,EntrypointConnectionItem
 from .connection_dialog import AssociationConnectionDialog,EntrypointConnectionDialog
@@ -428,28 +428,29 @@ class ModelScene(QGraphicsScene):
 
         # Draw attackers if they exists in scenario
         if self.scenario:
-            agents = self.scenario._agents_dict
+            agents = self.scenario.agent_settings
             for name, agent_info in agents.items():
 
-                if agent_info['type'] != 'attacker':
-                    continue
-
-                attacker_item = self.create_attacker(
-                    QPointF(0, 0), name, agent_info['entry_points']
-                )
-
-                for entrypoint_full_name in agent_info['entry_points']:
-                    attack_step = entrypoint_full_name.split(":")[-1]
-                    asset_name = (
-                        entrypoint_full_name.removesuffix(":" + attack_step)
+                if isinstance(agent_info, AttackerSettings):
+                    attacker_item = self.create_attacker(
+                        QPointF(0, 0), name, agent_info.entry_points
                     )
-                    asset = self.model.get_asset_by_name(asset_name)
-                    assert asset, "Asset does not exist"
-                    self.add_entrypoint_connection(
-                        attack_step,
-                        attacker_item,
-                        self._asset_id_to_item[asset.id]
-                    )
+
+                    for entry_point in agent_info.entry_points:
+                        entrypoint_full_name = (
+                            entry_point if isinstance(entry_point, str) else entry_point.full_name
+                        )
+                        attack_step = entrypoint_full_name.split(":")[-1]
+                        asset_name = (
+                            entrypoint_full_name.removesuffix(":" + attack_step)
+                        )
+                        asset = self.model.get_asset_by_name(asset_name)
+                        assert asset, "Asset does not exist"
+                        self.add_entrypoint_connection(
+                            attack_step,
+                            attacker_item,
+                            self._asset_id_to_item[asset.id]
+                        )
 
 
 # based on connectionType use attacker or

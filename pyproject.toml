@@ -17,8 +17,8 @@ dependencies = [
     "PySide6_Addons~=6.8.1",
     "PySide6_Essentials~=6.8.1",
     "shiboken6~=6.8.1",
-    "mal-toolbox==1.*",
-    "mal-simulator==1.*",
+    "mal-toolbox==2.*",
+    "mal-simulator==2.*",
     "qt-material==2.14",
     "appdirs==1.4.4"
 ]
