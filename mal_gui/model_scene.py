@@ -17,7 +17,7 @@ from PySide6.QtGui import QTransform, QAction, QUndoStack, QPen
 from PySide6.QtCore import QLineF, Qt, QPointF, QRectF
 
 from maltoolbox.model import Model
-from malsim.scenario import AttackerSettings
+from malsim.config.agent_settings import AttackerSettings
 
 from .connection_item import AssociationConnectionItem,EntrypointConnectionItem
 from .connection_dialog import AssociationConnectionDialog,EntrypointConnectionDialog

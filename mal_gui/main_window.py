@@ -28,7 +28,9 @@ from maltoolbox import __version__ as maltoolbox_version
 from maltoolbox.language import LanguageGraph
 from maltoolbox.model import Model, ModelAsset
 from maltoolbox.exceptions import ModelException
-from malsim.scenario import Scenario, AttackerSettings, AgentType, RandomAgent
+from malsim.config.agent_settings import AttackerSettings, AgentType
+from malsim.scenario import Scenario
+from malsim.policies import RandomAgent
 
 from .file_utils import image_path
 from .model_scene import ModelScene
