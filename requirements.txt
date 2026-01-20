@@ -9,3 +9,7 @@ mal-toolbox>=0.1.8
 
 # For config file path
 appdirs==1.4.4
+
+# testing
+pytest
+pytest-qt
