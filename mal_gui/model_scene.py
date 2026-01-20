@@ -47,25 +47,23 @@ if TYPE_CHECKING:
 
 class ModelScene(QGraphicsScene):
     def __init__(
-            self,
-            asset_factory: AssetFactory,
-            lang_graph: LanguageGraph,
-            model: Model,
-            main_window: MainWindow,
-            scenario: Optional[Scenario] = None
-        ):
+        self,
+        asset_factory: AssetFactory,
+        lang_graph: LanguageGraph,
+        model: Model,
+        main_window: MainWindow,
+        scenario: Optional[Scenario] = None,
+    ):
         super().__init__()
 
         self.asset_factory = asset_factory
-        self.undo_stack = QUndoStack(self)
-        self.clipboard = QApplication.clipboard()
-        self.main_window = main_window
-
-        # # Assign the MAL language graph, language classes factory, and
-        # # instance model
         self.lang_graph = lang_graph
         self.model = model
+        self.main_window = main_window
         self.scenario = scenario
+
+        self.undo_stack = QUndoStack(self)
+        self.clipboard = QApplication.clipboard()
 
         self._asset_id_to_item = {}
         self.attacker_items: list[AttackerItem] = []
@@ -73,258 +71,293 @@ class ModelScene(QGraphicsScene):
         self.copied_item = None
         self.cut_item_flag = False
 
+        # Connection drawing
         self.line_item = None
         self.start_item = None
         self.end_item = None
 
+        # Dragging / moving
         self.moving_item = None
         self.start_pos = None
-
-        self.show_association_checkbox_status = False
-
-        #For multiple select and handle
-        self.selection_rect = None
-        self.origin = QPointF()
-        self.is_dragging_item = False
         self.dragged_items = []
         self.initial_positions = {}
 
-        #Container
+        # Selection rectangle
+        self.selection_rect = None
+        self.origin = QPointF()
+
+        # Misc
+        self.show_association_checkbox_status = False
         self.container_box = None
+
         self.draw_model()
 
+    # ------------------------------------------------------------------
+    # Drag & drop
+    # ------------------------------------------------------------------
+
     def dragEnterEvent(self, event):
-        """Overrides base method"""
-        if event.mimeData().hasFormat('text/plain'):
+        if event.mimeData().hasFormat("text/plain"):
             event.acceptProposedAction()
 
     def dragMoveEvent(self, event):
-        """Overrides base method"""
-        if event.mimeData().hasFormat('text/plain'):
+        if event.mimeData().hasFormat("text/plain"):
             event.acceptProposedAction()
 
     def dropEvent(self, event):
-        """Overrides base method"""
-        print("dropEvent")
-        if event.mimeData().hasFormat('text/plain'):
-            print("format is text/plain")
-            item_type = event.mimeData().text()
-            print("dropped item type = " + item_type)
-            pos = event.scenePos()
+        if not event.mimeData().hasFormat("text/plain"):
+            return
 
-            if item_type == "Attacker":
-                # Perform drag and drop of Asset
-                self.undo_stack.push(
-                    DragDropAttackerCommand(self, pos)
-                )
-            else:
-                # Perform drag and drop of Asset
-                self.undo_stack.push(
-                    DragDropAssetCommand(self, item_type, pos)
-                )
-            event.acceptProposedAction()
+        item_type = event.mimeData().text()
+        pos = event.scenePos()
+
+        if item_type == "Attacker":
+            self.undo_stack.push(DragDropAttackerCommand(self, pos))
+        else:
+            self.undo_stack.push(DragDropAssetCommand(self, item_type, pos))
+
+        event.acceptProposedAction()
+
+    # ------------------------------------------------------------------
+    # Click helpers
+    # ------------------------------------------------------------------
+
+    def _clicked_item(self, event):
+        item = self.itemAt(event.scenePos(), QTransform())
+        return item.parentItem() if isinstance(item, EditableTextItem) else item
+
+    def _is_shift(self):
+        return QApplication.keyboardModifiers() == Qt.ShiftModifier
+
+    def _is_left(self, event):
+        return event.button() == Qt.LeftButton
+
+    def _is_right(self, event):
+        return event.button() == Qt.RightButton
+
+    # ------------------------------------------------------------------
+    # Mouse press
+    # ------------------------------------------------------------------
 
     def mousePressEvent(self, event):
-        """Overrides base method"""
-        print(event.button())
-        clicked_item = self.itemAt(event.scenePos(), QTransform())
+        clicked_item = self._clicked_item(event)
 
-        if (
-            event.button() == Qt.LeftButton
-            and QApplication.keyboardModifiers() == Qt.ShiftModifier
-        ):
-            print("Scene Mouse Press event Shift+Left Mouse Button")
-
-            if isinstance(clicked_item, EditableTextItem):
-                # If clicked on EditableTextItem,
-                # get its parent which is ItemBase1
-                clicked_item = clicked_item.parentItem()
-
+        if self._is_left(event) and self._is_shift():
             if isinstance(clicked_item, ItemBase):
-                self.start_item = clicked_item
-                self.line_item = QGraphicsLineItem()
-                self.line_item.setLine(
-                    QLineF(event.scenePos(), event.scenePos())
-                )
-                self.addItem(self.line_item)
-                print(f"Start item set: {self.start_item}")
-                # Without return Item was moving with mouse.
+                self._start_connection(event, clicked_item)
                 return
 
-        elif event.button() == Qt.LeftButton:
-            print("Item left click", clicked_item)
+        elif self._is_left(event):
+            self._handle_left_press(event, clicked_item)
 
-            if isinstance(clicked_item, EditableTextItem):
-                clicked_item = clicked_item.parentItem()
-
-            if isinstance(
-                clicked_item, (ItemBase, AssetsContainer)
-            ):
-
-                if clicked_item.isSelected():
-                    print("Item is already selected")
-                    self.moving_item = clicked_item
-                    self.start_pos = clicked_item.pos()
-                    self.dragged_items = [i for i in self.selectedItems() if isinstance(i, (AssetItem, AttackerItem))]
-                    self.initial_positions = {i: i.pos() for i in self.dragged_items}
-                else:
-                    print("Item is not selected")
-                    self.clearSelection()
-                    clicked_item.setSelected(True)
-                    self.moving_item = clicked_item
-                    self.start_pos = clicked_item.pos()
-                    self.dragged_items = [clicked_item]
-                    self.initial_positions = {clicked_item: clicked_item.pos()}
-            else:
-                self.clearSelection()  # Deselect all items if clicking outside any item
-                self.origin = event.scenePos()
-                self.selection_rect = QGraphicsRectItem(QRectF(self.origin, self.origin))
-                self.selection_rect.setPen(QPen(Qt.blue, 2, Qt.DashLine))
-                self.addItem(self.selection_rect)
-
-        elif event.button() == Qt.RightButton:
-            print("Item right click", clicked_item)
-
-            if clicked_item and isinstance(clicked_item, ItemBase):
-                if not clicked_item.isSelected():
-                    self.clearSelection()
-                    clicked_item.setSelected(True)
+        elif self._is_right(event):
+            self._handle_right_press(clicked_item)
 
         self.show_items_details()
         super().mousePressEvent(event)
 
+    def _start_connection(self, event, item):
+        self.start_item = item
+        self.line_item = QGraphicsLineItem(
+            QLineF(event.scenePos(), event.scenePos())
+        )
+        self.addItem(self.line_item)
+
+    def _handle_left_press(self, event, item):
+        if isinstance(item, (ItemBase, AssetsContainer)):
+            self._select_or_prepare_move(item)
+        else:
+            self._start_selection_rect(event)
+
+    def _handle_right_press(self, item):
+        if isinstance(item, ItemBase) and not item.isSelected():
+            self.clearSelection()
+            item.setSelected(True)
+
+    def _select_or_prepare_move(self, item):
+        if item.isSelected():
+            self._prepare_move(item, multi=True)
+        else:
+            self.clearSelection()
+            item.setSelected(True)
+            self._prepare_move(item, multi=False)
+
+    def _prepare_move(self, item, multi):
+        self.moving_item = item
+        self.start_pos = item.pos()
+
+        if multi:
+            self.dragged_items = [
+                i for i in self.selectedItems()
+                if isinstance(i, (AssetItem, AttackerItem))
+            ]
+        else:
+            self.dragged_items = [item]
+
+        self.initial_positions = {i: i.pos() for i in self.dragged_items}
+
+    def _start_selection_rect(self, event):
+        self.clearSelection()
+        self.origin = event.scenePos()
+        self.selection_rect = QGraphicsRectItem(QRectF(self.origin, self.origin))
+        self.selection_rect.setPen(QPen(Qt.blue, 2, Qt.DashLine))
+        self.addItem(self.selection_rect)
+
+    # ------------------------------------------------------------------
+    # Mouse move
+    # ------------------------------------------------------------------
+
     def mouseMoveEvent(self, event):
-        """Overrides base method"""
-        if self.line_item and QApplication.keyboardModifiers() == Qt.ShiftModifier:
-            print("Scene Mouse Move event")
-            self.line_item.setLine(QLineF(self.line_item.line().p1(), event.scenePos()))
-        elif self.moving_item and not QApplication.keyboardModifiers() == Qt.ShiftModifier:
-            new_pos = event.scenePos()
-            delta = new_pos - self.start_pos
-            for item in self.dragged_items:
-                item.setPos(self.initial_positions[item] + delta)
+        if self.line_item and self._is_shift():
+            self._update_connection_line(event)
+        elif self.moving_item and not self._is_shift():
+            self._update_dragged_items(event)
         elif self.selection_rect and not self.moving_item:
-            rect = QRectF(self.origin, event.scenePos()).normalized()
-            self.selection_rect.setRect(rect)
+            self._update_selection_rect(event)
 
         super().mouseMoveEvent(event)
 
+    def _update_connection_line(self, event):
+        self.line_item.setLine(
+            QLineF(self.line_item.line().p1(), event.scenePos())
+        )
+
+    def _update_dragged_items(self, event):
+        delta = event.scenePos() - self.start_pos
+        for item in self.dragged_items:
+            item.setPos(self.initial_positions[item] + delta)
+
+    def _update_selection_rect(self, event):
+        rect = QRectF(self.origin, event.scenePos()).normalized()
+        self.selection_rect.setRect(rect)
+
+    # ------------------------------------------------------------------
+    # Mouse release
+    # ------------------------------------------------------------------
+
     def mouseReleaseEvent(self, event):
-        """Overrides base method"""
-        released_item = self.itemAt(event.scenePos(), QTransform())
+        released_item = self._clicked_item(event)
 
-        if (
-            event.button() == Qt.LeftButton
-            and self.line_item
-            and QApplication.keyboardModifiers() == Qt.ShiftModifier
-        ):
+        if self._is_left(event) and self.line_item and self._is_shift():
+            self._finalize_connection(released_item)
 
-            print("Entered Release with Shift")
-
-            # Temporarily remove the line item to avoid interference
-            self.removeItem(self.line_item)
-            print(f"item is: {released_item}")
-
-            if isinstance(released_item, EditableTextItem):
-                # If clicked on EditableTextItem, get its parent which is AssetItem
-                released_item = released_item.parentItem()
-                if isinstance(released_item, (AssetItem, AttackerItem)):
-                    self.end_item = released_item
-                else:
-                    self.end_item = None
-            else:
-                self.end_item = released_item
-
-
-            # Create and show the connection dialog
-            if self.end_item:
-
-                if (
-                    isinstance(self.start_item, AssetItem)
-                    and isinstance(self.end_item, AssetItem)
-                ):
-                    # Asset to asset connection
-
-                    dialog = AssociationConnectionDialog(
-                        self.start_item,
-                        self.end_item,
-                        self.lang_graph,
-                        self.model
-                    )
-
-                    if dialog.exec() == QDialog.Accepted:
-                        selected_item = dialog.association_list_widget.currentItem()
-                        if selected_item:
-                            print("Selected Association Text is: "+ selected_item.text())
-                            # connection = AssociationConnectionItem(selected_item.text(),self.start_item, self.end_item,self)
-                            # self.addItem(connection)
-                            command = CreateAssociationConnectionCommand(
-                                self, self.start_item, self.end_item, dialog.field_name
-                            )
-                            self.undo_stack.push(command)
-                        else:
-                            print("No end item found")
-                            self.removeItem(self.line_item)
-                else:
-
-                    if (
-                        isinstance(self.start_item, AttackerItem)
-                        and isinstance(self.end_item, AttackerItem)
-                    ):
-                        raise TypeError("Start and end item can not both be type 'Attacker'")
-
-                    attacker_item = (
-                        self.start_item
-                        if isinstance(self.start_item, AttackerItem)
-                        else self.end_item
-                    )
-                    asset_item = (
-                        self.end_item
-                        if isinstance(self.start_item, AttackerItem)
-                        else self.start_item
-                    )
-
-                    dialog = EntrypointConnectionDialog(
-                        attacker_item, asset_item, self.lang_graph, self.model
-                    )
-                    if dialog.exec() == QDialog.Accepted:
-                        selected_item = dialog.attack_step_list_widget.currentItem()
-                        if selected_item:
-                            print("Selected Entrypoint Text is: "+ selected_item.text())
-                            command = CreateEntrypointConnectionCommand(
-                                self, attacker_item, asset_item, selected_item.text(),
-                            )
-                            self.undo_stack.push(command)
-                        else:
-                            print("No end item found")
-                            self.removeItem(self.line_item)
-            else:
-                print("No end item found")
-                self.removeItem(self.line_item)
-
-            self.line_item = None
-            self.start_item = None
-            self.end_item = None
-
-        elif event.button() == Qt.LeftButton:
-
-            if self.selection_rect:
-                items = self.items(self.selection_rect.rect(), Qt.IntersectsItemShape)
-                for item in items:
-                    if isinstance(item, (AssetItem, AttackerItem)):
-                        item.setSelected(True)
-                self.removeItem(self.selection_rect)
-                self.selection_rect = None
-
-            elif self.moving_item and not QApplication.keyboardModifiers() == Qt.ShiftModifier:
-                end_positions = {item: item.pos() for item in self.dragged_items}
-                if self.initial_positions != end_positions:
-                    command = MoveCommand(self, self.dragged_items, self.initial_positions, end_positions)
-                    self.undo_stack.push(command)
-            self.moving_item = None
+        elif self._is_left(event):
+            self._finalize_drag_or_selection()
 
         self.show_items_details()
         super().mouseReleaseEvent(event)
+
+    def _finalize_drag_or_selection(self):
+        if self.selection_rect:
+            self._finalize_selection_rect()
+        elif self.moving_item:
+            self._finalize_move()
+
+        self._reset_drag_state()
+
+    def _finalize_selection_rect(self):
+        items = self.items(
+            self.selection_rect.rect(), Qt.IntersectsItemShape
+        )
+        for item in items:
+            if isinstance(item, (AssetItem, AttackerItem)):
+                item.setSelected(True)
+
+        self.removeItem(self.selection_rect)
+        self.selection_rect = None
+
+    def _finalize_move(self):
+        end_positions = {i: i.pos() for i in self.dragged_items}
+        if end_positions != self.initial_positions:
+            self.undo_stack.push(
+                MoveCommand(
+                    self,
+                    self.dragged_items,
+                    self.initial_positions,
+                    end_positions,
+                )
+            )
+
+    def _reset_drag_state(self):
+        self.moving_item = None
+        self.start_pos = None
+        self.dragged_items = []
+        self.initial_positions = {}
+
+    # ------------------------------------------------------------------
+    # Connection finalization
+    # ------------------------------------------------------------------
+
+    def _finalize_connection(self, released_item):
+        self.removeItem(self.line_item)
+
+        self.end_item = (
+            released_item if isinstance(released_item, ItemBase) else None
+        )
+
+        if self.end_item:
+            if isinstance(self.start_item, AssetItem) and isinstance(
+                self.end_item, AssetItem
+            ):
+                self._create_asset_connection()
+            else:
+                self._create_attacker_connection()
+
+        self._reset_connection_state()
+
+    def _create_asset_connection(self):
+        dialog = AssociationConnectionDialog(
+            self.start_item,
+            self.end_item,
+            self.lang_graph,
+            self.model,
+        )
+        if dialog.exec() == QDialog.Accepted:
+            self.undo_stack.push(
+                CreateAssociationConnectionCommand(
+                    self,
+                    self.start_item,
+                    self.end_item,
+                    dialog.field_name,
+                )
+            )
+
+    def _create_attacker_connection(self):
+        if isinstance(self.start_item, AttackerItem) and isinstance(
+            self.end_item, AttackerItem
+        ):
+            raise TypeError(
+                "Start and end item can not both be type 'Attacker'"
+            )
+
+        attacker = (
+            self.start_item
+            if isinstance(self.start_item, AttackerItem)
+            else self.end_item
+        )
+        asset = (
+            self.end_item if attacker is self.start_item else self.start_item
+        )
+
+        dialog = EntrypointConnectionDialog(
+            attacker, asset, self.lang_graph, self.model
+        )
+        if dialog.exec() == QDialog.Accepted:
+            selected = dialog.attack_step_list_widget.currentItem()
+            if selected:
+                self.undo_stack.push(
+                    CreateEntrypointConnectionCommand(
+                        self,
+                        attacker,
+                        asset,
+                        selected.text(),
+                    )
+                )
+
+    def _reset_connection_state(self):
+        self.line_item = None
+        self.start_item = None
+        self.end_item = None
 
     def contextMenuEvent(self, event):
         """Overrides base method"""
