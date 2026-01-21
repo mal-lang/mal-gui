@@ -9,10 +9,6 @@ from mal_gui.main_window import MainWindow
 from mal_gui.model_scene import ModelScene
 from mal_gui.object_explorer import AssetItem, AttackerItem
 
-@pytest.fixture(scope="module")
-def app():
-    return QApplication([])
-
 @pytest.fixture
 def model_scene(app):
     lang_file_path = 'tests/testdata/org.mal-lang.coreLang-1.0.0.mar'
