@@ -180,72 +180,93 @@ class AssociationConnectionItem(IConnectionItem):
         self._scene.removeItem(self)
 
 
-class EntrypointConnectionItem(IConnectionItem):
+class AttackerConnectionBase(IConnectionItem):
+    """For both entrypoints and goals"""
+    COLOR = QColor(0, 0, 0)
+    LINE_STYLE = Qt.SolidLine
+    ICON_TEXT = "?"
+
     def __init__(
         self,
         attack_step_name,
         attacker_item: AttackerItem,
         asset_item: AssetItem,
         scene: ModelScene,
-        parent = None
+        parent=None
     ):
         super().__init__(parent)
 
-        pen = QPen(QColor(255, 0, 0), 2)  # Red color with 2-pixel thickness
+        pen = QPen(self.COLOR, 2)
+        pen.setStyle(self.LINE_STYLE)
         self.setPen(pen)
-        self.setZValue(0)  # Ensure connection items are behind rect items
+        self.setZValue(0)
 
         self.attacker_item = attacker_item
         self.asset_item = asset_item
         self._scene = scene
+        self.attack_step_name = attack_step_name
 
         self.attacker_item.add_connection(self)
         self.asset_item.add_connection(self)
-        self.attack_step_name = attack_step_name
-        self.label_entrypoint = self.create_label(attack_step_name)
+
+        self.label = self.create_label(attack_step_name)
+
+        self.update_path()
+
 
     def create_label(self, text) -> QGraphicsItemGroup:
-        """Create the entrypoint label"""
-        label = QGraphicsTextItem(text)
+        label = QGraphicsTextItem(self.ICON_TEXT + " " + text)
         label.setDefaultTextColor(Qt.black)
 
-        # Create a white background for the label
         rect = label.boundingRect()
-        label_background = QGraphicsRectItem(rect)
-        label_background.setBrush(QBrush(QColor(255, 255, 255, 200)))
-        label_background.setPen(Qt.NoPen)
+        bg = QGraphicsRectItem(rect)
+        bg.setBrush(QBrush(QColor(255, 255, 255, 200)))
+        bg.setPen(Qt.NoPen)
 
-        # Create a group to hold the label and its background
-        label_group = self._scene.createItemGroup([label_background, label])
-        label_group.setParentItem(self)
-        label_group.setZValue(1)  # Ensure labels are above the line
+        group = self._scene.createItemGroup([bg, label])
+        group.setParentItem(self)
+        group.setZValue(1)
+        return group
 
-        return label_group
+    def create_icon(self, text) -> QGraphicsTextItem:
+        icon = QGraphicsTextItem(text)
+        icon.setDefaultTextColor(self.COLOR)
+        icon.setParentItem(self)
+        icon.setZValue(1)
+        return icon
 
     def update_path(self):
-        """Draw straight line from start to end items
-        and updates label positions."""
-
         start_pos = self.attacker_item.sceneBoundingRect().center()
         end_pos = self.asset_item.sceneBoundingRect().center()
         self.setLine(QLineF(start_pos, end_pos))
 
-        label_entrypoints_pos = self.line().pointAt(0.5)
-        self.label_entrypoint.setPos(
-            label_entrypoints_pos - QPointF(
-                self.label_entrypoint.boundingRect().width() / 2,
-                self.label_entrypoint.boundingRect().height() / 2
+        # label in the middle
+        mid = self.line().pointAt(0.5)
+        self.label.setPos(
+            mid - QPointF(
+                self.label.boundingRect().width() / 2,
+                self.label.boundingRect().height() / 2
             )
         )
 
     def remove_labels(self):
-        self._scene.removeItem(self.label_entrypoint)
+        self._scene.removeItem(self.label)
 
     def restore_labels(self):
-        self._scene.addItem(self.label_entrypoint)
+        self._scene.addItem(self.label)
 
     def delete(self):
-        """Delete connection item"""
         self.remove_labels()
         self._scene.removeItem(self)
 
+
+class EntrypointConnectionItem(AttackerConnectionBase):
+    COLOR = QColor(255, 0, 0)
+    LINE_STYLE = Qt.SolidLine
+    ICON_TEXT = "💣"
+
+
+class GoalConnectionItem(AttackerConnectionBase):
+    COLOR = QColor(0, 180, 0)
+    LINE_STYLE = Qt.DashLine
+    ICON_TEXT = "🏁"
