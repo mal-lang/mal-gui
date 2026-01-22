@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
 from ..object_explorer import AssetItem, AttackerItem
-from ..connection_item import AssociationConnectionItem, EntrypointConnectionItem
+from ..connection_item import AssociationConnectionItem, EntrypointConnectionItem, GoalConnectionItem
 
 if TYPE_CHECKING:
     from ..model_scene import ModelScene
@@ -40,6 +40,13 @@ class DeleteCommand(QUndoCommand):
                 except ValueError:
                     print(f"Entrypoint {step_full_name} not found in attacker {connection.attacker_item.name}")
 
+            if isinstance(connection, GoalConnectionItem):
+                step_full_name = connection.asset_item.asset.name + ":" + connection.attack_step_name
+                try:
+                    connection.attacker_item.goals.remove(step_full_name)
+                except ValueError:
+                    print(f"Entrypoint {step_full_name} not found in attacker {connection.attacker_item.name}")
+
 
         for item in self.items:
             if isinstance(item, AssetItem):
@@ -74,6 +81,17 @@ class DeleteCommand(QUndoCommand):
                     connection.asset_item.asset.name + ":" + connection.attack_step_name
                 )
                 connection.attacker_item.entry_points.append(step_full_name)
+
+            if isinstance(connection, GoalConnectionItem):
+                self.scene.add_goal_connection(
+                    connection.attack_step_name,
+                    connection.attacker_item,
+                    connection.asset_item
+                )
+                step_full_name = (
+                    connection.asset_item.asset.name + ":" + connection.attack_step_name
+                )
+                connection.attacker_item.goals.append(step_full_name)
 
             elif isinstance(connection, AssociationConnectionItem):
                 self.scene.add_association_connection(

@@ -19,8 +19,10 @@ from PySide6.QtCore import QLineF, Qt, QPointF, QRectF
 from maltoolbox.model import Model
 from malsim.config.agent_settings import AttackerSettings
 
-from .connection_item import AssociationConnectionItem,EntrypointConnectionItem
-from .connection_dialog import AssociationConnectionDialog,EntrypointConnectionDialog
+from mal_gui.undo_redo_commands.create_goal_connection_command import CreateGoalConnectionCommand
+
+from .connection_item import AssociationConnectionItem, AttackerConnectionBase,EntrypointConnectionItem, GoalConnectionItem
+from .connection_dialog import AssociationConnectionDialog,EntrypointConnectionDialog, GoalConnectionDialog
 from .object_explorer import AssetItem, AttackerItem, EditableTextItem, ItemBase
 from .assets_container import AssetsContainer, AssetsContainerRectangleBox
 
@@ -322,6 +324,23 @@ class ModelScene(QGraphicsScene):
                 )
             )
 
+    def _ask_attacker_connection_type(self, scene_pos):
+        """
+        Ask user whether to create an entrypoint or goal connection.
+        Returns: "entrypoint", "goal", or None
+        """
+        menu = QMenu()
+        entry_action = menu.addAction("Create Entrypoint")
+        goal_action = menu.addAction("Create Goal")
+
+        chosen_action = menu.exec(scene_pos)
+
+        if chosen_action == entry_action:
+            return "entrypoint"
+        if chosen_action == goal_action:
+            return "goal"
+        return None
+
     def _create_attacker_connection(self):
         if isinstance(self.start_item, AttackerItem) and isinstance(
             self.end_item, AttackerItem
@@ -339,20 +358,61 @@ class ModelScene(QGraphicsScene):
             self.end_item if attacker is self.start_item else self.start_item
         )
 
+        # Ask user what type of attacker connection they want
+        scene_pos = self.views()[0].mapToGlobal(
+            self.views()[0].mapFromScene(asset.scenePos())
+        )
+
+        connection_type = self._ask_attacker_connection_type(scene_pos)
+        if connection_type == "entrypoint":
+            self._create_entrypoint_connection(attacker, asset)
+        elif connection_type == "goal":
+            self._create_goal_connection(attacker, asset)
+        else:
+            # User cancelled menu
+            return
+
+    def _create_entrypoint_connection(self, attacker, asset):
         dialog = EntrypointConnectionDialog(
             attacker, asset, self.lang_graph, self.model
         )
-        if dialog.exec() == QDialog.Accepted:
-            selected = dialog.attack_step_list_widget.currentItem()
-            if selected:
-                self.undo_stack.push(
-                    CreateEntrypointConnectionCommand(
-                        self,
-                        attacker,
-                        asset,
-                        selected.text(),
-                    )
-                )
+
+        if dialog.exec() != QDialog.Accepted:
+            return
+
+        selected = dialog.attack_step_list_widget.currentItem()
+        if not selected:
+            return
+
+        self.undo_stack.push(
+            CreateEntrypointConnectionCommand(
+                self,
+                attacker,
+                asset,
+                selected.text(),
+            )
+        )
+
+    def _create_goal_connection(self, attacker, asset):
+        dialog = GoalConnectionDialog(
+            attacker, asset, self.lang_graph, self.model
+        )
+
+        if dialog.exec() != QDialog.Accepted:
+            return
+
+        selected = dialog.attack_step_list_widget.currentItem()
+        if not selected:
+            return
+
+        self.undo_stack.push(
+            CreateGoalConnectionCommand(
+                self,
+                attacker,
+                asset,
+                selected.text(),
+            )
+        )
 
     def _reset_connection_state(self):
         self.line_item = None
@@ -372,7 +432,7 @@ class ModelScene(QGraphicsScene):
                 # self.show_asset_context_menu(event.screenPos(), item)
                 self.show_asset_context_menu(event.screenPos())
 
-            elif isinstance(item, (AssociationConnectionItem, EntrypointConnectionItem)):
+            elif isinstance(item, (AssociationConnectionItem, AttackerConnectionBase)):
                 # Right clicking an association or entry point line
                 print("Found Connection Item", item)
                 self.show_connection_item_context_menu(event.screenPos(), item)
@@ -382,7 +442,7 @@ class ModelScene(QGraphicsScene):
                 print("Found text box", item)
                 item = item.parentItem()
                 item = item.parentItem() if item else None
-                if isinstance(item, (AssociationConnectionItem, EntrypointConnectionItem)):
+                if isinstance(item, (AssociationConnectionItem, AttackerConnectionBase)):
                     print("Found parent of text box, a connection item")
                     self.show_connection_item_context_menu(event.screenPos(), item)
 
@@ -485,6 +545,22 @@ class ModelScene(QGraphicsScene):
                             self._asset_id_to_item[asset.id]
                         )
 
+                    for goal in agent_info.goals:
+                        goal_full_name = (
+                            goal if isinstance(goal, str) else goal.full_name
+                        )
+                        attack_step = goal_full_name.split(":")[-1]
+                        asset_name = (
+                            goal_full_name.removesuffix(":" + attack_step)
+                        )
+                        asset = self.model.get_asset_by_name(asset_name)
+                        assert asset, "Asset does not exist"
+                        self.add_goal_connection(
+                            attack_step,
+                            attacker_item,
+                            self._asset_id_to_item[asset.id]
+                        )
+
 
 # based on connectionType use attacker or
 # add_association_connection
@@ -525,6 +601,27 @@ class ModelScene(QGraphicsScene):
         connection.restore_labels()
         connection.update_path()
         return connection
+
+    def add_goal_connection(
+        self,
+        attack_step_name,
+        attacker_item,
+        asset_item
+    ):
+        """Add attacker goals to the scene"""
+
+        connection = GoalConnectionItem(
+            attack_step_name,
+            attacker_item,
+            asset_item,
+            self
+        )
+
+        self.addItem(connection)
+        connection.restore_labels()
+        connection.update_path()
+        return connection
+
 
     def recreate_asset(
             self,
@@ -602,6 +699,22 @@ class ModelScene(QGraphicsScene):
         print("Remove entrypoint", entrypoint_item.attack_step_name)
         entrypoint_item.attacker_item.entry_points.remove(full_name)
         entrypoint_item.delete()
+
+    def remove_goal(self, goal_item: GoalConnectionItem):
+        """Remove attacker goal and goal item"""
+
+        full_name = (
+            goal_item.asset_item.asset.name + ":"
+            + goal_item.attack_step_name
+        )
+
+        print("Remove goal", goal_item.attack_step_name)
+        try:
+            goal_item.attacker_item.goals.remove(full_name)
+        except:
+            print("goal connection already deleted")
+
+        goal_item.delete()
 
     def cut_assets(self, selected_assets: list[AssetItem]):
         print("Cut Asset is called..")

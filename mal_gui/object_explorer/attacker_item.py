@@ -13,10 +13,12 @@ class AttackerItem(ItemBase):
             name: str,
             image_path: str,
             entry_points=None,
+            goals=None,
             parent=None,
         ):
 
         self.entry_points: list[str] = entry_points or []
+        self.goals: list[str] = goals or []
         self.name = name
         self.attacker_toggle_state = False
 

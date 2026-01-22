@@ -547,6 +547,7 @@ class MainWindow(QMainWindow):
 
         if not file_path:
             print("No valid path detected for loading")
+            self.show_error_popup("No valid path detected for loading")
             return
 
         open_project_user_confirmation = QMessageBox.question(
@@ -574,7 +575,6 @@ class MainWindow(QMainWindow):
     def load_scenario(self, file_path: str):
         """Load model and agents from a scenario"""
         scenario = Scenario.load_from_file(file_path)
-        yaml.safe_load(file_path)
         # Reload in case language was changed
         self.load_scene(scenario._lang_file, scenario.model, scenario)
         self.scenario_file_name = file_path
@@ -680,6 +680,11 @@ class MainWindow(QMainWindow):
         file_dialog.setDefaultSuffix("yaml")
         file_path, _ = file_dialog.getSaveFileName()
 
+        if not file_path:
+            print("No valid path detected for saving")
+            self.show_error_popup("No valid path detected for saving")
+            return
+
         agents = self.scene.scenario.agent_settings if self.scene.scenario else {}
         # Add attacker agents from scene
         for attacker_item in self.scene.attacker_items:
@@ -688,17 +693,16 @@ class MainWindow(QMainWindow):
             if isinstance(agent, AttackerSettings):
                 # If agent already exists in scenario, update entrypoints
                 agent.entry_points = set(attacker_item.entry_points)
+                agent.goals = set(attacker_item.goals)
             else:
                 # Otherwise, add new agent to scenario agents dict
                 agents[attacker_item.name] = AttackerSettings(
                     name=attacker_item.name,
                     entry_points=set(attacker_item.entry_points),
+                    goals=set(attacker_item.goals),
                     type=AgentType.ATTACKER,
                     policy=RandomAgent,
                 )
-        if not file_path:
-            print("No valid path detected for saving")
-            return
 
         else:
             self.add_positions_to_model()

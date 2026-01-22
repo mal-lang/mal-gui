@@ -150,6 +150,79 @@ class EntrypointConnectionDialog(ConnectionDialog):
                     continue
                 attack_step_full_name = attack_step.asset.name + ":" + attack_step.name
                 if attack_step_full_name not in already_attached_entrypoints:
+                    item = QListWidgetItem(attack_step.name)
+                    self.attack_step_list_widget.addItem(item)
+
+            self.layout = QVBoxLayout()
+
+            self.label = QLabel(
+                f"{attacker_item.name}:{asset_item.asset.name}"
+            )
+            self.layout.addWidget(self.label)
+
+            self.filter_edit = QLineEdit()
+            self.filter_edit.setPlaceholderText("Type to filter...")
+            self.filter_edit.textChanged.connect(self.filter_items)
+            self.layout.addWidget(self.filter_edit)
+            self.layout.addWidget(self.attack_step_list_widget)
+
+        button_layout = QHBoxLayout()
+        self.ok_button = QPushButton("OK")
+        self.ok_button.clicked.connect(self.ok_button_clicked)
+        self.ok_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        button_layout.addWidget(self.ok_button)
+
+        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button.clicked.connect(self.reject)
+        self.cancel_button.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Fixed)
+        button_layout.addWidget(self.cancel_button)
+
+        self.layout.addLayout(button_layout)
+        self.setLayout(self.layout)
+
+        # Select the first item by default
+        self.attack_step_list_widget.setCurrentRow(0)
+
+    def filter_items(self, text):
+        for i in range(self.attack_step_list_widget.count()):
+            item = self.attack_step_list_widget.item(i)
+            item.setHidden(text.lower() not in item.text().lower())
+
+    def ok_button_clicked(self):
+        self.accept()
+
+
+class GoalConnectionDialog(ConnectionDialog):
+    def __init__(
+            self,
+            attacker_item: AttackerItem,
+            asset_item: AssetItem,
+            lang_graph: LanguageGraph,
+            model,
+            parent=None
+        ):
+        super().__init__(parent)
+
+        self.lang_graph = lang_graph
+        self.model = model
+
+        self.setWindowTitle("Select Attacker Goal")
+        self.setMinimumWidth(300)
+
+        self.attack_step_list_widget = QListWidget()
+
+        if asset_item.asset is not None:
+            asset_type = self.lang_graph.assets[asset_item.asset.type]
+
+            # Find asset attack steps already part of attacker goals
+            already_attached_goals = set(attacker_item.goals)
+
+            for attack_step in asset_type.attack_steps.values():
+                if attack_step.type not in ['or', 'and']:
+                    continue
+                attack_step_full_name = attack_step.asset.name + ":" + attack_step.name
+                if attack_step_full_name not in already_attached_goals:
                     print(attack_step_full_name)
                     item = QListWidgetItem(attack_step.name)
                     self.attack_step_list_widget.addItem(item)
