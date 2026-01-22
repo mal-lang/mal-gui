@@ -575,7 +575,6 @@ class MainWindow(QMainWindow):
     def load_scenario(self, file_path: str):
         """Load model and agents from a scenario"""
         scenario = Scenario.load_from_file(file_path)
-        yaml.safe_load(file_path)
         # Reload in case language was changed
         self.load_scene(scenario._lang_file, scenario.model, scenario)
         self.scenario_file_name = file_path
