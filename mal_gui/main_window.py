@@ -736,21 +736,26 @@ class MainWindow(QMainWindow):
                         self.scene.scenario.is_observable.to_dict()
                     )
 
-            scenario = Scenario(
-                lang_file=self.lang_file_path,
-                model=self.scene.model,
-                agent_settings=agents,
-                rewards=rewards,
-                false_negative_rates=false_negative_rates,
-                false_positive_rates=false_positive_rates,
-                actionable_steps=is_actionable,
-                observable_steps=is_observable,
-            )
-            scenario.save_to_file(file_path)
-            if hasattr(self, '_lang_file'):
-                scenario_dict = yaml.safe_load(open(file_path, "r"))
-                scenario_dict["lang_file"] = self._lang_file
-                yaml.safe_dump(scenario_dict, open(file_path, "w"))
+            try:
+                scenario = Scenario(
+                    lang_file=self.lang_file_path,
+                    model=self.scene.model,
+                    agent_settings=agents,
+                    rewards=rewards,
+                    false_negative_rates=false_negative_rates,
+                    false_positive_rates=false_positive_rates,
+                    actionable_steps=is_actionable,
+                    observable_steps=is_observable,
+                )
+                scenario.save_to_file(file_path)
+
+                if hasattr(self, '_lang_file'):
+                    scenario_dict = yaml.safe_load(open(file_path, "r"))
+                    scenario_dict["lang_file"] = self._lang_file
+                    yaml.safe_dump(scenario_dict, open(file_path, "w"))
+            except Exception as e:
+                self.show_error_popup("Could not save scenario: " + str(e))
+
 
     def quitApp(self):
         self.app.quit()
