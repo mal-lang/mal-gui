@@ -709,7 +709,11 @@ class ModelScene(QGraphicsScene):
         )
 
         print("Remove goal", goal_item.attack_step_name)
-        goal_item.attacker_item.goals.remove(full_name)
+        try:
+            goal_item.attacker_item.goals.remove(full_name)
+        except:
+            print("goal connection already deleted")
+
         goal_item.delete()
 
     def cut_assets(self, selected_assets: list[AssetItem]):

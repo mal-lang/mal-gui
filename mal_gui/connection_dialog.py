@@ -150,7 +150,6 @@ class EntrypointConnectionDialog(ConnectionDialog):
                     continue
                 attack_step_full_name = attack_step.asset.name + ":" + attack_step.name
                 if attack_step_full_name not in already_attached_entrypoints:
-                    print(attack_step_full_name)
                     item = QListWidgetItem(attack_step.name)
                     self.attack_step_list_widget.addItem(item)
 
