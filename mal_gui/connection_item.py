@@ -267,6 +267,6 @@ class EntrypointConnectionItem(AttackerConnectionBase):
 
 
 class GoalConnectionItem(AttackerConnectionBase):
-    COLOR = QColor(0, 180, 0)
+    COLOR = QColor(255, 0, 0)
     LINE_STYLE = Qt.DashLine
     ICON_TEXT = "🏁"
