@@ -1,9 +1,20 @@
+from typing import Any
 from PySide6.QtGui import QColor
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QGraphicsItem
 from shiboken6 import isValid
 
+from malsim import policies
+
 from .item_base import ItemBase
+
+ALLOWED_POLICIES = [
+    policies.PassiveAgent,
+    policies.BreadthFirstAttacker,
+    policies.DepthFirstAttacker,
+    policies.RandomAgent,
+    policies.TTCSoftMinAttacker,
+]
 
 class AttackerItem(ItemBase):
     # Starting Sequence Id with normal start at 100 (randomly taken)
@@ -18,6 +29,7 @@ class AttackerItem(ItemBase):
         ):
 
         self.entry_points: list[str] = entry_points or []
+        self.policy = policies.PassiveAgent
         self.goals: list[str] = goals or []
         self.name = name
         self.attacker_toggle_state = False
@@ -40,12 +52,28 @@ class AttackerItem(ItemBase):
         super().update_name()
         self.name = self.title
 
-    def get_item_attribute_values(self):
+    def get_item_attribute_values(self) -> dict[str, dict]:
         return {
-            "Attacker name": self.name,
-            "Entry points": self.entry_points,
-            "Goals": self.goals
+            "name": {"value": self.name, "editable": False},
+            "entry_points": {"value": self.entry_points, "editable": False},
+            "goals": {"value": self.goals, "editable": False},
+            "policy": {
+                "value": self.policy.__name__,
+                "editable": True,
+                "type": "enum",
+                "choices": [cls.__name__ for cls in ALLOWED_POLICIES],
+            },
         }
+
+    def set_item_attribute_value(self, attr_name, new_value_str) -> None:
+        if attr_name == "policy":
+            mapping = {cls.__name__: cls for cls in ALLOWED_POLICIES}
+            if new_value_str not in mapping:
+                raise ValueError(f"Invalid policy: {new_value_str}")
+            print("Change policy to ", new_value_str)
+            self.policy = mapping[new_value_str]
+            return
+        raise AttributeError(f"{attr_name} is not editable")
 
     def update_status_color(self):
         # Object may already be deleted on C++ side

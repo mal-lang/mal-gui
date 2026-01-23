@@ -30,7 +30,6 @@ from maltoolbox.model import Model, ModelAsset
 from maltoolbox.exceptions import ModelException
 from malsim.config.agent_settings import AttackerSettings, AgentType
 from malsim.scenario import Scenario
-from malsim.policies import RandomAgent
 import yaml
 
 from mal_gui.object_explorer.attacker_item import AttackerItem
@@ -692,6 +691,7 @@ class MainWindow(QMainWindow):
                 # If agent already exists in scenario, update entrypoints
                 agent.entry_points = set(attacker_item.entry_points)
                 agent.goals = set(attacker_item.goals)
+                agent.policy = attacker_item.policy
             else:
                 # Otherwise, add new agent to scenario agents dict
                 agents[attacker_item.name] = AttackerSettings(
@@ -699,7 +699,7 @@ class MainWindow(QMainWindow):
                     entry_points=set(attacker_item.entry_points),
                     goals=set(attacker_item.goals),
                     type=AgentType.ATTACKER,
-                    policy=RandomAgent,
+                    policy=attacker_item.policy,
                 )
 
         else:
