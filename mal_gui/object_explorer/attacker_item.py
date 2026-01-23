@@ -44,6 +44,7 @@ class AttackerItem(ItemBase):
         return {
             "Attacker name": self.name,
             "Entry points": self.entry_points,
+            "Goals": self.goals
         }
 
     def update_status_color(self):

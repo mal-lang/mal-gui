@@ -1012,21 +1012,20 @@ class ModelScene(QGraphicsScene):
     def show_items_details(self):
         selected_items = self.selectedItems()
         if len(selected_items) == 1:
+            # self.main_window is a reference to main window
             item = selected_items[0]
+            self.main_window.item_details_window.update_item_details_window(item)
             if isinstance(item, AssetItem):
-                # self.main_window is a reference to main window
-                self.main_window.item_details_window\
-                    .update_item_details_window(item)
-                if item.asset_type == 'Attacker':
-                    print("Attacker Selected")
-                    self.main_window.update_attack_steps_window(item)
-                    self.main_window.update_properties_window(None)
-                    self.main_window.update_asset_relations_window(None)
-                else:
-                    print("Asset selected")
-                    self.main_window.update_properties_window(item)
-                    self.main_window.update_attack_steps_window(None)
-                    self.main_window.update_asset_relations_window(item)
+                print("Asset selected")
+                self.main_window.update_properties_window(item)
+                self.main_window.update_attack_steps_window(None)
+                self.main_window.update_asset_relations_window(item)
+            elif isinstance(item, AttackerItem):
+                print("Attacker Selected")
+                self.main_window.update_attack_steps_window(item)
+                self.main_window.update_properties_window(None)
+                self.main_window.update_asset_relations_window(None)
+
         else:
             self.main_window.item_details_window\
                 .update_item_details_window(None)
