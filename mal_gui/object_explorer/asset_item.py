@@ -29,12 +29,24 @@ class AssetItem(ItemBase):
         super().update_name()
         self.asset.name = self.title
 
-    def get_item_attribute_values(self):
+    def get_item_attribute_values(self) -> dict[str, dict[str, Any]]:
         return {
-            "Asset ID": self.asset.id,
-            "Asset Name": self.asset.name,
-            "Asset Type": self.asset_type
+            "id": {
+                "value": self.asset.id,
+                "editable": False,
+            },
+            "name": {
+                "value": self.asset.name,
+                "editable": False,
+            },
+            "type": {
+                "value": self.asset_type,
+                "editable": False,
+            },
         }
+
+    def set_item_attribute_value(self, attr_name, new_value_str) -> None:
+        self.__setattr__(attr_name, new_value_str)
 
     def serialize(self):
         return {

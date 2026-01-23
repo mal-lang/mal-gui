@@ -30,8 +30,9 @@ from maltoolbox.model import Model, ModelAsset
 from maltoolbox.exceptions import ModelException
 from malsim.config.agent_settings import AttackerSettings, AgentType
 from malsim.scenario import Scenario
-from malsim.policies import RandomAgent
 import yaml
+
+from mal_gui.object_explorer.attacker_item import AttackerItem
 
 from .file_utils import image_path
 from .model_scene import ModelScene
@@ -343,15 +344,11 @@ class MainWindow(QMainWindow):
         else:
             self.properties_table.currentItem = None
 
-    def update_attack_steps_window(self, attacker_asset_item):
+    def update_attack_steps_window(self, attacker_asset_item: AttackerItem):
         if attacker_asset_item is not None:
             self.attack_steps_docked_window.clear()
-            for asset, attack_step_names in \
-                    attacker_asset_item.attackerAttachment.entry_points:
-                for attack_step_name in attack_step_names:
-                    self.attack_steps_docked_window.addItem(
-                        asset.name + ':' + attack_step_name
-                    )
+            for attack_step_name in attacker_asset_item.entry_points:
+                self.attack_steps_docked_window.addItem(attack_step_name)
         else:
             self.attack_steps_docked_window.clear()
 
@@ -694,6 +691,7 @@ class MainWindow(QMainWindow):
                 # If agent already exists in scenario, update entrypoints
                 agent.entry_points = set(attacker_item.entry_points)
                 agent.goals = set(attacker_item.goals)
+                agent.policy = attacker_item.policy
             else:
                 # Otherwise, add new agent to scenario agents dict
                 agents[attacker_item.name] = AttackerSettings(
@@ -701,7 +699,7 @@ class MainWindow(QMainWindow):
                     entry_points=set(attacker_item.entry_points),
                     goals=set(attacker_item.goals),
                     type=AgentType.ATTACKER,
-                    policy=RandomAgent,
+                    policy=attacker_item.policy,
                 )
 
         else:
