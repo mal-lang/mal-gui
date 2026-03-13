@@ -20,9 +20,9 @@ If you for any reason don't want to install the package, you can run it as a mod
 
 ![Start popup](docs/select_lang.png "Select MAL/MAR archive.")
 
-When you start up `malgui` you need to select a MAL-language.
+When you start up `malgui` you need to select and load a MAL-language.
 
-Read the tutorial if you do not know how: https://github.com/mal-lang/mal-toolbox-tutorial.
+Read this [tutorial](https://github.com/mal-lang/mal-tutorials/blob/main/tutorials/tutorial2/model-tutorial.md) if you do not know how.
 
 ### Add an asset
 When you have started the application you can drag and drop new assets from the object explorer on the left.
