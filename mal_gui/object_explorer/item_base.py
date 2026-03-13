@@ -316,5 +316,9 @@ class ItemBase(QGraphicsItem):
         raise NotImplementedError("get_item_attribute_values")
 
     @abstractmethod
+    def set_item_attribute_value(self, attr_name, new_value_str) -> None:
+        raise NotImplementedError("set_item_attribute_value")
+
+    @abstractmethod
     def serialize(self) -> dict:
         raise NotImplementedError("get_item_attribute_values")
