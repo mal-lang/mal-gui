@@ -580,10 +580,12 @@ class MainWindow(QMainWindow):
     def load_model(self, file_path: str):
         """Load a MAL model from a file"""
 
-        self.model_file_name = file_path
-        self.scene.model = Model.load_from_file(
+        model = Model.load_from_file(
             file_path, self.scene.lang_graph
         )
+        self.load_scene(self.lang_file_path, model, None)
+        self.scenario_file_name = None
+        self.model_file_name = file_path
 
     def add_positions_to_model(self):
         """Add x/y positions to asset extras of model"""

@@ -476,7 +476,6 @@ class ModelScene(QGraphicsScene):
         assets_without_position = []
         x_max = 0
         y_max = 0
-
         for asset in self.model.assets.values():
 
             if 'position' in asset.extras:
