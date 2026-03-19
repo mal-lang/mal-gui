@@ -1,7 +1,6 @@
 from PySide6.QtWidgets import QTreeWidget, QTreeWidgetItem
 from PySide6.QtCore import Qt
 
-from ..object_explorer import ItemBase
 
 from PySide6.QtWidgets import QStyledItemDelegate, QComboBox
 

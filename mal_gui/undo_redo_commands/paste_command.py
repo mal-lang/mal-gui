@@ -11,14 +11,9 @@ from ..object_explorer import ItemBase, AssetItem, AttackerItem
 if TYPE_CHECKING:
     from ..model_scene import ModelScene
 
+
 class PasteCommand(QUndoCommand):
-    def __init__(
-            self,
-            scene: ModelScene,
-            position,
-            clipboard,
-            parent=None
-        ):
+    def __init__(self, scene: ModelScene, position, clipboard, parent=None):
 
         super().__init__(parent)
         self.scene = scene
@@ -37,25 +32,22 @@ class PasteCommand(QUndoCommand):
         print("\nPaste Redo is Called")
 
         serialized_data = self.clipboard.text()
-        deserialized_data = (
-            self.scene.deserialize_graphics_items(serialized_data)
-        )
-        print(json.dumps(deserialized_data, indent = 2))
+        deserialized_data = self.scene.deserialize_graphics_items(serialized_data)
+        print(json.dumps(deserialized_data, indent=2))
 
         # First pass: create items with new assetIds
         for data in deserialized_data:
-
-            item_type = data['type']
-            old_id = data['id']
-            position_tuple = data['position']
+            item_type = data["type"]
+            old_id = data["id"]
+            position_tuple = data["position"]
             position = QPointF(position_tuple[0], position_tuple[1])
 
             if item_type == "attacker":
                 new_item = self.scene.create_attacker(position)
 
             elif item_type == "asset":
-                asset_type = data['properties']['type']
-                asset_name = data['properties']['name']
+                asset_type = data["properties"]["type"]
+                asset_name = data["properties"]["name"]
 
                 new_asset_id = None
 
@@ -67,10 +59,7 @@ class PasteCommand(QUndoCommand):
 
                 else:
                     new_item = self.scene.create_asset(
-                        asset_type,
-                        position,
-                        name=asset_name,
-                        asset_id=new_asset_id
+                        asset_type, position, name=asset_name, asset_id=new_asset_id
                     )
 
             else:
@@ -80,10 +69,8 @@ class PasteCommand(QUndoCommand):
 
         # Adjust the position of all assetItems with offset values
         # Find the top-leftmost position among the items to be pasted
-        min_x = min(
-            item.pos().x() for item in self.original_id_to_item.values())
-        min_y = min(
-            item.pos().y() for item in self.original_id_to_item.values())
+        min_x = min(item.pos().x() for item in self.original_id_to_item.values())
+        min_y = min(item.pos().y() for item in self.original_id_to_item.values())
         top_left = QPointF(min_x, min_y)
 
         # Calculate the offset from the top-leftmost
@@ -96,20 +83,18 @@ class PasteCommand(QUndoCommand):
 
         # Second pass: re-establish connections with new assetSequenceIds
         for data in deserialized_data:
-            item_type = data['type']
-            old_id = data['id']
-            position_tuple = data['position']
+            item_type = data["type"]
+            old_id = data["id"]
+            position_tuple = data["position"]
             item = self.original_id_to_item[old_id]
 
             if isinstance(item, AssetItem):
                 # Must be an asset
-                associated_assets = data['properties']['associated_assets']
+                associated_assets = data["properties"]["associated_assets"]
                 for fieldname, assets in associated_assets.items():
                     for asset_id in assets:
                         right_item = self.original_id_to_item[asset_id]
-                        item.asset.add_associated_assets(
-                            fieldname, {right_item.asset}
-                        )
+                        item.asset.add_associated_assets(fieldname, {right_item.asset})
                         con = self.scene.add_association_connection(
                             item, right_item, fieldname
                         )
@@ -117,21 +102,18 @@ class PasteCommand(QUndoCommand):
 
             elif isinstance(item, AttackerItem):
                 # Add attacker entrypoints
-                for entrypoint in data['entrypoints']:
-                    print(f'ENTRYPOINT: {entrypoint}')
+                for entrypoint in data["entrypoints"]:
+                    print(f"ENTRYPOINT: {entrypoint}")
 
                     old_start_id, old_end_id, label = entrypoint
-                    new_attacker_item: AttackerItem = (
-                        self.original_id_to_item[old_start_id]
-                    )
-                    new_asset_item: AssetItem = (
-                        self.original_id_to_item[old_end_id]
-                    )
+                    new_attacker_item: AttackerItem = self.original_id_to_item[
+                        old_start_id
+                    ]
+                    new_asset_item: AssetItem = self.original_id_to_item[old_end_id]
 
-                    new_connection = self.scene\
-                        .add_entrypoint_connection(
-                            label, new_attacker_item, new_asset_item
-                        )
+                    new_connection = self.scene.add_entrypoint_connection(
+                        label, new_attacker_item, new_asset_item
+                    )
 
                     self.pasted_entrypoints.append(new_connection)
                     new_attacker_item.attacker.add_entry_point(

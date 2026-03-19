@@ -1,7 +1,9 @@
-from PySide6.QtWidgets import QWidget,QTableView,QVBoxLayout
-from PySide6.QtGui import QStandardItemModel,QStandardItem
+from PySide6.QtWidgets import QWidget, QTableView, QVBoxLayout
+from PySide6.QtGui import QStandardItemModel, QStandardItem
 
 from .main_window import MainWindow
+
+
 class AssociationDefinitions(QWidget):
     def __init__(self, parent: MainWindow):
         super().__init__(parent)
@@ -12,10 +14,15 @@ class AssociationDefinitions(QWidget):
         self.table_association_view = QTableView(self)
         self.association_info_model = QStandardItemModel()
 
-        #headers for the columns
+        # headers for the columns
         self.association_info_model.setHorizontalHeaderLabels(
-            ['AssocLeftAsset', 'AssocLeftField', 'AssocName',
-             'AssocRightField','AssocRightAsset']
+            [
+                "AssocLeftAsset",
+                "AssocLeftField",
+                "AssocName",
+                "AssocRightField",
+                "AssocRightAsset",
+            ]
         )
 
         self.association_info_model.removeRows(
@@ -28,7 +35,7 @@ class AssociationDefinitions(QWidget):
                 QStandardItem(assoc.left_field.fieldname),
                 QStandardItem(assoc.name),
                 QStandardItem(assoc.right_field.fieldname),
-                QStandardItem(assoc.right_field.asset.name)
+                QStandardItem(assoc.right_field.asset.name),
             ]
             self.association_info_model.appendRow(items)
 

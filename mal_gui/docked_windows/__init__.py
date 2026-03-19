@@ -14,5 +14,5 @@ __all__ = [
     "EditableDelegate",
     "CustomDialog",
     "CustomDialogGlobal",
-    "Visibility"
+    "Visibility",
 ]

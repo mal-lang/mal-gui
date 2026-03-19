@@ -6,15 +6,16 @@ if TYPE_CHECKING:
     from ..object_explorer.asset_item import AssetItem
     from ..model_scene import ModelScene
 
+
 class MoveCommand(QUndoCommand):
     def __init__(
-            self,
-            scene: ModelScene,
-            items: list,
-            start_positions,
-            end_positions,
-            parent=None
-        ):
+        self,
+        scene: ModelScene,
+        items: list,
+        start_positions,
+        end_positions,
+        parent=None,
+    ):
         super().__init__(parent)
         self.scene = scene
         self.items = items
@@ -37,6 +38,6 @@ class MoveCommand(QUndoCommand):
 
     def update_connections(self, item: AssetItem):
         """Redraw connecting lines"""
-        if hasattr(item, 'connections'):
+        if hasattr(item, "connections"):
             for connection in item.connections:
                 connection.update_path()

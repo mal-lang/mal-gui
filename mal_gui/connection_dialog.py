@@ -15,8 +15,9 @@ from PySide6.QtWidgets import (
 
 if TYPE_CHECKING:
     from .object_explorer import AssetItem, AttackerItem
-    from maltoolbox.language import LanguageGraph, LanguageGraphAsset
+    from maltoolbox.language import LanguageGraph
     from maltoolbox.model import Model, ModelAsset
+
 
 class ConnectionDialog(QDialog):
     def filter_items(self, text):
@@ -28,13 +29,13 @@ class ConnectionDialog(QDialog):
 
 class AssociationConnectionDialog(ConnectionDialog):
     def __init__(
-            self,
-            start_item: AssetItem,
-            end_item: AssetItem,
-            lang_graph: LanguageGraph,
-            model: Model,
-            parent=None
-        ):
+        self,
+        start_item: AssetItem,
+        end_item: AssetItem,
+        lang_graph: LanguageGraph,
+        model: Model,
+        parent=None,
+    ):
         super().__init__(parent)
 
         self.lang_graph: LanguageGraph = lang_graph
@@ -43,8 +44,8 @@ class AssociationConnectionDialog(ConnectionDialog):
         self.setWindowTitle("Select Association Type")
         self.setMinimumWidth(300)
 
-        print(f'START ITEM TYPE {start_item.asset_type}')
-        print(f'END ITEM TYPE {end_item.asset_type}')
+        print(f"START ITEM TYPE {start_item.asset_type}")
+        print(f"END ITEM TYPE {end_item.asset_type}")
 
         self.association_list_widget = QListWidget()
 
@@ -53,9 +54,7 @@ class AssociationConnectionDialog(ConnectionDialog):
         self.field_name = None
 
         self.layout = QVBoxLayout()
-        self.label = (
-            QLabel(f"{self.start_asset.name} -> {self.end_asset.name}")
-        )
+        self.label = QLabel(f"{self.start_asset.name} -> {self.end_asset.name}")
         self.layout.addWidget(self.label)
         self.filter_edit = QLineEdit()
         self.filter_edit.setPlaceholderText("Type to filter...")
@@ -69,14 +68,20 @@ class AssociationConnectionDialog(ConnectionDialog):
             # If assoc ends with end_assets type, give that assoc
             # as option in list widget
             if field.asset == self.end_asset.lg_asset:
-                assoc_list_item = QListWidgetItem(self.start_asset.name + "." + fieldname + " = " + self.end_asset.name)
+                assoc_list_item = QListWidgetItem(
+                    self.start_asset.name
+                    + "."
+                    + fieldname
+                    + " = "
+                    + self.end_asset.name
+                )
                 assoc_list_item.setData(
                     Qt.UserRole,
                     {
-                        'from': self.start_asset,
-                        'to': self.end_asset,
-                        'fieldname': fieldname
-                    }
+                        "from": self.start_asset,
+                        "to": self.end_asset,
+                        "fieldname": fieldname,
+                    },
                 )
                 self.association_list_widget.addItem(assoc_list_item)
 
@@ -111,24 +116,24 @@ class AssociationConnectionDialog(ConnectionDialog):
         if selected_item:
             data = selected_item.data(Qt.UserRole)
 
-            from_asset: ModelAsset = data.get('from')
-            to_asset: ModelAsset = data.get('to')
-            self.field_name: str = data.get('fieldname')
+            from_asset: ModelAsset = data.get("from")
+            to_asset: ModelAsset = data.get("to")
+            self.field_name: str = data.get("fieldname")
 
-            print(f'{from_asset}.{self.field_name} = {to_asset} chosen')
-
+            print(f"{from_asset}.{self.field_name} = {to_asset} chosen")
 
         self.accept()
 
+
 class EntrypointConnectionDialog(ConnectionDialog):
     def __init__(
-            self,
-            attacker_item: AttackerItem,
-            asset_item: AssetItem,
-            lang_graph: LanguageGraph,
-            model,
-            parent=None
-        ):
+        self,
+        attacker_item: AttackerItem,
+        asset_item: AssetItem,
+        lang_graph: LanguageGraph,
+        model,
+        parent=None,
+    ):
         super().__init__(parent)
 
         self.lang_graph = lang_graph
@@ -146,7 +151,7 @@ class EntrypointConnectionDialog(ConnectionDialog):
             already_attached_entrypoints = set(attacker_item.entry_points)
 
             for attack_step in asset_type.attack_steps.values():
-                if attack_step.type not in ['or', 'and']:
+                if attack_step.type not in ["or", "and"]:
                     continue
                 attack_step_full_name = attack_step.asset.name + ":" + attack_step.name
                 if attack_step_full_name not in already_attached_entrypoints:
@@ -155,9 +160,7 @@ class EntrypointConnectionDialog(ConnectionDialog):
 
             self.layout = QVBoxLayout()
 
-            self.label = QLabel(
-                f"{attacker_item.name}:{asset_item.asset.name}"
-            )
+            self.label = QLabel(f"{attacker_item.name}:{asset_item.asset.name}")
             self.layout.addWidget(self.label)
 
             self.filter_edit = QLineEdit()
@@ -174,8 +177,7 @@ class EntrypointConnectionDialog(ConnectionDialog):
 
         self.cancel_button = QPushButton("Cancel")
         self.cancel_button.clicked.connect(self.reject)
-        self.cancel_button.setSizePolicy(
-            QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.cancel_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         button_layout.addWidget(self.cancel_button)
 
         self.layout.addLayout(button_layout)
@@ -195,13 +197,13 @@ class EntrypointConnectionDialog(ConnectionDialog):
 
 class GoalConnectionDialog(ConnectionDialog):
     def __init__(
-            self,
-            attacker_item: AttackerItem,
-            asset_item: AssetItem,
-            lang_graph: LanguageGraph,
-            model,
-            parent=None
-        ):
+        self,
+        attacker_item: AttackerItem,
+        asset_item: AssetItem,
+        lang_graph: LanguageGraph,
+        model,
+        parent=None,
+    ):
         super().__init__(parent)
 
         self.lang_graph = lang_graph
@@ -219,7 +221,7 @@ class GoalConnectionDialog(ConnectionDialog):
             already_attached_goals = set(attacker_item.goals)
 
             for attack_step in asset_type.attack_steps.values():
-                if attack_step.type not in ['or', 'and']:
+                if attack_step.type not in ["or", "and"]:
                     continue
                 attack_step_full_name = attack_step.asset.name + ":" + attack_step.name
                 if attack_step_full_name not in already_attached_goals:
@@ -229,9 +231,7 @@ class GoalConnectionDialog(ConnectionDialog):
 
             self.layout = QVBoxLayout()
 
-            self.label = QLabel(
-                f"{attacker_item.name}:{asset_item.asset.name}"
-            )
+            self.label = QLabel(f"{attacker_item.name}:{asset_item.asset.name}")
             self.layout.addWidget(self.label)
 
             self.filter_edit = QLineEdit()
@@ -248,8 +248,7 @@ class GoalConnectionDialog(ConnectionDialog):
 
         self.cancel_button = QPushButton("Cancel")
         self.cancel_button.clicked.connect(self.reject)
-        self.cancel_button.setSizePolicy(
-            QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.cancel_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         button_layout.addWidget(self.cancel_button)
 
         self.layout.addLayout(button_layout)

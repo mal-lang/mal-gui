@@ -1,4 +1,3 @@
-from typing import Any
 from PySide6.QtGui import QColor
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QGraphicsItem
@@ -16,17 +15,18 @@ ALLOWED_POLICIES = [
     policies.TTCSoftMinAttacker,
 ]
 
+
 class AttackerItem(ItemBase):
     # Starting Sequence Id with normal start at 100 (randomly taken)
 
     def __init__(
-            self,
-            name: str,
-            image_path: str,
-            entry_points=None,
-            goals=None,
-            parent=None,
-        ):
+        self,
+        name: str,
+        image_path: str,
+        entry_points=None,
+        goals=None,
+        parent=None,
+    ):
 
         self.entry_points: list[str] = entry_points or []
         self.policy = policies.PassiveAgent
@@ -40,7 +40,7 @@ class AttackerItem(ItemBase):
         self.timer.timeout.connect(self.update_status_color)
         self.timer.start(500)
 
-        super().__init__('Attacker', image_path, parent)
+        super().__init__("Attacker", image_path, parent)
 
     def update_type_text_item_position(self):
         super().update_type_text_item_position()
@@ -102,8 +102,8 @@ class AttackerItem(ItemBase):
 
     def serialize(self):
         return {
-            'title': self.title,
-            'image_path': self.image_path,
-            'type': 'asset',
-            'object': self.entry_points
+            "title": self.title,
+            "image_path": self.image_path,
+            "type": "asset",
+            "object": self.entry_points,
         }
