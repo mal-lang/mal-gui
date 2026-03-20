@@ -13,6 +13,16 @@ This will open up the graphical user interface.
 
 If you for any reason don't want to install the package, you can run it as a module directly with `python -m mal_gui.app` from this directory.
 
+## Contributing
+
+- If you have contributions, please make a PR or an issue
+- Write test if possible
+- Make sure the pipeline passes in Github
+
+### Making a release
+- Change the version number in pyproject.toml according to [semantic versioning](https://semver.org/)
+- Make a commit
+- Tag the latest commit with the new version number
 
 ## How to use the graphical interface
 
