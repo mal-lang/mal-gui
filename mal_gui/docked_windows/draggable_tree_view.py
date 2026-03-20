@@ -14,14 +14,9 @@ from .style_configuration import (
 if TYPE_CHECKING:
     from ..object_explorer.asset_item import AssetItem
 
+
 class DraggableTreeView(QTreeWidget):
-    def __init__(
-            self,
-            scene,
-            eye_unhide_icon,
-            eve_hide_icon,
-            rgb_color_icon
-        ):
+    def __init__(self, scene, eye_unhide_icon, eve_hide_icon, rgb_color_icon):
 
         super().__init__()
         self.scene = scene
@@ -48,7 +43,9 @@ class DraggableTreeView(QTreeWidget):
     def startDrag(self, supported_actions):
         """Overrides base method"""
         item = self.currentItem()
-        if item and item.parent() is None:  # Only start drag if the item is a top-level item (parent)
+        if (
+            item and item.parent() is None
+        ):  # Only start drag if the item is a top-level item (parent)
             drag = QDrag(self)
             mime_data = QMimeData()
             mime_data.setText(item.text(0))
@@ -92,7 +89,7 @@ class DraggableTreeView(QTreeWidget):
         if icon:
             parent_item.setIcon(0, QIcon(icon))
         self.addTopLevelItem(parent_item)
-        self.add_button_to_item(parent_item,"",is_parent=True)
+        self.add_button_to_item(parent_item, "", is_parent=True)
         return parent_item
 
     def add_child_item(self, parent_item, child_item_asset, text):
@@ -100,7 +97,7 @@ class DraggableTreeView(QTreeWidget):
         child_item = QTreeWidgetItem([text, ""])
         child_item.assetItemReference = child_item_asset
         parent_item.addChild(child_item)
-        self.add_button_to_item(child_item,"",is_parent=False)
+        self.add_button_to_item(child_item, "", is_parent=False)
         return child_item
 
     def add_button_to_item(self, item, text, is_parent, icon_path=None):
@@ -118,14 +115,16 @@ class DraggableTreeView(QTreeWidget):
             left_eye_button = QPushButton(text)
             left_eye_button.setIcon(QIcon(self.eye_unhide_icon))
             left_eye_button.clicked.connect(
-                lambda: self.hide_unhide_asset_item(left_eye_button, item))
+                lambda: self.hide_unhide_asset_item(left_eye_button, item)
+            )
             # Place the left button in the second column
             self.setItemWidget(item, 1, left_eye_button)
 
             right_color_button = QPushButton(text)
             right_color_button.setIcon(QIcon(self.rgb_color_icon))
             right_color_button.clicked.connect(
-                lambda: self.show_local_asset_edit_form(item))
+                lambda: self.show_local_asset_edit_form(item)
+            )
             # Place the right button in the third column
             self.setItemWidget(item, 2, right_color_button)
 
@@ -133,34 +132,33 @@ class DraggableTreeView(QTreeWidget):
         if self.eye_visibility == Visibility.UNHIDE:
             self.eye_visibility = Visibility.HIDE
 
-            #First Hide the connections associtaed with the asset item
+            # First Hide the connections associtaed with the asset item
             asset_item: AssetItem = item.assetItemReference
 
-            if hasattr(asset_item, 'connections'):
+            if hasattr(asset_item, "connections"):
                 connections = asset_item.connections
                 for connection in connections:
                     connection.remove_labels()
                     connection.setVisible(False)
 
-            #Then hide the asset item itself
+            # Then hide the asset item itself
             asset_item.setVisible(False)
 
             eye_button.setIcon(QIcon(self.eve_hide_icon))
         else:
             self.eye_visibility = Visibility.UNHIDE
 
-            #First unhide the connections associtaed with the asset item
+            # First unhide the connections associtaed with the asset item
             asset_item = item.assetItemReference
 
-            if hasattr(asset_item, 'connections'):
+            if hasattr(asset_item, "connections"):
                 connections = asset_item.connections
                 for connection in connections:
                     connection.restore_labels()
                     connection.setVisible(True)
 
-            #Then unhide the asset item itself
+            # Then unhide the asset item itself
             asset_item.setVisible(True)
-
 
             eye_button.setIcon(QIcon(self.eye_unhide_icon))
 
@@ -194,7 +192,6 @@ class DraggableTreeView(QTreeWidget):
     #         if font2:
     #             item.setFont(1, QFont(font2))
 
-
     def update_color_callback(self, color1, color2):
         item = self.selected_item
         item.asset_type_background_color = color1
@@ -211,14 +208,14 @@ class DraggableTreeView(QTreeWidget):
         # self.globalAssetStyleHandlerDialog(self.scene)
         # print("globalAssetStyleHandlerDialog executing")
         # self.globalAssetStyleHandlerDialog.exec()
-        self.dialog = CustomDialogGlobal(self.scene,item)
+        self.dialog = CustomDialogGlobal(self.scene, item)
         self.dialog.exec()
 
     def check_and_get_if_parent_asset_type_exists(self, child_asset_type):
         for i in range(self.topLevelItemCount()):
             parent_item = self.topLevelItem(i)
             if parent_item.text(0) == child_asset_type:
-                return parent_item,child_asset_type
+                return parent_item, child_asset_type
         return None, None
 
     def remove_children(self, parent_item):

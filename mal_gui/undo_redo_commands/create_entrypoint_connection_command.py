@@ -6,6 +6,8 @@ from PySide6.QtGui import QUndoCommand
 if TYPE_CHECKING:
     from ..model_scene import ModelScene
     from ..object_explorer import AttackerItem, AssetItem
+
+
 class CreateEntrypointConnectionCommand(QUndoCommand):
     def __init__(
         self,
@@ -13,7 +15,7 @@ class CreateEntrypointConnectionCommand(QUndoCommand):
         attacker_item: AttackerItem,
         asset_item: AssetItem,
         attack_step_name: str,
-        parent=None
+        parent=None,
     ):
         super().__init__(parent)
         self.scene = scene
@@ -25,9 +27,7 @@ class CreateEntrypointConnectionCommand(QUndoCommand):
     def redo(self):
         """Create entrypoint for attacker"""
         self.connection = self.scene.add_entrypoint_connection(
-            self.attack_step_name,
-            self.attacker_item,
-            self.asset_item
+            self.attack_step_name, self.attacker_item, self.asset_item
         )
         self.attacker_item.entry_points.append(
             self.asset_item.asset.name + ":" + self.attack_step_name

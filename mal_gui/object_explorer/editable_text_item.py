@@ -2,6 +2,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QTextCursor
 from PySide6.QtWidgets import QGraphicsTextItem
 
+
 class EditableTextItem(QGraphicsTextItem):
     lostFocus = Signal()
 

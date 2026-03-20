@@ -2,19 +2,19 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from PySide6.QtGui import QUndoCommand
 from ..object_explorer import AssetItem, AttackerItem
-from ..connection_item import AssociationConnectionItem, EntrypointConnectionItem, GoalConnectionItem
+from ..connection_item import (
+    AssociationConnectionItem,
+    EntrypointConnectionItem,
+    GoalConnectionItem,
+)
 
 if TYPE_CHECKING:
     from ..model_scene import ModelScene
     from ..connection_item import IConnectionItem
 
+
 class DeleteCommand(QUndoCommand):
-    def __init__(
-            self,
-            scene: ModelScene,
-            items,
-            parent=None
-        ):
+    def __init__(self, scene: ModelScene, items, parent=None):
         super().__init__(parent)
         self.scene = scene
         self.items = items
@@ -22,7 +22,7 @@ class DeleteCommand(QUndoCommand):
 
         # Save connections of all items
         for item in self.items:
-            if hasattr(item, 'connections'):
+            if hasattr(item, "connections"):
                 self.connections.extend(item.connections.copy())
 
     def redo(self):
@@ -34,19 +34,26 @@ class DeleteCommand(QUndoCommand):
             self.scene.removeItem(connection)
 
             if isinstance(connection, EntrypointConnectionItem):
-                step_full_name = connection.asset_item.asset.name + ":" + connection.attack_step_name
+                step_full_name = (
+                    connection.asset_item.asset.name + ":" + connection.attack_step_name
+                )
                 try:
                     connection.attacker_item.entry_points.remove(step_full_name)
                 except ValueError:
-                    print(f"Entrypoint {step_full_name} not found in attacker {connection.attacker_item.name}")
+                    print(
+                        f"Entrypoint {step_full_name} not found in attacker {connection.attacker_item.name}"
+                    )
 
             if isinstance(connection, GoalConnectionItem):
-                step_full_name = connection.asset_item.asset.name + ":" + connection.attack_step_name
+                step_full_name = (
+                    connection.asset_item.asset.name + ":" + connection.attack_step_name
+                )
                 try:
                     connection.attacker_item.goals.remove(step_full_name)
                 except ValueError:
-                    print(f"Entrypoint {step_full_name} not found in attacker {connection.attacker_item.name}")
-
+                    print(
+                        f"Entrypoint {step_full_name} not found in attacker {connection.attacker_item.name}"
+                    )
 
         for item in self.items:
             if isinstance(item, AssetItem):
@@ -55,7 +62,7 @@ class DeleteCommand(QUndoCommand):
             if isinstance(item, AttackerItem):
                 self.scene.remove_attacker(item)
 
-        #Update the Object Explorer when number of items change
+        # Update the Object Explorer when number of items change
         self.scene.main_window.update_childs_in_object_explorer_signal.emit()
 
     def undo(self):
@@ -70,12 +77,11 @@ class DeleteCommand(QUndoCommand):
 
         # Restore connections
         for connection in self.connections:
-
             if isinstance(connection, EntrypointConnectionItem):
                 self.scene.add_entrypoint_connection(
                     connection.attack_step_name,
                     connection.attacker_item,
-                    connection.asset_item
+                    connection.asset_item,
                 )
                 step_full_name = (
                     connection.asset_item.asset.name + ":" + connection.attack_step_name
@@ -86,7 +92,7 @@ class DeleteCommand(QUndoCommand):
                 self.scene.add_goal_connection(
                     connection.attack_step_name,
                     connection.attacker_item,
-                    connection.asset_item
+                    connection.asset_item,
                 )
                 step_full_name = (
                     connection.asset_item.asset.name + ":" + connection.attack_step_name
@@ -97,12 +103,11 @@ class DeleteCommand(QUndoCommand):
                 self.scene.add_association_connection(
                     connection.start_item,
                     connection.end_item,
-                    connection.right_fieldname
+                    connection.right_fieldname,
                 )
                 connection.start_item.asset.add_associated_assets(
                     connection.right_fieldname, {connection.end_item.asset}
                 )
 
-
-        #Update the Object Explorer when number of items change
+        # Update the Object Explorer when number of items change
         self.scene.main_window.update_childs_in_object_explorer_signal.emit()

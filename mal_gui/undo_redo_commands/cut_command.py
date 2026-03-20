@@ -7,14 +7,9 @@ if TYPE_CHECKING:
     from ..model_scene import ModelScene
     from ..connection_item import IConnectionItem
 
+
 class CutCommand(QUndoCommand):
-    def __init__(
-            self,
-            scene: ModelScene,
-            items,
-            clipboard,
-            parent=None
-        ):
+    def __init__(self, scene: ModelScene, items, clipboard, parent=None):
         super().__init__(parent)
         self.scene = scene
         self.items = items
@@ -23,14 +18,15 @@ class CutCommand(QUndoCommand):
 
         # Save connections of all items
         for item in self.items:
-            if hasattr(item, 'connections'):
+            if hasattr(item, "connections"):
                 self.connections.extend(item.connections.copy())
 
     def redo(self):
         """Perform cut command"""
         self.cut_item_flag = True
         serialized_data = self.scene.serialize_graphics_items(
-            self.items, self.cut_item_flag)
+            self.items, self.cut_item_flag
+        )
         self.clipboard.clear()
         self.clipboard.setText(serialized_data)
 
@@ -42,7 +38,7 @@ class CutCommand(QUndoCommand):
         for item in self.items:
             self.scene.removeItem(item)
 
-        #Update the Object Explorer when number of items change
+        # Update the Object Explorer when number of items change
         self.scene.main_window.update_childs_in_object_explorer_signal.emit()
 
     def undo(self):
@@ -59,5 +55,5 @@ class CutCommand(QUndoCommand):
 
         self.clipboard.clear()
 
-        #Update the Object Explorer when number of items change
+        # Update the Object Explorer when number of items change
         self.scene.main_window.update_childs_in_object_explorer_signal.emit()

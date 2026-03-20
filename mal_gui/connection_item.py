@@ -1,13 +1,13 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QPointF, QLineF
-from PySide6.QtGui import QBrush, QColor,QPen
+from PySide6.QtGui import QBrush, QColor, QPen
 from PySide6.QtWidgets import (
     QGraphicsLineItem,
     QGraphicsTextItem,
     QGraphicsRectItem,
-    QGraphicsItemGroup
+    QGraphicsItemGroup,
 )
 
 if TYPE_CHECKING:
@@ -15,8 +15,10 @@ if TYPE_CHECKING:
     from .model_scene import ModelScene
     from .object_explorer import AssetItem, AttackerItem
 
+
 class IConnectionItem(QGraphicsLineItem):
     """'interface' for Connection Item"""
+
     start_item: AssetItem
     end_item: AssetItem
     association_details: list[str]
@@ -44,7 +46,7 @@ class AssociationConnectionItem(IConnectionItem):
         start_item: AssetItem,
         end_item: AssetItem,
         scene: ModelScene,
-        parent = None
+        parent=None,
     ):
         super().__init__(parent)
 
@@ -61,9 +63,9 @@ class AssociationConnectionItem(IConnectionItem):
         self.end_item.add_connection(self)
 
         # Fetch the association and the fieldnames
-        lg_assoc: LanguageGraphAssociation = (
-            start_item.asset.lg_asset.associations[fieldname]
-        )
+        lg_assoc: LanguageGraphAssociation = start_item.asset.lg_asset.associations[
+            fieldname
+        ]
         opposite_fieldname = lg_assoc.get_opposite_fieldname(fieldname)
 
         # Get left field name
@@ -74,14 +76,11 @@ class AssociationConnectionItem(IConnectionItem):
         self.right_fieldname = fieldname
 
         # Create labels with background color
-        self.label_assoc_left_field = \
-            self.create_label(self.left_fieldname)
+        self.label_assoc_left_field = self.create_label(self.left_fieldname)
 
-        self.label_assoc_middle_name = \
-            self.create_label(self.assoc_name)
+        self.label_assoc_middle_name = self.create_label(self.assoc_name)
 
-        self.label_assoc_right_field = \
-            self.create_label(self.right_fieldname)
+        self.label_assoc_right_field = self.create_label(self.right_fieldname)
 
         self.update_path()
 
@@ -115,32 +114,37 @@ class AssociationConnectionItem(IConnectionItem):
 
         label_assoc_left_field_pos = self.line().pointAt(0.2)
         self.label_assoc_left_field.setPos(
-            label_assoc_left_field_pos - QPointF(
+            label_assoc_left_field_pos
+            - QPointF(
                 self.label_assoc_left_field.boundingRect().width() / 2,
-                self.label_assoc_left_field.boundingRect().height() / 2
+                self.label_assoc_left_field.boundingRect().height() / 2,
             )
         )
 
         label_assoc_middle_name_pos = self.line().pointAt(0.5)
         self.label_assoc_middle_name.setPos(
-            label_assoc_middle_name_pos - QPointF(
+            label_assoc_middle_name_pos
+            - QPointF(
                 self.label_assoc_middle_name.boundingRect().width() / 2,
-                self.label_assoc_middle_name.boundingRect().height() / 2
+                self.label_assoc_middle_name.boundingRect().height() / 2,
             )
         )
 
         labelassoc_right_field_pos = self.line().pointAt(0.8)
         self.label_assoc_right_field.setPos(
-            labelassoc_right_field_pos - QPointF(
+            labelassoc_right_field_pos
+            - QPointF(
                 self.label_assoc_right_field.boundingRect().width() / 2,
-                self.label_assoc_right_field.boundingRect().height() / 2
+                self.label_assoc_right_field.boundingRect().height() / 2,
             )
         )
 
         self.label_assoc_left_field.setVisible(
-            self._scene.get_show_assoc_checkbox_status())
+            self._scene.get_show_assoc_checkbox_status()
+        )
         self.label_assoc_right_field.setVisible(
-            self._scene.get_show_assoc_checkbox_status())
+            self._scene.get_show_assoc_checkbox_status()
+        )
 
     def calculate_offset(self, rect, label_pos, angle):
         """Calculate the offset to position the label
@@ -182,6 +186,7 @@ class AssociationConnectionItem(IConnectionItem):
 
 class AttackerConnectionBase(IConnectionItem):
     """For both entrypoints and goals"""
+
     COLOR = QColor(0, 0, 0)
     LINE_STYLE = Qt.SolidLine
     ICON_TEXT = "?"
@@ -192,7 +197,7 @@ class AttackerConnectionBase(IConnectionItem):
         attacker_item: AttackerItem,
         asset_item: AssetItem,
         scene: ModelScene,
-        parent=None
+        parent=None,
     ):
         super().__init__(parent)
 
@@ -212,7 +217,6 @@ class AttackerConnectionBase(IConnectionItem):
         self.label = self.create_label(attack_step_name)
 
         self.update_path()
-
 
     def create_label(self, text) -> QGraphicsItemGroup:
         label = QGraphicsTextItem(self.ICON_TEXT + " " + text)
@@ -243,9 +247,10 @@ class AttackerConnectionBase(IConnectionItem):
         # label in the middle
         mid = self.line().pointAt(0.5)
         self.label.setPos(
-            mid - QPointF(
+            mid
+            - QPointF(
                 self.label.boundingRect().width() / 2,
-                self.label.boundingRect().height() / 2
+                self.label.boundingRect().height() / 2,
             )
         )
 

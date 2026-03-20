@@ -7,13 +7,14 @@ from PySide6.QtCore import QPointF
 if TYPE_CHECKING:
     from mal_gui.model_scene import ModelScene
 
+
 class DragDropAssetCommand(QUndoCommand):
     def __init__(
         self,
         scene: ModelScene,
         asset_type: str,
         position: QPointF,
-        name = None,
+        name=None,
         parent=None,
     ):
         """
@@ -35,16 +36,14 @@ class DragDropAssetCommand(QUndoCommand):
         # If it is an 'actual' redo, we need to add the same asset again
         if self.item:
             # Create asset from previous deleted asset
-            self.item = self.scene.recreate_asset(
-                self.item, self.position
-            )
+            self.item = self.scene.recreate_asset(self.item, self.position)
         else:
             # Create/add asset from scratch
             self.item = self.scene.create_asset(
                 self.asset_type, self.position, self.name
             )
 
-        #Update the Object Explorer when number of items change
+        # Update the Object Explorer when number of items change
         self.scene.main_window.update_childs_in_object_explorer_signal.emit()
 
     def undo(self):
@@ -77,13 +76,13 @@ class DragDropAttackerCommand(QUndoCommand):
             self.item = self.scene.create_attacker(
                 self.item.pos(),
                 name=self.item.attacker.name,
-                attacker_id=self.item.attacker.id
+                attacker_id=self.item.attacker.id,
             )
         else:
             # Create attacker from scratch
-            self.item = self.scene.create_attacker(self.position, 'Attacker')
+            self.item = self.scene.create_attacker(self.position, "Attacker")
 
-        #Update the Object Explorer when number of items change
+        # Update the Object Explorer when number of items change
         self.scene.main_window.update_childs_in_object_explorer_signal.emit()
 
     def undo(self):

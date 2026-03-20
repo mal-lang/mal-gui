@@ -1,6 +1,7 @@
 import pytest
 from PySide6.QtWidgets import QApplication
 
+
 @pytest.fixture
 def lang_file_path():
     return "tests/testdata/org.mal-lang.coreLang-1.0.0.mar"

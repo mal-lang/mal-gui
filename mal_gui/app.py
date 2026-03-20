@@ -24,9 +24,10 @@ from PySide6.QtWidgets import (
     QPushButton,
     QDialogButtonBox,
     QFileDialog,
-    QMessageBox
+    QMessageBox,
 )
 from .main_window import MainWindow
+
 
 class FileSelectionDialog(QDialog):
     def __init__(self, parent=None):
@@ -46,7 +47,7 @@ class FileSelectionDialog(QDialog):
 
         # Load the config file containing latest lang file path
         config_file_dir = user_config_dir("mal-gui", "mal-lang")
-        self.config_file_path = config_file_dir + '/config.ini'
+        self.config_file_path = config_file_dir + "/config.ini"
 
         # Make sure config file exists
         os.makedirs(os.path.dirname(self.config_file_path), exist_ok=True)
@@ -54,7 +55,8 @@ class FileSelectionDialog(QDialog):
         self.config = configparser.ConfigParser()
         self.config.read(self.config_file_path)
         self.selected_lang_file = self.config.get(
-            'Settings', 'langFilePath', fallback=None)
+            "Settings", "langFilePath", fallback=None
+        )
         print(f"Initial langFilePath path: {self.selected_lang_file}")
 
         self.lang_file_path_text.setText(self.selected_lang_file)
@@ -98,27 +100,25 @@ class FileSelectionDialog(QDialog):
 
         selected_lang_file = self.lang_file_path_text.text()
 
-        if selected_lang_file.endswith('.mar') or \
-                selected_lang_file.endswith('.mal'):
+        if selected_lang_file.endswith(".mar") or selected_lang_file.endswith(".mal"):
             self.selected_lang_file = selected_lang_file
 
             # Remember language choice in user settings
             try:
-                self.config.add_section('Settings')
+                self.config.add_section("Settings")
             except configparser.DuplicateSectionError:
                 pass
 
-            self.config.set('Settings', 'langFilePath',
-                self.selected_lang_file)
+            self.config.set("Settings", "langFilePath", self.selected_lang_file)
 
-            with open(self.config_file_path, 'w', encoding='utf-8') as conf_file:
+            with open(self.config_file_path, "w", encoding="utf-8") as conf_file:
                 self.config.write(conf_file)
 
             self.accept()  # Close the dialog and return accepted
         else:
             QMessageBox.warning(
-                self, "Invalid File",
-                "Please select a valid .mal or .mar file.")
+                self, "Invalid File", "Please select a valid .mal or .mar file."
+            )
 
     def get_selected_file(self):
         return self.selected_lang_file

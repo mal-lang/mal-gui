@@ -16,11 +16,11 @@ class ModelView(QGraphicsView):
 
     def zoomIn(self):
         """Overrides base"""
-        self.zoom(1.5) # Akash: This value need to discuss with Andrei
+        self.zoom(1.5)  # Akash: This value need to discuss with Andrei
 
     def zoomOut(self):
         """Overrides base"""
-        self.zoom(1 / 1.5) # Akash: This value need to discuss with Andrei
+        self.zoom(1 / 1.5)  # Akash: This value need to discuss with Andrei
 
     def wheelEvent(self, event):
         """Overrides base"""
