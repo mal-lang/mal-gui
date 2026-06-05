@@ -1,5 +1,5 @@
-# mal-toolbox-gui
-A graphical user interface tool used to create MAL instance models and scenarios (with attacker agents specified).
+# MAL-GUI
+A graphical user interface tool used to create MAL instance models and scenarios (with attacker agents specified). (Note, it does not support visualization for attack graphs, for that we recommend Neo4j or GraphViz - see the MAL toolbox documentation.)
 
 ## Installation
 
