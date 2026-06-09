@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Optional
 
@@ -22,6 +23,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QDrag, QAction, QIcon, QIntValidator
 from PySide6.QtCore import Qt, QMimeData, QByteArray, QSize, Signal, QPointF
 
+from malsim import DefenderSettings
 from qt_material import apply_stylesheet, list_themes
 
 from maltoolbox import __version__ as maltoolbox_version
@@ -684,69 +686,49 @@ class MainWindow(QMainWindow):
             self.show_error_popup("No valid path detected for saving")
             return
 
-        agents = self.scene.scenario.agent_settings if self.scene.scenario else {}
+        prev_attacker_agents = self.scene.scenario.attacker_settings if self.scene.scenario else dict()
+        prev_defender_agents = self.scene.scenario.defender_settings if self.scene.scenario else dict()
+        # Start with existing defender agents, as they are not editable in the GUI
+        new_agents: Iterable[AttackerSettings[str] | DefenderSettings] = list(prev_defender_agents.values())
+
         # Add attacker agents from scene
         for attacker_item in self.scene.attacker_items:
-            agent = agents.get(attacker_item.name)
-            # Only thing that can be changed by GUI for agents is entry points
-            if isinstance(agent, AttackerSettings):
+            prev_agent = prev_attacker_agents.get(attacker_item.name)
+
+            if prev_agent:
                 # If agent already exists in scenario, update entrypoints
-                agent.entry_points = set(attacker_item.entry_points)
-                agent.goals = set(attacker_item.goals)
-                agent.policy = attacker_item.policy
+                agent = AttackerSettings(
+                    name=prev_agent.name,
+                    entry_points=set(attacker_item.entry_points),
+                    goals=set(prev_agent.goals),
+                    type=AgentType.ATTACKER,
+                    policy=attacker_item.policy,
+                )
             else:
-                # Otherwise, add new agent to scenario agents dict
-                agents[attacker_item.name] = AttackerSettings(
+                # Otherwise, add new agent to scenario agents tuple
+                agent = AttackerSettings(
                     name=attacker_item.name,
                     entry_points=set(attacker_item.entry_points),
                     goals=set(attacker_item.goals),
                     type=AgentType.ATTACKER,
                     policy=attacker_item.policy,
                 )
-
+            new_agents.append(agent)
         else:
             self.add_positions_to_model()
-            # Create a new scenario based on settings in gui and save it to file
-            # TODO: this is a hacky solution, instead malsim scenario should be easier to work with
-            rewards = None
-            false_negative_rates = None
-            false_positive_rates = None
-            is_actionable = None
-            is_observable = None
-
-            if self.scene.scenario:
-                if self.scene.scenario.rewards:
-                    rewards = self.scene.scenario.rewards.to_dict()
-                if self.scene.scenario.false_negative_rates:
-                    false_negative_rates = (
-                        self.scene.scenario.false_negative_rates.to_dict()
-                    )
-                if self.scene.scenario.false_positive_rates:
-                    false_positive_rates = (
-                        self.scene.scenario.false_positive_rates.to_dict()
-                    )
-                if self.scene.scenario.is_actionable:
-                    is_actionable = self.scene.scenario.is_actionable.to_dict()
-                if self.scene.scenario.is_observable:
-                    is_observable = self.scene.scenario.is_observable.to_dict()
 
             try:
                 scenario = Scenario(
                     lang_file=self.lang_file_path,
                     model=self.scene.model,
-                    agent_settings=agents,
-                    rewards=rewards,
-                    false_negative_rates=false_negative_rates,
-                    false_positive_rates=false_positive_rates,
-                    actionable_steps=is_actionable,
-                    observable_steps=is_observable,
+                    agents=tuple(new_agents),
                 )
                 scenario.save_to_file(file_path)
 
                 if hasattr(self, "_lang_file"):
                     scenario_dict = yaml.safe_load(open(file_path, "r"))
                     scenario_dict["lang_file"] = self._lang_file
-                    yaml.safe_dump(scenario_dict, open(file_path, "w"))
+                    yaml.safe_dump(scenario_dict, open(file_path, "w"), sort_keys=False)
             except Exception as e:
                 self.show_error_popup("Could not save scenario: " + str(e))
 
