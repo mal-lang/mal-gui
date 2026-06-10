@@ -520,13 +520,24 @@ class ModelScene(QGraphicsScene):
         # Draw attackers if they exists in scenario
         if self.scenario:
             agents = self.scenario.agent_settings
-            for name, agent_info in agents.items():
-                if isinstance(agent_info, AttackerSettings):
+            for agent_setting in agents:
+                if isinstance(agent_setting, AttackerSettings):
+                    if isinstance(agent_setting.entry_points, (tuple)):
+                        raise TypeError(
+                            "Expected entry_points to be a list or set, got a tuple"
+                        )
                     attacker_item = self.create_attacker(
-                        QPointF(0, 0), name, agent_info.entry_points
+                        QPointF(0, 0),
+                        agent_setting.name,
+                        {ep.full_name for ep in agent_setting.entry_points}
                     )
 
-                    for entry_point in agent_info.entry_points:
+                    if isinstance(agent_setting.entry_points, (tuple)):
+                        raise TypeError(
+                            "Expected entry_points to be a list or set, got a tuple"
+                        )
+
+                    for entry_point in agent_setting.entry_points:
                         entrypoint_full_name = (
                             entry_point
                             if isinstance(entry_point, str)
@@ -542,7 +553,7 @@ class ModelScene(QGraphicsScene):
                             attack_step, attacker_item, self._asset_id_to_item[asset.id]
                         )
 
-                    for goal in agent_info.goals:
+                    for goal in agent_setting.goals:
                         goal_full_name = (
                             goal if isinstance(goal, str) else goal.full_name
                         )
