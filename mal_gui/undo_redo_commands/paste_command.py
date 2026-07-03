@@ -42,8 +42,12 @@ class PasteCommand(QUndoCommand):
             position_tuple = data["position"]
             position = QPointF(position_tuple[0], position_tuple[1])
 
-            if item_type == "attacker":
-                new_item = self.scene.create_attacker(position)
+            if item_type in {"attacker", "meta_detector"}:
+                new_item = self.scene.create_special_item(
+                    "Meta Detector" if item_type == "meta_detector" else "Attacker",
+                    position,
+                    old_id,
+                )
 
             elif item_type == "asset":
                 asset_type = data["properties"]["type"]

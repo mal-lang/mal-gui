@@ -6,6 +6,7 @@ from ..connection_item import (
     AssociationConnectionItem,
     EntrypointConnectionItem,
     GoalConnectionItem,
+    MetaDetectorConnectionItem,
 )
 
 if TYPE_CHECKING:
@@ -54,6 +55,17 @@ class DeleteCommand(QUndoCommand):
                     print(
                         f"Entrypoint {step_full_name} not found in attacker {connection.attacker_item.name}"
                     )
+            if isinstance(connection, MetaDetectorConnectionItem):
+                asset_name = connection.asset_item.asset.name
+                try:
+                    connection.meta_detector_item.connected_assets.remove(asset_name)
+                except ValueError:
+                    print(
+                        f"Connection to {asset_name} not found in meta detector {connection.meta_detector_item.name}"
+                    )
+                connection.meta_detector_item.connected_asset_labels.pop(
+                    asset_name, None
+                )
 
         for item in self.items:
             if isinstance(item, AssetItem):
@@ -98,6 +110,18 @@ class DeleteCommand(QUndoCommand):
                     connection.asset_item.asset.name + ":" + connection.attack_step_name
                 )
                 connection.attacker_item.goals.append(step_full_name)
+            elif isinstance(connection, MetaDetectorConnectionItem):
+                self.scene.add_meta_detector_connection(
+                    connection.meta_detector_item,
+                    connection.asset_item,
+                    connection.label_value,
+                )
+                asset_name = connection.asset_item.asset.name
+                if asset_name not in connection.meta_detector_item.connected_assets:
+                    connection.meta_detector_item.connected_assets.append(asset_name)
+                connection.meta_detector_item.connected_asset_labels[asset_name] = (
+                    connection.label_value
+                )
 
             elif isinstance(connection, AssociationConnectionItem):
                 self.scene.add_association_connection(

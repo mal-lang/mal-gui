@@ -6,7 +6,7 @@ from maltoolbox.language import LanguageGraph
 from maltoolbox.model import Model
 from mal_gui.main_window import MainWindow
 from mal_gui.model_scene import ModelScene
-from mal_gui.object_explorer import AssetItem, AttackerItem
+from mal_gui.object_explorer import AssetItem, AttackerItem, MetaDetectorItem
 
 
 @pytest.fixture
@@ -39,6 +39,15 @@ def test_add_attacker(model_scene):
     assert isinstance(attacker_item, AttackerItem)
     assert attacker_item.pos() == pos
     assert attacker_item in model_scene.attacker_items
+
+
+def test_add_meta_detector(model_scene):
+    pos = QPointF(10, 20)
+    meta_detector_item = model_scene.create_meta_detector(pos, "Meta Detector 1")
+    assert isinstance(meta_detector_item, MetaDetectorItem)
+    assert isinstance(meta_detector_item, AttackerItem)
+    assert meta_detector_item.pos() == pos
+    assert meta_detector_item in model_scene.attacker_items
 
 
 # def test_connection_creation(model_scene):

@@ -13,6 +13,7 @@ from PySide6.QtGui import (
     QFontMetrics,
     QLinearGradient,
     QImage,
+    QPainter,
 )
 from PySide6.QtWidgets import QGraphicsItem
 
@@ -69,16 +70,23 @@ class ItemBase(QGraphicsItem):
 
         self.horizontal_margin = 15  # Horizontal margin
         self.vertical_margin = 15  # Vertical margin
-        self.status_color = QColor(0, 255, 0)
+        self.status_color =  QColor(0, 255, 0)
+        self.has_detector = False
+        self.detector_color = QColor(220, 0, 0)
 
         self.build()
 
     def boundingRect(self):
         """Overrides base method"""
+        if self.has_detector:
+            return self.size.adjusted(0, -38, 26, 48)
         return self.size
 
     def paint(self, painter, option, widget=None):
         """Overrides base method"""
+        if self.has_detector:
+            self._draw_detector_stem(painter)
+
         painter.setPen(self.asset_name_background_color.lighter())
         painter.setBrush(self.asset_name_background_color)
         painter.drawPath(self.path)
@@ -97,6 +105,9 @@ class ItemBase(QGraphicsItem):
         painter.setBrush(Qt.white)
         painter.drawPath(self.title_path)
         painter.drawPath(self.type_path)
+
+        if self.has_detector:
+            self._draw_detector_diamond(painter)
 
         # Draw the status path
         painter.setBrush(self.status_color)
@@ -280,6 +291,35 @@ class ItemBase(QGraphicsItem):
         if associated_scene:
             print("Asset Name Changed by user")
             associated_scene.main_window.update_childs_in_object_explorer_signal.emit()
+
+    def _draw_detector_stem(self, painter):
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setPen(QPen(QColor(20, 20, 20), 1))
+        painter.setBrush(QColor(180, 30, 30))
+
+        stem_width = 5
+        stem_height = 52
+        stem_x = self.width / 2 - 34
+        stem_y = -self.height / 2 - 15
+        painter.drawRect(QRectF(stem_x, stem_y, stem_width, stem_height))
+        painter.restore()
+
+    def _draw_detector_diamond(self, painter):
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setPen(QPen(QColor(20, 20, 20), 1))
+        painter.setBrush(QColor(180, 30, 30))
+
+        diamond_size = 16
+        half = diamond_size / 2
+        diamond_center_x = self.width / 2 - 31.5
+        diamond_center_y = -self.height / 2 - 18
+
+        painter.translate(diamond_center_x, diamond_center_y)
+        painter.rotate(-45)
+        painter.drawRect(QRectF(-half, -half, diamond_size, diamond_size))
+        painter.restore()
 
     def setIcon(self, icon_path=None):
         """Overrides base method"""

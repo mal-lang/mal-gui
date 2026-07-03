@@ -60,11 +60,18 @@ class DragDropAssetCommand(QUndoCommand):
 
 
 class DragDropAttackerCommand(QUndoCommand):
-    def __init__(self, scene: ModelScene, position: QPointF, parent=None):
+    def __init__(
+        self,
+        scene: ModelScene,
+        position: QPointF,
+        item_type: str = "Attacker",
+        parent=None,
+    ):
         """We need all info required to create/remove attacker"""
         super().__init__(parent)
         self.scene = scene
         self.position = position
+        self.item_type = item_type
         self.item = None
 
     def redo(self):
@@ -72,15 +79,18 @@ class DragDropAttackerCommand(QUndoCommand):
         print("REDO DROP!")
 
         if self.item:
-            # Create attacker from previous deleted attacker
-            self.item = self.scene.create_attacker(
-                self.item.pos(),
-                name=self.item.attacker.name,
-                attacker_id=self.item.attacker.id,
+            self.item = self.scene.create_special_item(
+                self.item_type,
+                self.position,
+                name=self.item.name,
+                entry_points=self.item.entry_points,
+                goals=self.item.goals,
+                policy=self.item.policy,
             )
         else:
-            # Create attacker from scratch
-            self.item = self.scene.create_attacker(self.position, "Attacker")
+            self.item = self.scene.create_special_item(
+                self.item_type, self.position, self.item_type
+            )
 
         # Update the Object Explorer when number of items change
         self.scene.main_window.update_childs_in_object_explorer_signal.emit()

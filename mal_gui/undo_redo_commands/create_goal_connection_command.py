@@ -23,15 +23,27 @@ class CreateGoalConnectionCommand(QUndoCommand):
         self.asset_item = asset_item
         self.attack_step_name = attack_step_name
         self.connection = None
+        self.step_full_name = self.asset_item.asset.name + ":" + self.attack_step_name
+
+    def _add_step(self):
+        if isinstance(self.attacker_item.goals, set):
+            self.attacker_item.goals.add(self.step_full_name)
+            return
+        if self.step_full_name not in self.attacker_item.goals:
+            self.attacker_item.goals.append(self.step_full_name)
+
+    def _remove_step(self):
+        try:
+            self.attacker_item.goals.remove(self.step_full_name)
+        except (ValueError, KeyError):
+            pass
 
     def redo(self):
         """Create entrypoint for attacker"""
         self.connection = self.scene.add_goal_connection(
             self.attack_step_name, self.attacker_item, self.asset_item
         )
-        self.attacker_item.goals.append(
-            self.asset_item.asset.name + ":" + self.attack_step_name
-        )
+        self._add_step()
 
     def undo(self):
         """Undo entrypoint creation"""
@@ -39,6 +51,4 @@ class CreateGoalConnectionCommand(QUndoCommand):
             self.connection.remove_labels()
             self.scene.removeItem(self.connection)
 
-        self.attacker_item.goals.remove(
-            self.asset_item.asset.name + ":" + self.attack_step_name
-        )
+        self._remove_step()

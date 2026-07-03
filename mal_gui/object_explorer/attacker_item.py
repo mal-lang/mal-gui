@@ -14,9 +14,20 @@ ALLOWED_POLICIES = [
     policies.RandomAgent,
     policies.TTCSoftMinAttacker,
 ]
+POLICY_NAME_TO_CLASS = {cls.__name__: cls for cls in ALLOWED_POLICIES}
+
+
+def resolve_policy(policy_name: str | None):
+    if not policy_name:
+        return policies.PassiveAgent
+    return POLICY_NAME_TO_CLASS.get(policy_name, policies.PassiveAgent)
 
 
 class AttackerItem(ItemBase):
+    TITLE = "Attacker"
+    HEADER_COLOR = (255, 0, 0)
+    ITEM_KIND = "attacker"
+
     # Starting Sequence Id with normal start at 100 (randomly taken)
 
     def __init__(
@@ -25,12 +36,14 @@ class AttackerItem(ItemBase):
         image_path: str,
         entry_points=None,
         goals=None,
+        policy=None,
         parent=None,
     ):
 
-        self.entry_points: list[str] = entry_points or []
-        self.policy = policies.PassiveAgent
-        self.goals: list[str] = goals or []
+        # Scenario data may come in as sets; normalize to lists for GUI ops.
+        self.entry_points: list[str] = list(entry_points) if entry_points else []
+        self.policy = policy or policies.PassiveAgent
+        self.goals: list[str] = list(goals) if goals else []
         self.name = name
         self.attacker_toggle_state = False
 
@@ -40,12 +53,11 @@ class AttackerItem(ItemBase):
         self.timer.timeout.connect(self.update_status_color)
         self.timer.start(500)
 
-        super().__init__("Attacker", image_path, parent)
+        super().__init__(self.TITLE, image_path, parent)
 
     def update_type_text_item_position(self):
         super().update_type_text_item_position()
-        # For Attacker make the background of type As Red
-        self.asset_type_background_color = QColor(255, 0, 0)  # Red
+        self.asset_type_background_color = QColor(*self.HEADER_COLOR)
 
     def update_name(self):
         """Update the name of the attacker"""
@@ -67,11 +79,10 @@ class AttackerItem(ItemBase):
 
     def set_item_attribute_value(self, attr_name, new_value_str) -> None:
         if attr_name == "policy":
-            mapping = {cls.__name__: cls for cls in ALLOWED_POLICIES}
-            if new_value_str not in mapping:
+            if new_value_str not in POLICY_NAME_TO_CLASS:
                 raise ValueError(f"Invalid policy: {new_value_str}")
             print("Change policy to ", new_value_str)
-            self.policy = mapping[new_value_str]
+            self.policy = POLICY_NAME_TO_CLASS[new_value_str]
             return
         raise AttributeError(f"{attr_name} is not editable")
 
@@ -104,6 +115,6 @@ class AttackerItem(ItemBase):
         return {
             "title": self.title,
             "image_path": self.image_path,
-            "type": "asset",
+            "type": self.ITEM_KIND,
             "object": self.entry_points,
         }

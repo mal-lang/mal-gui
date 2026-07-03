@@ -1,6 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-
+from typing import TYPE_CHECKING, Any
 
 from .item_base import ItemBase
 
@@ -15,6 +14,7 @@ class AssetItem(ItemBase):
         self,
         asset: ModelAsset,
         image_path: str,
+        has_detector: bool = False,
         parent=None,
     ):
         print("Create Asset item with parent", parent)
@@ -23,6 +23,7 @@ class AssetItem(ItemBase):
         self.asset_type = asset.lg_asset
 
         super().__init__(asset.lg_asset.name, image_path, parent)
+        self.has_detector = has_detector
 
     def update_name(self):
         super().update_name()
