@@ -53,7 +53,7 @@ class FileSelectionDialog(QDialog):
         os.makedirs(os.path.dirname(self.config_file_path), exist_ok=True)
 
         self.config = configparser.ConfigParser()
-        self.config.read(self.config_file_path)
+        self.config.read(self.config_file_path, encoding="utf-8")
         self.selected_lang_file = self.config.get(
             "Settings", "langFilePath", fallback=None
         )

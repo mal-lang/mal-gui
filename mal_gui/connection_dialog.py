@@ -65,9 +65,8 @@ class AssociationConnectionDialog(ConnectionDialog):
         for fieldname, association in possible_assocs.items():
             field = association.get_field(fieldname)
 
-            # If assoc ends with end_assets type, give that assoc
-            # as option in list widget
-            if field.asset == self.end_asset.lg_asset:
+            # Association endpoints also accept subassets of their declared type.
+            if self.end_asset.lg_asset.is_subasset_of(field.asset):
                 assoc_list_item = QListWidgetItem(
                     self.start_asset.name
                     + "."
@@ -91,6 +90,7 @@ class AssociationConnectionDialog(ConnectionDialog):
         self.ok_button = QPushButton("OK")
         self.ok_button.clicked.connect(self.ok_button_clicked)
         self.ok_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.ok_button.setEnabled(self.association_list_widget.count() > 0)
         button_layout.addWidget(self.ok_button)
 
         self.cancel_button = QPushButton("Cancel")
@@ -112,15 +112,16 @@ class AssociationConnectionDialog(ConnectionDialog):
 
     def ok_button_clicked(self):
         selected_item = self.association_list_widget.currentItem()
+        if selected_item is None:
+            return
 
-        if selected_item:
-            data = selected_item.data(Qt.UserRole)
+        data = selected_item.data(Qt.UserRole)
 
-            from_asset: ModelAsset = data.get("from")
-            to_asset: ModelAsset = data.get("to")
-            self.field_name: str = data.get("fieldname")
+        from_asset: ModelAsset = data.get("from")
+        to_asset: ModelAsset = data.get("to")
+        self.field_name: str = data.get("fieldname")
 
-            print(f"{from_asset}.{self.field_name} = {to_asset} chosen")
+        print(f"{from_asset}.{self.field_name} = {to_asset} chosen")
 
         self.accept()
 
