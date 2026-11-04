@@ -25,10 +25,17 @@ class ModelView(QGraphicsView):
 
     def wheelEvent(self, event):
         """Overrides base"""
-        if event.angleDelta().y() > 0:
-            self.zoomIn()
-        else:
-            self.zoomOut()
+        # Touchpads report small pixel deltas at a high rate, mouse wheels
+        # report 120 units per notch. Scale the zoom by the actual distance
+        # scrolled so both feel similar and neither over-zooms.
+        pixel_delta = event.pixelDelta().y()
+        if pixel_delta:
+            self.zoom(1.005 ** pixel_delta)
+            return
+
+        angle_delta = event.angleDelta().y()
+        if angle_delta:
+            self.zoom(1.0015 ** angle_delta)
 
     def zoom(self, factor):
         """Zoom one step with given factor"""
